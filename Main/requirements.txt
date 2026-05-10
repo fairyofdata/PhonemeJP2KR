@@ -6,3 +6,6 @@ librosa
 pydub
 langdetect
 datasets
+openai
+matplotlib
+torchvision
