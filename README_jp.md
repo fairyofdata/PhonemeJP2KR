@@ -30,8 +30,8 @@
 
 1. **リポジトリのクローン**:
    ```bash
-   git clone https://github.com/fairyofdata/JP2KR_PhonemeTutor
-   cd JP2KR_PhonemeTutor
+   git clone https://github.com/fairyofdata/PhonemeJP2KR
+   cd PhonemeJP2KR
    ```
 
 2. **パッケージのインストール**:

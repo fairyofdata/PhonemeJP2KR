@@ -32,7 +32,7 @@ Project Prototype Planning
 
 1. **Clone the Repository**:
    ```bash
-   git clone <https://github.com/fairyofdata/PhonemeJP2KR>
+   git clone https://github.com/fairyofdata/PhonemeJP2KR
    cd PhonemeJP2KR
    ```
 

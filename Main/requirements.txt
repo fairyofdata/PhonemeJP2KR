@@ -3,9 +3,7 @@ transformers
 torch
 torchaudio
 librosa
-pydub
+soundfile
 langdetect
-datasets
 openai
 matplotlib
-torchvision
