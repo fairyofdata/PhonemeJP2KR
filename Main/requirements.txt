@@ -5,5 +5,6 @@ torchaudio
 librosa
 soundfile
 langdetect
-openai
+google-cloud-aiplatform
 matplotlib
+streamlit-mic-recorder

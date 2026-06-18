@@ -1,0 +1,48 @@
+# Python & Environments
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary audio files
+*.wav
+*.mp3
+*.flac
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# API Keys and Credentials
+*key*.json
+*secret*.json
+vertex_key.json
+openai_key*
+credentials.json
+*.pem
+
+# Machine Learning models (if downloaded locally)
+*.pt
+*.pth
+*.h5
+*.onnx
+
+# Data and logs
+data/
+*.log
+
+# Project specific
+app.db
+.gemini/
+screencapture-*.png
+vertex_key_new.md

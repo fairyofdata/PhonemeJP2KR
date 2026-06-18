@@ -2,14 +2,12 @@ import torch
 from transformers import WhisperProcessor, WhisperForConditionalGeneration, Wav2Vec2Processor, Wav2Vec2ForCTC
 import librosa
 from langdetect import detect
-from openai import OpenAI
+import google.generativeai as genai
+import os
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Load models (placeholder for now)
 def load_whisper_model():
-    # Load Whisper model for intended pronunciation
-    # large-v3는 로컬에서 너무 무거우므로 프로토타이핑용으로 small을 권장합니다.
     model_id = "openai/whisper-small"
     processor = WhisperProcessor.from_pretrained(model_id)
     model = WhisperForConditionalGeneration.from_pretrained(model_id).to(DEVICE)
@@ -17,16 +15,13 @@ def load_whisper_model():
 
 def load_wav2vec_model():
     # 일반 한국어 Wav2Vec2 모델 로드 (일본인 타겟팅은 LLM 프롬프트가 담당)
-    model_id = "jonatasgrosman/wav2vec2-large-xlsr-53-korean"
+    model_id = "kresnik/wav2vec2-large-xlsr-korean"
     processor = Wav2Vec2Processor.from_pretrained(model_id)
     model = Wav2Vec2ForCTC.from_pretrained(model_id).to(DEVICE)
     return processor, model
 
-# Function to transcribe audio with Whisper
 def transcribe_audio(audio_path, processor, model):
-    # Load audio
     audio, sr = librosa.load(audio_path, sr=16000)
-    # Process and generate transcription
     inputs = processor(audio, return_tensors="pt", sampling_rate=sr)
     input_features = inputs.input_features.to(DEVICE)
     with torch.no_grad():
@@ -53,31 +48,91 @@ def detect_language(text):
     except:
         return "unknown"
 
-# LLM 기반 피드백 생성을 위한 뼈대
-def generate_feedback(intended, actual, api_key=None):
-    if not api_key:
-        return "⚠️ OpenAI API 키가 제공되지 않았습니다. 사이드바에 API 키를 입력해주세요.\n\n**[Mock Response]**\n의도하신 발음이 한국어 인식기에는 다르게 들렸습니다. API 키를 연결하면 상세한 교정 피드백이 제공됩니다."
-        
-    prompt = f"""당신은 일본인 학습자를 위한 한국어 발음 교정 전문가입니다.
-    학습자가 의도한 발음: {intended}
-    일반 한국어 음성인식기가 실제 인식한 발음: {actual}
-    
-    한국어 음성인식기가 원래 의도와 다르게 '{actual}'이라고 인식했다면, 이는 일본어 모어 화자 특유의 발음 습관(예: 자음 끝에 불필요한 모음 'ㅜ/ㅗ' 추가, 받침 발음 누락, 평음/격음/경음 혼동 등) 때문일 확률이 높습니다.
-    위 두 발음을 비교하여:
-    1. 일본인 학습자가 어떤 부분에서 특유의 발음 실수를 했는지 분석하세요.
-    2. 어떻게 입모양이나 혀의 위치를 바꿔야 정확한 한국어 발음이 되는지 구체적이고 친절한 교정 피드백을 제공하세요.
-    """
+# Pure Python Levenshtein (Windows 빌드 에러 우회)
+def levenshtein_distance(s1, s2):
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+    if len(s2) == 0:
+        return len(s1)
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+    return previous_row[-1]
+
+def calculate_phoneme_score(intended_ipa, actual_ipa):
+    if not intended_ipa or not actual_ipa:
+        return 0
+    distance = levenshtein_distance(intended_ipa, actual_ipa)
+    max_len = max(len(intended_ipa), len(actual_ipa))
+    if max_len == 0:
+        return 100
+    score = max(0, 100 - (distance / max_len * 100))
+    return round(score)
+
+import json
+
+# LLM 기반 피드백 및 IPA, Katakana 추출
+def generate_feedback(target, whisper_text, wav2vec_text):
+    prompt = f"""あなたは親切で専門的な韓国語の発音矯正の先生であり、日本人学習者（Japanese Native Speakers）の母語干渉（L1 Interference）を深く理解している言語学の専門家です。
+
+[分析データ]
+- 学習者が意図した文章 (Target): {target}
+- Whisperが認識した文章 (Intelligibility - 韓国人の体感): {whisper_text}
+- Wav2Vec2が認識した音声 (Acoustics - 物理的な音声): {wav2vec_text}
+
+[日本人話者の最適化ガイドライン (Linguistic Rules)]
+日本語はモーラ（Mora）拍言語であり、終声（パッチム）が制限されているため、韓国語の発音時に典型的なエラーが発生します。
+1. 母音挿入 (Epenthesis): パッチムの後に不要な母音 /u/ や /o/ を追加する。
+2. 破裂音/摩擦音の混同: 平音、激音、硬音を区別できず、有声音/無声音としてのみ区別する。
+3. 母音の歪み: /ʌ/（オ）を /o/ や /a/ で発音する。
+4. 鼻音化エラー: 終声 /ŋ/ の発音を明確に切れない。
+
+これらのガイドラインと上記の3つのデータを基に、以下の項目を分析し、**必ず有効なJSONフォーマットのみ**で応答してください。他の説明は一切加えないでください。
+
+{{
+    "target_ipa": "目標文章の国際音声記号(IPA)",
+    "whisper_ipa": "Whisperが認識した文章の国際音声記号(IPA)",
+    "wav2vec_ipa": "Wav2Vec2が認識した音声の国際音声記号(IPA)",
+    "katakana": "Wav2Vec2の音声を日本人が発音したかのようにカタカナで表記（L1干渉を視覚化するため）",
+    "feedback_jp": "上記の指標とL1干渉ルールに基づき、日本語で作成された詳細な発音矯正フィードバック（マークダウン使用可）"
+}}
+"""
     
     try:
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini", # 비용 효율적이고 빠른 최신 모델
-            messages=[
-                {"role": "system", "content": "당신은 친절하고 전문적인 한국어 발음 교정 선생님입니다."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7
+        key_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'vertex_key_new.md')
+        with open(key_path, 'r', encoding='utf-8') as f:
+            api_key = f.read().strip()
+            
+        genai.configure(api_key=api_key)
+        
+        # 最新で安定している 2.5-flash モデルを使用
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        
+        response = model.generate_content(
+            prompt,
+            generation_config={"temperature": 0.2}
         )
-        return response.choices[0].message.content
+        
+        # JSON 파싱
+        response_text = response.text.strip()
+        if response_text.startswith("```json"):
+            response_text = response_text[7:-3].strip()
+        elif response_text.startswith("```"):
+            response_text = response_text[3:-3].strip()
+            
+        result = json.loads(response_text)
+        return result
     except Exception as e:
-        return f"OpenAI API 호출 중 오류가 발생했습니다: {str(e)}"
+        return {
+            "target_ipa": "N/A",
+            "whisper_ipa": "N/A",
+            "wav2vec_ipa": "N/A",
+            "katakana": "N/A",
+            "feedback_jp": f"API 呼び出し中にエラーが発生しました: {str(e)}\n\nAPIキーを確認してください。"
+        }
