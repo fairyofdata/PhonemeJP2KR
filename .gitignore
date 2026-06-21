@@ -45,3 +45,5 @@ data/
 app.db
 .gemini/
 vertex_key_new.md
+Project_Evaluation.md
+*.pdf

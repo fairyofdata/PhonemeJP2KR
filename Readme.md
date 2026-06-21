@@ -33,6 +33,9 @@ This project solves this problem by offering a **4-way linguistic comparison**:
 - **Expert LLM Feedback**: Utilizes Google's **Gemini 2.5 Flash** to analyze the data and generate professional, linguistics-grade coaching feedback in Japanese.
 - **Japanese UI Localization**: Fully localized for Japanese end-users.
 - **Audio Waveform Visualization**: Visual feedback of the spoken audio.
+- **Auto Translation (JP to KR)**: Enter a Japanese sentence and it automatically translates to natural Korean for pronunciation practice.
+- **Native TTS Audio (edge-tts)**: Listen to the target sentence read by high-quality Korean neural voices (SunHi, InJoon, Hyunsu).
+- **Learning History Management**: Easily track your past practice sessions and delete unwanted records.
 
 ---
 
