@@ -43,3 +43,10 @@ def get_all_records():
     columns = ["id", "timestamp", "intended", "actual", "score", "feedback"]
     result = [dict(zip(columns, row)) for row in records]
     return result
+
+def delete_record(record_id):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('DELETE FROM feedback_history WHERE id = ?', (record_id,))
+    conn.commit()
+    conn.close()

@@ -8,3 +8,4 @@ langdetect
 google-cloud-aiplatform
 matplotlib
 streamlit-mic-recorder
+edge-tts

@@ -1,7 +1,8 @@
 import streamlit as st
-from src.models import load_whisper_model, load_wav2vec_model, transcribe_audio, analyze_pronunciation, generate_feedback
+from src.models import load_whisper_model, load_wav2vec_model, transcribe_audio, analyze_pronunciation, generate_feedback, translate_jp_to_kr
+from src.tts import generate_tts_audio
 from src.models import calculate_phoneme_score
-from src.database import init_db, save_record, get_all_records
+from src.database import init_db, save_record, get_all_records, delete_record
 import tempfile
 import os
 import matplotlib.pyplot as plt
@@ -40,7 +41,53 @@ with tab_analysis:
     練習する文章を入力した後、ブラウザのマイクで直接録音するか、音声ファイルをアップロードして発音を分析してみてください。
     """)
     
-    target = st.text_input("🎯 練習する文章を正確に入力してください (目標文章)", value="감사합니다")
+    if 'target_sentence' not in st.session_state:
+        st.session_state.target_sentence = "감사합니다"
+
+    st.markdown("### Step 1. 言いたいことを入力 (日本語 ➡️ 韓国語)")
+    col_jp1, col_jp2 = st.columns([3, 1])
+    with col_jp1:
+        jp_input = st.text_input("🗣️ 言いたい日本語を入力してください (말하고 싶은 일본어)", placeholder="例: こんにちは、お会いできて嬉しいです")
+    with col_jp2:
+        # Align button with text input
+        st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+        if st.button("韓国語に翻訳 (한국어로 번역)", use_container_width=True):
+            if jp_input.strip():
+                with st.spinner("翻訳中..."):
+                    translated = translate_jp_to_kr(jp_input)
+                    if "번역 오류" not in translated:
+                        st.session_state.target_sentence = translated
+                    else:
+                        st.error(translated)
+            else:
+                st.warning("日本語を入力してください。")
+
+    st.markdown("### Step 2. 目標文章の確認と録音")
+    target = st.text_input("🎯 練習する文章 (目標文章)", key="target_sentence")
+
+    if target.strip():
+        st.markdown("#### 🎧 原語民の発音を聞く (TTS)")
+        voice_choice = st.radio("声優を選択 (성우 선택):", ["👩 SunHi (차분한 여성)", "👨 InJoon (신뢰감 남성)", "👦 Hyunsu (부드러운 남성)"], horizontal=True)
+        
+        if st.button("🔊 発音を生成して聞く (발음 듣기)"):
+            voice_key = "SunHi"
+            if "InJoon" in voice_choice: voice_key = "InJoon"
+            elif "Hyunsu" in voice_choice: voice_key = "Hyunsu"
+            
+            with st.spinner("オーディオを生成しています..."):
+                import hashlib
+                text_hash = hashlib.md5(target.encode()).hexdigest()
+                out_path = os.path.join(tempfile.gettempdir(), f"tts_{text_hash}_{voice_key}.mp3")
+                
+                success = True
+                if not os.path.exists(out_path):
+                    success = generate_tts_audio(target, voice_key, out_path)
+                
+                if success:
+                    st.audio(out_path, format="audio/mp3")
+                else:
+                    st.error("오디오 생성에 실패했습니다.")
+    
     st.markdown("---")
     
     col1, col2 = st.columns(2)
@@ -146,6 +193,9 @@ with tab_history:
                 st.write(f"**실제 들린 발음:** {r['actual']}")
                 st.markdown("**피드백:**")
                 st.write(r['feedback'])
+                if st.button("🗑️ 기록 삭제", key=f"del_{r['id']}", type="secondary"):
+                    delete_record(r['id'])
+                    st.rerun()
 
 st.markdown("---")
 st.markdown("**Note:** This is a basic prototype. Models are loaded locally for efficiency.")

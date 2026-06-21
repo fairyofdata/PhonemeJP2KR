@@ -4,6 +4,8 @@ import librosa
 from langdetect import detect
 import google.generativeai as genai
 import os
+import asyncio
+import edge_tts
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -136,3 +138,40 @@ def generate_feedback(target, whisper_text, wav2vec_text):
             "katakana": "N/A",
             "feedback_jp": f"API 呼び出し中にエラーが発生しました: {str(e)}\n\nAPIキーを確認してください。"
         }
+
+def translate_jp_to_kr(jp_text):
+    prompt = f"다음 일본어 문장을 자연스러운 회화체 한국어로 번역하세요. 결과는 번역된 한국어 문장 단 하나만 출력해야 하며, 따옴표나 다른 부가 설명, 마크다운 형식 등은 일절 포함하지 마세요.\n\n일본어: {jp_text}"
+    try:
+        key_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'vertex_key_new.md')
+        with open(key_path, 'r', encoding='utf-8') as f:
+            api_key = f.read().strip()
+            
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        
+        response = model.generate_content(
+            prompt,
+            generation_config={"temperature": 0.2}
+        )
+        
+        return response.text.strip()
+    except Exception as e:
+        return f"번역 오류: {str(e)}"
+
+async def _generate_tts(text, voice, output_path):
+    communicate = edge_tts.Communicate(text, voice)
+    await communicate.save(output_path)
+
+def generate_tts_audio(text, voice_name, output_path):
+    voice_map = {
+        "SunHi": "ko-KR-SunHiNeural",
+        "InJoon": "ko-KR-InJoonNeural",
+        "JiMin": "ko-KR-JiMinNeural"
+    }
+    voice_id = voice_map.get(voice_name, "ko-KR-SunHiNeural")
+    try:
+        asyncio.run(_generate_tts(text, voice_id, output_path))
+        return True
+    except Exception as e:
+        print(f"TTS Error: {e}")
+        return False
