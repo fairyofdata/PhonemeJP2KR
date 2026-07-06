@@ -2,6 +2,8 @@
 
 # Phoneme-level Korean Pronunciation Coaching for Japanese Native Speakers 🧑‍🏫
 
+[![CI](https://github.com/fairyofdata/PhonemeJP2KR/actions/workflows/ci.yml/badge.svg)](https://github.com/fairyofdata/PhonemeJP2KR/actions/workflows/ci.yml)
+
 [![Demo Video](https://img.youtube.com/vi/4SwwmzEcpZQ/0.jpg)](https://youtu.be/4SwwmzEcpZQ)
 
 > A CAPT (Computer-Assisted Pronunciation Training) web application for Japanese learners of Korean. It combines a **dual-ASR perception/production probe** (Whisper × Wav2Vec2), a **deterministic Korean G2P phonological rule engine**, and an **LLM interpretation layer** (Gemini) to detect, quantify, and explain pronunciation errors at the phoneme (jamo) level — with L1 interference made visible through katakana back-mapping.
@@ -14,10 +16,11 @@
 3. [Architecture](#architecture)
 4. [The Deterministic G2P Engine](#the-deterministic-g2p-engine)
 5. [Scoring & L1 Error Taxonomy](#scoring--l1-error-taxonomy)
-6. [Installation](#installation)
-7. [Usage](#usage)
-8. [Testing](#testing)
-9. [Limitations & Roadmap](#limitations--roadmap)
+6. [Empirical Validation](#empirical-validation)
+7. [Installation](#installation)
+8. [Usage](#usage)
+9. [Testing](#testing)
+10. [Limitations & Roadmap](#limitations--roadmap)
 
 ---
 
@@ -97,6 +100,16 @@ Because **both** the target and the ASR hypothesis pass through the same G2P, or
 | `nasal_coda_confusion` | ㄴ/ㅇ collapse into JP moraic ん | 산 → 상 |
 
 These structured tags — not raw strings — are what the LLM receives, so its feedback cites concrete evidence instead of guessing.
+
+## Empirical Validation
+
+Three reproducible experiments ([`experiments/`](experiments/), full report in [docs/EVALUATION.md](docs/EVALUATION.md)):
+
+| # | Question | Result |
+|---|---|---|
+| 1 | Is LLM-generated IPA a valid scorer? | **No** — on identical input, the v1 LLM scorer fluctuated 89–93 (sd 1.45) across 10 runs, producing 4 different IPA transcriptions of the same word. The deterministic scorer: sd 0.0. |
+| 2 | Does the pipeline detect injected L1 errors? (TTS perturbation study) | **80% pairwise ranking accuracy** over 10 sentence pairs; mean gap 10.3 points. Both failures trace to the documented ASR-error confound and are analyzed in the report. |
+| 3 | Does the G2P engine generalize beyond its dev examples? | **100% (51/51)** on a held-out 표준발음법 set; 0/9 on morphology-dependent items, exactly matching the documented scope. Runs in CI as a regression gate. |
 
 ## Installation
 

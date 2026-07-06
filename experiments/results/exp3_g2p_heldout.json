@@ -1,0 +1,60 @@
+{
+  "core": {
+    "n": 51,
+    "correct": 51,
+    "failures": [],
+    "accuracy": 1.0
+  },
+  "oos": {
+    "n": 9,
+    "correct": 0,
+    "failures": [
+      {
+        "orthography": "앉고",
+        "gold": "안꼬",
+        "pred": "안고"
+      },
+      {
+        "orthography": "신고",
+        "gold": "신꼬",
+        "pred": "신고"
+      },
+      {
+        "orthography": "밟다",
+        "gold": "밥따",
+        "pred": "발다"
+      },
+      {
+        "orthography": "넓게",
+        "gold": "널께",
+        "pred": "널게"
+      },
+      {
+        "orthography": "꽃잎",
+        "gold": "꼰닙",
+        "pred": "꼬칩"
+      },
+      {
+        "orthography": "색연필",
+        "gold": "생년필",
+        "pred": "새견필"
+      },
+      {
+        "orthography": "맨입",
+        "gold": "맨닙",
+        "pred": "매닙"
+      },
+      {
+        "orthography": "의견란",
+        "gold": "의견난",
+        "pred": "의결란"
+      },
+      {
+        "orthography": "맛없다",
+        "gold": "마덥따",
+        "pred": "마섭따"
+      }
+    ],
+    "accuracy": 0.0
+  }
+}

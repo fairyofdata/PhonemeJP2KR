@@ -2,6 +2,8 @@
 
 # 일본어 모어 화자를 위한 음소 수준 한국어 발음 코칭 🧑‍🏫
 
+[![CI](https://github.com/fairyofdata/PhonemeJP2KR/actions/workflows/ci.yml/badge.svg)](https://github.com/fairyofdata/PhonemeJP2KR/actions/workflows/ci.yml)
+
 [![데모 영상](https://img.youtube.com/vi/4SwwmzEcpZQ/0.jpg)](https://youtu.be/4SwwmzEcpZQ)
 
 > 일본인 한국어 학습자를 위한 CAPT(컴퓨터 보조 발음 훈련) 웹 애플리케이션입니다. **듀얼 ASR 지각/산출 프로브**(Whisper × Wav2Vec2), **결정적(rule-based) 한국어 G2P 음운 규칙 엔진**, **LLM 해석 레이어**(Gemini)를 결합하여 자모(음소) 수준에서 발음 오류를 탐지·정량화·설명하고, 가타카나 역매핑으로 모어 간섭(L1 Interference)을 시각화합니다.
@@ -84,6 +86,16 @@ flowchart TD
 | `nasal_coda_confusion` | ㄴ/ㅇ이 일본어 撥音 ん으로 통합 | 산 → 상 |
 
 LLM은 원시 문자열이 아니라 이 구조화된 태그를 입력받으므로, 추측이 아닌 구체적 근거를 인용하는 피드백을 생성합니다.
+
+## 실증 검증 (Empirical Validation)
+
+재현 가능한 실험 3종을 수행했습니다 ([`experiments/`](experiments/), 상세 보고서: [docs/EVALUATION.md](docs/EVALUATION.md)):
+
+| # | 질문 | 결과 |
+|---|---|---|
+| 1 | LLM 생성 IPA는 유효한 채점기인가? | **아니오** — 동일 입력에 대해 v1 LLM 채점기는 10회 실행에서 89~93점으로 요동(sd 1.45), 같은 단어의 IPA 전사가 4가지로 상이. 결정적 채점기는 sd 0.0. |
+| 2 | 파이프라인이 주입된 L1 오류를 탐지하는가? (TTS 섭동 실험) | 10개 문장 쌍에서 **순위 정확도 80%**, 평균 점수 갭 10.3점. 실패 2건은 모두 문서화된 ASR 오류 교란으로 소급되며 보고서에서 분석. |
+| 3 | G2P 엔진이 개발 예제 밖으로 일반화되는가? | held-out 표준발음법 평가셋에서 **100% (51/51)**; 형태소 의존 항목은 0/9로 문서화된 적용 범위와 정확히 일치. CI에서 회귀 게이트로 실행. |
 
 ## 설치
 

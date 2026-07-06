@@ -2,6 +2,8 @@
 
 # 日本語母語話者のための音素レベル韓国語発音コーチング 🧑‍🏫
 
+[![CI](https://github.com/fairyofdata/PhonemeJP2KR/actions/workflows/ci.yml/badge.svg)](https://github.com/fairyofdata/PhonemeJP2KR/actions/workflows/ci.yml)
+
 [![デモ動画](https://img.youtube.com/vi/4SwwmzEcpZQ/0.jpg)](https://youtu.be/4SwwmzEcpZQ)
 
 > 日本人韓国語学習者向けのCAPT（コンピュータ支援発音訓練）Webアプリケーションです。**デュアルASRによる知覚/産出プローブ**（Whisper × Wav2Vec2）、**決定論的な韓国語G2P音韻規則エンジン**、**LLM解釈レイヤー**（Gemini）を組み合わせ、字母（音素）レベルで発音エラーを検出・定量化・説明します。母語干渉（L1 Interference）はカタカナへの逆マッピングによって可視化されます。
@@ -84,6 +86,16 @@ flowchart TD
 | `nasal_coda_confusion` | ㄴ/ㅇが日本語の撥音「ん」に統合 | 산 → 상 |
 
 LLMは生の文字列ではなくこの構造化タグを受け取るため、推測ではなく具体的な根拠を引用したフィードバックを生成します。
+
+## 実証検証 (Empirical Validation)
+
+再現可能な3つの実験を実施しました（[`experiments/`](experiments/)、詳細レポート: [docs/EVALUATION.md](docs/EVALUATION.md)）:
+
+| # | 問い | 結果 |
+|---|---|---|
+| 1 | LLM生成IPAは有効な採点器か？ | **No** — 同一入力に対しv1のLLM採点器は10回の実行で89〜93点と変動（sd 1.45）、同じ単語のIPA転写が4種類に分裂。決定論的採点器はsd 0.0。 |
+| 2 | パイプラインは注入されたL1エラーを検出するか？（TTS摂動実験） | 10文ペアで**ランキング精度80%**、平均スコア差10.3点。失敗2件はいずれも文書化済みのASRエラー交絡に起因し、レポートで分析。 |
+| 3 | G2Pエンジンは開発例の外に一般化するか？ | held-out標準発音法評価セットで**100% (51/51)**；形態素依存項目は0/9で、文書化された適用範囲と正確に一致。CIで回帰ゲートとして実行。 |
 
 ## インストール
 

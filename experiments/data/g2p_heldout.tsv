@@ -1,0 +1,66 @@
+# Held-out G2P evaluation set — disjoint from tests/test_g2p.py cases.
+# Gold labels follow 표준발음법 (Standard Korean Pronunciation) as listed in
+# the 표준국어대사전 pronunciation field.
+# Columns: scope <TAB> orthography <TAB> gold_surface
+# scope: core = rule categories implemented by the engine
+#        oos  = out-of-scope (requires morphological analysis; documented limitation)
+core	꽃	꼳
+core	밖	박
+core	젖	젇
+core	빚	빋
+core	무릎	무릅
+core	웃다	욷따
+core	덮다	덥따
+core	낮잠	낟짬
+core	꽃다발	꼳따발
+core	국내	궁내
+core	박물관	방물관
+core	끝나다	끈나다
+core	앞머리	암머리
+core	밥맛	밤맏
+core	작년	장년
+core	겉모습	건모습
+core	종로	종노
+core	대통령	대통녕
+core	음료수	음뇨수
+core	강릉	강능
+core	왕래	왕내
+core	칼날	칼랄
+core	난로	날로
+core	진리	질리
+core	논리	놀리
+core	앓는	알른
+core	낮에	나제
+core	꽃을	꼬츨
+core	앞에	아페
+core	밭에	바테
+core	부엌에	부어케
+core	부엌이	부어키
+core	값이	갑씨
+core	넋이	넉씨
+core	닭을	달글
+core	젊음	절믐
+core	핥아	할타
+core	읊어	을퍼
+core	없이	업씨
+core	놓지	노치
+core	쌓다	싸타
+core	많고	만코
+core	옷을 입다	오슬 입따
+core	책을 읽어요	채글 일거요
+core	밥을 먹었어요	바블 머거써요
+core	꽃이 피었습니다	꼬치 피얻씀니다
+core	좋은 하루 되세요	조은 하루 되세요
+core	정말 고맙습니다	정말 고맙씀니다
+core	잘 먹겠습니다	잘 먹껟씀니다
+core	처음 뵙겠습니다	처음 뵙껟씀니다
+core	어떻게 지내세요	어떠케 지내세요
+oos	앉고	안꼬
+oos	신고	신꼬
+oos	밟다	밥따
+oos	넓게	널께
+oos	꽃잎	꼰닙
+oos	색연필	생년필
+oos	맨입	맨닙
+oos	의견란	의견난
+oos	맛없다	마덥따

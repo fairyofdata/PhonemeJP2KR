@@ -37,8 +37,8 @@ credentials.json
 *.h5
 *.onnx
 
-# Data and logs
-data/
+# Data and logs (user practice history DB; NOT experiments/data)
+/data/
 *.log
 
 # Test artifacts

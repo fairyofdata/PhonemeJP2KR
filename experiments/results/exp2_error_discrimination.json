@@ -1,0 +1,119 @@
+{
+  "n_pairs": 10,
+  "pairwise_ranking_accuracy": 0.8,
+  "correct_audio": {
+    "mean": 85.8,
+    "stdev": 23.5,
+    "min": 25,
+    "max": 100
+  },
+  "error_audio": {
+    "mean": 75.5,
+    "stdev": 17.3,
+    "min": 38,
+    "max": 100
+  },
+  "mean_gap": 10.3,
+  "pairs": [
+    {
+      "target": "감사합니다",
+      "injected": "감사하무니다",
+      "pattern": "vowel_epenthesis",
+      "asr_ok": "감사합니다",
+      "asr_err": "감사하문니다",
+      "score_ok": 100,
+      "score_err": 86,
+      "correctly_ranked": true
+    },
+    {
+      "target": "안녕하세요",
+      "injected": "안뇽하세요",
+      "pattern": "vowel_substitution",
+      "asr_ok": "안하세요",
+      "asr_err": "안가세요",
+      "score_ok": 70,
+      "score_err": 60,
+      "correctly_ranked": true
+    },
+    {
+      "target": "서울에 갑니다",
+      "injected": "소우루에 가무니다",
+      "pattern": "ʌ→o + epenthesis",
+      "asr_ok": "서울을 갑니다",
+      "asr_err": "서 가문이다",
+      "score_ok": 85,
+      "score_err": 67,
+      "correctly_ranked": true
+    },
+    {
+      "target": "한국어를 공부합니다",
+      "injected": "한구고루 고부하무니다",
+      "pattern": "multiple",
+      "asr_ok": "한국어를 공부합니다",
+      "asr_err": "한국으로 고부하니다",
+      "score_ok": 100,
+      "score_err": 77,
+      "correctly_ranked": true
+    },
+    {
+      "target": "만나서 반갑습니다",
+      "injected": "만나소 반가푸스무니다",
+      "pattern": "severe multiple",
+      "asr_ok": "만라서 반갑습니다",
+      "asr_err": "만나서 반갑은 쓰이다",
+      "score_ok": 90,
+      "score_err": 80,
+      "correctly_ranked": true
+    },
+    {
+      "target": "물 주세요",
+      "injected": "무루 주세요",
+      "pattern": "coda repair",
+      "asr_ok": "물주세",
+      "asr_err": "물우주세",
+      "score_ok": 88,
+      "score_err": 75,
+      "correctly_ranked": true
+    },
+    {
+      "target": "괜찮아요",
+      "injected": "겐차나요",
+      "pattern": "vowel simplification",
+      "asr_ok": "근로아",
+      "asr_err": "차아",
+      "score_ok": 25,
+      "score_err": 38,
+      "correctly_ranked": false
+    },
+    {
+      "target": "어디에 있어요",
+      "injected": "오디에 이소요",
+      "pattern": "ʌ→o + tense loss",
+      "asr_ok": "어디에 있어요",
+      "asr_err": "우디에 있어요",
+      "score_ok": 100,
+      "score_err": 88,
+      "correctly_ranked": true
+    },
+    {
+      "target": "맛있어요",
+      "injected": "마시소요",
+      "pattern": "tense loss + ʌ→o",
+      "asr_ok": "맛있어요",
+      "asr_err": "맛있어요",
+      "score_ok": 100,
+      "score_err": 100,
+      "correctly_ranked": false
+    },
+    {
+      "target": "저는 학생입니다",
+      "injected": "조누는 학세이무니다",
+      "pattern": "multiple",
+      "asr_ok": "저는 학생입니다",
+      "asr_err": "존는 학생이문이다",
+      "score_ok": 100,
+      "score_err": 84,
+      "correctly_ranked": true
+    }
+  ]
+}
