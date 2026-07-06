@@ -1,0 +1,103 @@
+{
+  "input": {
+    "target": "감사합니다",
+    "actual": "감사하무니다"
+  },
+  "n_runs": 10,
+  "v1_llm_ipa": {
+    "scores": [
+      93,
+      93,
+      92,
+      92,
+      89,
+      93,
+      92,
+      93,
+      90
+    ],
+    "mean": 91.89,
+    "stdev": 1.45,
+    "min": 89,
+    "max": 93,
+    "range": 4,
+    "unique_target_ipa": [
+      "[kam.sa.ham.ni.da]",
+      "[kamsahamnida]",
+      "kamsahamnida",
+      "kɐm.sɐ.ɦɐm.ni.dɐ"
+    ],
+    "unique_actual_ipa": [
+      "[kam.sa.ha.mu.ni.da]",
+      "[kamsahamunida]",
+      "kamsahamunida",
+      "kɐm.sɐ.ɦɐ.mu.ni.dɐ"
+    ],
+    "runs": [
+      {
+        "target_ipa": "[kamsahamnida]",
+        "actual_ipa": "[kamsahamunida]",
+        "score": 93
+      },
+      {
+        "target_ipa": "[kamsahamnida]",
+        "actual_ipa": "[kamsahamunida]",
+        "score": 93
+      },
+      {
+        "target_ipa": "kamsahamnida",
+        "actual_ipa": "kamsahamunida",
+        "score": 92
+      },
+      {
+        "target_ipa": "kamsahamnida",
+        "actual_ipa": "kamsahamunida",
+        "score": 92
+      },
+      {
+        "target_ipa": "kɐm.sɐ.ɦɐm.ni.dɐ",
+        "actual_ipa": "kɐm.sɐ.ɦɐ.mu.ni.dɐ",
+        "score": 89
+      },
+      {
+        "target_ipa": "[kamsahamnida]",
+        "actual_ipa": "[kamsahamunida]",
+        "score": 93
+      },
+      {
+        "target_ipa": "kamsahamnida",
+        "actual_ipa": "kamsahamunida",
+        "score": 92
+      },
+      {
+        "target_ipa": "[kamsahamnida]",
+        "actual_ipa": "[kamsahamunida]",
+        "score": 93
+      },
+      {
+        "target_ipa": "[kam.sa.ham.ni.da]",
+        "actual_ipa": "[kam.sa.ha.mu.ni.da]",
+        "score": 90
+      }
+    ]
+  },
+  "v2_deterministic": {
+    "scores": [
+      92,
+      92,
+      92,
+      92,
+      92,
+      92,
+      92,
+      92,
+      92,
+      92
+    ],
+    "mean": 92,
+    "stdev": 0.0,
+    "min": 92,
+    "max": 92,
+    "range": 0
+  }
+}
