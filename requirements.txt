@@ -3,7 +3,8 @@ streamlit-mic-recorder
 torch
 transformers
 librosa
-langdetect
-google-generativeai
+soundfile
+google-genai
 matplotlib
 imageio-ffmpeg
+edge-tts

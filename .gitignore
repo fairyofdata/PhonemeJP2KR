@@ -41,6 +41,9 @@ credentials.json
 data/
 *.log
 
+# Test artifacts
+.pytest_cache/
+
 # Project specific
 app.db
 .gemini/
