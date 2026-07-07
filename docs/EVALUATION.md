@@ -1,10 +1,11 @@
 # Empirical Evaluation
 
-Three experiments validate the system's core claims. All scripts live in
-[`experiments/`](../experiments/) and write raw results to
-`experiments/results/*.json`. Every number below is reproducible by
-re-running the scripts (Exp 1 requires a Gemini API key; Exp 2 requires
-the ASR models).
+Four executed experiments validate the system's core claims, and a fifth
+(the decisive human-rater study) is fully designed and harness-ready.
+All scripts live in [`experiments/`](../experiments/) and write raw
+results to `experiments/results/*.json`. Every number below is
+reproducible by re-running the scripts (Exp 1 requires a Gemini API key;
+Exp 2/4 require the ASR models).
 
 ---
 
@@ -107,14 +108,72 @@ dependency fails to build). A comparison on Linux CI is future work.
 
 ---
 
+## Experiment 4 — Graded severity monotonicity (human-rating surrogate)
+
+**Question.** Without human ratings, can we still test whether the score
+tracks error *severity*, not just error presence?
+
+**Method.** For 5 base sentences, four TTS clips were synthesized at
+severity 0–3, where severity *k* applies the first *k* cumulative error
+injections (all attested Japanese-L1 patterns: epenthesis, ㅓ→ㅗ,
+laryngeal confusion, coda repair, ŋ-loss). The injected error count is a
+controlled ground-truth severity ordinal; a valid scorer must decrease
+monotonically. 20 clips, full pipeline.
+Script: [`exp4_severity_monotonicity.py`](../experiments/exp4_severity_monotonicity.py).
+
+**Results.**
+
+| Metric | Value |
+|---|---|
+| Spearman ρ (severity vs score) | **−0.702** [95% bootstrap CI −0.928, −0.325] |
+| Mean score by severity 0→3 | 91.8 → 88.2 → 78.0 → 74.8 (strictly decreasing) |
+| Monotonic step rate | 13/15 (87%) |
+| Perfectly monotone sentences | 4/5 |
+
+**Failure analysis.** The one non-monotone ladder (비빔밥을 먹었어요) had
+its *severity-0* clip scored 71 — Wav2Vec2 misrecognized the correct
+native TTS audio, the same ASR-error confound documented in Experiment 2.
+One ladder (서울에서 만나요) plateaued at 85 for severities 1–3: the
+recognizer absorbed the later perturbations, compressing ordinal
+resolution at high error densities.
+
+**Interpretation.** The CI excludes zero: the score is a statistically
+significant monotone function of controlled error severity. Combined with
+Exp 2 this establishes ordinal sensitivity; absolute calibration against
+human judgment remains for Exp 5.
+
+---
+
+## Experiment 5 — Human-rater correlation study (designed; awaiting recordings)
+
+The decisive validity test — system score vs native listeners' ratings of
+genuine Japanese-accented Korean — cannot run until recordings exist.
+Everything except the data is done:
+
+- **Protocol** (materials, ≥5 speakers × 10 sentences, ≥3 native raters,
+  anchored 1–5 intelligibility rubric, blinding, consent, pre-registered
+  threshold ρ ≥ 0.6 and interpretation rules):
+  [docs/HUMAN_EVAL_PROTOCOL.md](HUMAN_EVAL_PROTOCOL.md)
+- **Analysis harness** (Spearman/Pearson + bootstrap CIs, inter-rater
+  reliability, per-speaker breakdown; CSV in → JSON report out):
+  [`exp5_human_correlation.py`](../experiments/exp5_human_correlation.py)
+- **Harness verified** end-to-end via `--selftest` (synthesizes 5 TTS
+  clips + dummy ratings and runs the identical code path).
+
+An alternative to speaker recruitment — AI-Hub L2 Korean speech corpora —
+is documented in the protocol (§9) and should be license-reviewed before
+recruiting.
+
+---
+
 ## Future Work (evaluation)
 
-1. **Human-rater correlation study** — collect recordings from Japanese
-   learners, have native Korean speakers rate them, report Spearman ρ
-   between system scores and human ratings. This is the decisive validity
-   test that synthetic perturbation cannot replace.
+1. **Execute Experiment 5** — collect recordings per
+   [HUMAN_EVAL_PROTOCOL.md](HUMAN_EVAL_PROTOCOL.md), or substitute an
+   AI-Hub L2 corpus after license review; then run the existing harness.
 2. **GOP baseline** — implement Goodness of Pronunciation (Witt & Young,
    2000) from Wav2Vec2 phoneme posteriors and compare error-detection
    performance against the alignment-based method.
-3. **Real L2 corpora** — evaluate on accented-Korean datasets (e.g. AI-Hub
-   L2 Korean speech) once licensing permits.
+3. **Accent-aware acoustic model** — fine-tune Wav2Vec2 on
+   Japanese-accented Korean to attack the ASR-error confound that appears
+   as the dominant failure mode in Exp 2 and Exp 4.

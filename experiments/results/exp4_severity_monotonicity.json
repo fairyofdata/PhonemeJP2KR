@@ -1,0 +1,67 @@
+{
+  "n_clips": 20,
+  "spearman_rho": -0.702,
+  "bootstrap_95ci": [
+    -0.928,
+    -0.325
+  ],
+  "mean_score_by_severity": {
+    "0": 91.8,
+    "1": 88.2,
+    "2": 78,
+    "3": 74.8
+  },
+  "monotonic_step_rate": 0.867,
+  "ladders": [
+    {
+      "target": "감사합니다",
+      "scores": [
+        100,
+        86,
+        75,
+        67
+      ],
+      "violations": 0
+    },
+    {
+      "target": "서울에서 만나요",
+      "scores": [
+        100,
+        85,
+        85,
+        85
+      ],
+      "violations": 0
+    },
+    {
+      "target": "도서관에 갑니다",
+      "scores": [
+        88,
+        88,
+        81,
+        67
+      ],
+      "violations": 0
+    },
+    {
+      "target": "비빔밥을 먹었어요",
+      "scores": [
+        71,
+        88,
+        65,
+        71
+      ],
+      "violations": 2
+    },
+    {
+      "target": "저는 학생입니다",
+      "scores": [
+        100,
+        94,
+        84,
+        84
+      ],
+      "violations": 0
+    }
+  ]
+}

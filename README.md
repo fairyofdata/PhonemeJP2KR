@@ -103,13 +103,16 @@ These structured tags — not raw strings — are what the LLM receives, so its 
 
 ## Empirical Validation
 
-Three reproducible experiments ([`experiments/`](experiments/), full report in [docs/EVALUATION.md](docs/EVALUATION.md)):
+Four reproducible experiments ([`experiments/`](experiments/), full report in [docs/EVALUATION.md](docs/EVALUATION.md)):
 
 | # | Question | Result |
 |---|---|---|
 | 1 | Is LLM-generated IPA a valid scorer? | **No** — on identical input, the v1 LLM scorer fluctuated 89–93 (sd 1.45) across 10 runs, producing 4 different IPA transcriptions of the same word. The deterministic scorer: sd 0.0. |
 | 2 | Does the pipeline detect injected L1 errors? (TTS perturbation study) | **80% pairwise ranking accuracy** over 10 sentence pairs; mean gap 10.3 points. Both failures trace to the documented ASR-error confound and are analyzed in the report. |
 | 3 | Does the G2P engine generalize beyond its dev examples? | **100% (51/51)** on a held-out 표준발음법 set; 0/9 on morphology-dependent items, exactly matching the documented scope. Runs in CI as a regression gate. |
+| 4 | Does the score track error *severity*? (graded 0–3 injection) | **Spearman ρ = −0.702** [95% CI −0.928, −0.325]; mean score strictly decreasing by severity (91.8→74.8), 87% monotonic steps. |
+
+The decisive human-rater correlation study is fully designed and harness-ready (protocol: [docs/HUMAN_EVAL_PROTOCOL.md](docs/HUMAN_EVAL_PROTOCOL.md), self-tested analysis script: [`experiments/exp5_human_correlation.py`](experiments/exp5_human_correlation.py)) — it awaits L2 recordings.
 
 ## Installation
 
