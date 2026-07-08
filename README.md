@@ -16,11 +16,12 @@
 3. [Architecture](#architecture)
 4. [The Deterministic G2P Engine](#the-deterministic-g2p-engine)
 5. [Scoring & L1 Error Taxonomy](#scoring--l1-error-taxonomy)
-6. [Empirical Validation](#empirical-validation)
-7. [Installation](#installation)
-8. [Usage](#usage)
-9. [Testing](#testing)
-10. [Limitations & Roadmap](#limitations--roadmap)
+6. [Academic Background](#academic-background)
+7. [Empirical Validation](#empirical-validation)
+8. [Installation](#installation)
+9. [Usage](#usage)
+10. [Testing](#testing)
+11. [Limitations & Roadmap](#limitations--roadmap)
 
 ---
 
@@ -101,6 +102,16 @@ Because **both** the target and the ASR hypothesis pass through the same G2P, or
 
 These structured tags — not raw strings — are what the LLM receives, so its feedback cites concrete evidence instead of guessing.
 
+## Academic Background
+
+Phomene's architecture and rule-based classifier are strictly grounded in Contrastive Phonology literature. The rules implemented in `src/scoring.py` directly correspond to empirical studies on Japanese learners of Korean:
+
+- **Syllabification and Vowel Epenthesis (`vowel_epenthesis`)**: Japanese learners unconsciously substitute Korean syllable-final consonants with Japanese *sokuon* (/Q/) or *hatsuon* (/N/), resulting in the resyllabification of CVC into CV.CV (Jang, 2016; Ha & Lee, 2019).
+- **Over-assimilation (`nasal_coda_confusion`)**: Japanese learners tend to redundantly copy the place of articulation from the following consonant when nasalizing (Lee, 2018).
+- **Dual-ASR Validation**: The limitation of single-ASR pronunciation assessment for L2 speakers has been recently formalized, confirming that comparing Intended (Morphological/LM-driven) vs Actual (Acoustic) divergence is the robust path forward (Cho & Kim, 2023).
+
+For the full list of referenced studies and abstracts, see [`docs/REFERENCES.md`](docs/REFERENCES.md).
+
 ## Empirical Validation
 
 Four reproducible experiments ([`experiments/`](experiments/), full report in [docs/EVALUATION.md](docs/EVALUATION.md)):
@@ -167,8 +178,8 @@ Known limitations of the rule engine (documented in [`src/g2p.py`](src/g2p.py)) 
 Planned:
 - **Forced alignment** (e.g. CTC segmentation) to localize errors in time and play back the offending segment
 - **K-drama shadowing mode** — preset target sentences from popular content
-- **Fine-tuning Wav2Vec2** on Japanese-accented Korean speech for accent-aware acoustic modeling
-- Morpheme-aware G2P via a Korean morphological analyzer
+- **Morpheme-aware G2P** via a Korean morphological analyzer
+- **Transition to ML-based L2 Acoustic Models**: Shifting from the deterministic rule-based L1 tagger to fine-tuning Wav2Vec2 on Japanese-accented L2 Korean datasets (e.g., C-JAS from NINJAL, AI-Hub foreign language speech data). A boilerplate pipeline for this future expansion is included in [`src/data/l2_korean_dataset_builder.py`](src/data/l2_korean_dataset_builder.py).
 
 ## License
 
