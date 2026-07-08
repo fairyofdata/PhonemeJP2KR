@@ -91,9 +91,15 @@ flowchart TD
 
 Phomene의 아키텍처와 규칙 기반 오류 분류기는 대조음운론(Contrastive Phonology) 문헌에 엄밀하게 기초하고 있습니다. `src/scoring.py`에 구현된 규칙들은 일본인 한국어 학습자 대상의 실증적 연구들과 직접적으로 맞닿아 있습니다:
 
-- **일본어식 음절화 및 모음 첨가 (`vowel_epenthesis`)**: 일본인 학습자는 무의식적으로 한국어의 종성을 일본어의 촉음(/Q/)이나 발음(/N/)으로 대체하며, 이로 인해 CVC 구조가 CV.CV 구조로 재음절화되는 현상이 발생합니다 (장향실, 2016; 하호빈·이화진, 2019).
-- **과도한 조음 위치 동화 (`nasal_coda_confusion`)**: 일본인 학습자는 비음화 시 뒤따르는 자음의 조음 위치까지 불필요하게 복사(redundant place assimilation)하는 경향이 있습니다 (이화진, 2018).
-- **Dual-ASR 검증**: 제2언어(L2) 화자의 발음 평가에서 단일 STT 모델이 갖는 한계가 최근 공식화되었으며, 이를 극복하기 위해 의도된 발음(형태소/LM 기반)과 실제 발음(음향 기반)의 괴리를 비교하는 방식이 학술적으로 지지받고 있습니다 (조현진·김병욱, 2023).
+- **일본어식 음절화 및 모음 첨가 (`vowel_epenthesis`)**: 일본인 학습자는 무의식적으로 한국어의 종성을 일본어의 촉음(/Q/)이나 발음(/N/)으로 대체하며, 이로 인해 CVC 구조가 CV.CV 구조로 재음절화되는 현상이 발생합니다.
+  - 🔗 [*중국어와 일본어 모어 화자의 한국어 음절 종성 산출 차이 연구* (장향실, 2016)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE10761462)
+  - 🔗 [*음절 연쇄에서 나타나는 일본인 학습자의 한국어 종성 발음 유형* (하호빈·이화진, 2019)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE09235049)
+- **과도한 조음 위치 동화 (`nasal_coda_confusion`)**: 일본인 학습자는 비음화 시 뒤따르는 자음의 조음 위치까지 불필요하게 복사(redundant place assimilation)하는 경향이 있습니다.
+  - 🔗 [*한국어 비음화의 오류 유형과 원인 분석* (이화진, 2018)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE08838909)
+- **모음 체계의 차이 (`vowel_ʌ_o_confusion`, `vowel_ɯ_u_confusion`)**: 일본어 음운 체계에 존재하지 않는 모음(/ㅓ/, /ㅡ/)으로 인해 발생하는 규칙적인 병합(merger) 현상입니다.
+  - 🔗 [*모음 체계와 자질에 의한 일본인 학습자의 한국어 모음 발음 분석* (김수진, 2009)](https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002158469)
+- **Dual-ASR 검증**: 제2언어(L2) 화자의 발음 평가에서 단일 STT 모델이 갖는 한계가 최근 공식화되었으며, 이를 극복하기 위해 의도된 발음(형태소/LM 기반)과 실제 발음(음향 기반)의 괴리를 비교하는 방식이 학술적으로 지지받고 있습니다.
+  - 🔗 [*형태소 분석기반 외국인 발화 한국어 발음평가 개선 방법* (조현진·김병욱, 2023)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11438586)
 
 전체 참고 문헌 및 초록은 [`docs/REFERENCES.md`](docs/REFERENCES.md)에서 확인할 수 있습니다.
 

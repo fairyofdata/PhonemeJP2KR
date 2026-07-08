@@ -106,9 +106,15 @@ These structured tags — not raw strings — are what the LLM receives, so its 
 
 Phomene's architecture and rule-based classifier are strictly grounded in Contrastive Phonology literature. The rules implemented in `src/scoring.py` directly correspond to empirical studies on Japanese learners of Korean:
 
-- **Syllabification and Vowel Epenthesis (`vowel_epenthesis`)**: Japanese learners unconsciously substitute Korean syllable-final consonants with Japanese *sokuon* (/Q/) or *hatsuon* (/N/), resulting in the resyllabification of CVC into CV.CV (Jang, 2016; Ha & Lee, 2019).
-- **Over-assimilation (`nasal_coda_confusion`)**: Japanese learners tend to redundantly copy the place of articulation from the following consonant when nasalizing (Lee, 2018).
-- **Dual-ASR Validation**: The limitation of single-ASR pronunciation assessment for L2 speakers has been recently formalized, confirming that comparing Intended (Morphological/LM-driven) vs Actual (Acoustic) divergence is the robust path forward (Cho & Kim, 2023).
+- **Syllabification and Vowel Epenthesis (`vowel_epenthesis`)**: Japanese learners unconsciously substitute Korean syllable-final consonants with Japanese *sokuon* (/Q/) or *hatsuon* (/N/), resulting in the resyllabification of CVC into CV.CV.
+  - 🔗 [*중국어와 일본어 모어 화자의 한국어 음절 종성 산출 차이 연구* (Jang, 2016)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE10761462)
+  - 🔗 [*음절 연쇄에서 나타나는 일본인 학습자의 한국어 종성 발음 유형* (Ha & Lee, 2019)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE09235049)
+- **Over-assimilation (`nasal_coda_confusion`)**: Japanese learners tend to redundantly copy the place of articulation from the following consonant when nasalizing, leading to over-assimilation.
+  - 🔗 [*한국어 비음화의 오류 유형과 원인 분석* (Lee, 2018)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE08838909)
+- **Vowel Confusion (`vowel_ʌ_o_confusion`, `vowel_ɯ_u_confusion`)**: The structural differences in vowel inventory (e.g., absence of /ʌ/ and /ɯ/ in Japanese) cause systematic mergers.
+  - 🔗 [*모음 체계와 자질에 의한 일본인 학습자의 한국어 모음 발음 분석* (2009)](https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002158469)
+- **Dual-ASR Validation**: The limitation of single-ASR pronunciation assessment for L2 speakers has been recently formalized. Comparing Intended (Morphological/LM-driven) vs Actual (Acoustic) divergence is the robust path forward.
+  - 🔗 [*형태소 분석기반 외국인 발화 한국어 발음평가 개선 방법* (Cho & Kim, 2023)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11438586)
 
 For the full list of referenced studies and abstracts, see [`docs/REFERENCES.md`](docs/REFERENCES.md).
 

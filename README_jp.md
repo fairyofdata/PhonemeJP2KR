@@ -91,9 +91,15 @@ flowchart TD
 
 Phomeneのアーキテクチャとルールベースのエラー分類器は、対照音韻論（Contrastive Phonology）の文献に厳密に基づいています。`src/scoring.py`に実装されたルールは、日本人韓国語学習者を対象とした実証的研究と直接結びついています。
 
-- **日本語的な音節化と母音挿入 (`vowel_epenthesis`)**: 日本人学習者は無意識に韓国語の終声を日本語の促音（/Q/）や撥音（/N/）で置き換え、その結果CVC構造がCV.CV構造に再音節化されます（Jang, 2016; Ha & Lee, 2019）。
-- **過度な調音位置同化 (`nasal_coda_confusion`)**: 日本人学習者は鼻音化する際に、後続の子音の調音位置まで不必要にコピーしてしまう（redundant place assimilation）傾向があります（Lee, 2018）。
-- **Dual-ASRの検証**: 第二言語（L2）話者の発音評価において、単一のSTTモデルが持つ限界が最近定式化され、これを克服するために意図された発音（形態素/LMベース）と実際の発音（音響ベース）の乖離を比較するアプローチが学術的に支持されています（Cho & Kim, 2023）。
+- **日本語的な音節化と母音挿入 (`vowel_epenthesis`)**: 日本人学習者は無意識に韓国語の終声を日本語の促音（/Q/）や撥音（/N/）で置き換え、その結果CVC構造がCV.CV構造に再音節化されます。
+  - 🔗 [*중국어와 일본어 모어 화자의 한국어 음절 종성 산출 차이 연구* (Jang, 2016)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE10761462)
+  - 🔗 [*음절 연쇄에서 나타나는 일본인 학습자의 한국어 종성 발음 유형* (Ha & Lee, 2019)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE09235049)
+- **過度な調音位置同化 (`nasal_coda_confusion`)**: 日本人学習者は鼻音化する際に、後続の子音の調音位置まで不必要にコピーしてしまう（redundant place assimilation）傾向があります。
+  - 🔗 [*한국어 비음화의 오류 유형과 원인 분석* (Lee, 2018)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE08838909)
+- **母音体系の違い (`vowel_ʌ_o_confusion`, `vowel_ɯ_u_confusion`)**: 日本語に存在しない母音（/ㅓ/, /ㅡ/）の構造的な違いにより、体系的な統合（merger）が発生します。
+  - 🔗 [*모음 체계와 자질에 의한 일본인 학습자의 한국어 모음 발음 분석* (2009)](https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002158469)
+- **Dual-ASRの検証**: 第二言語（L2）話者の発音評価において、単一のSTTモデルが持つ限界が最近定式化され、これを克服するために意図された発音（形態素/LMベース）と実際の発音（音響ベース）の乖離を比較するアプローチが学術的に支持されています。
+  - 🔗 [*형태소 분석기반 외국인 발화 한국어 발음평가 개선 방법* (Cho & Kim, 2023)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11438586)
 
 詳細な参考文献と要約については、[`docs/REFERENCES.md`](docs/REFERENCES.md)をご覧ください。
 
