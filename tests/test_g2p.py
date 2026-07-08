@@ -43,7 +43,17 @@ from src.g2p import to_surface, to_ipa, to_jamo_sequence
     ("학교", "학꾜"),
     ("국밥", "국빱"),
     ("읽다", "익따"),
-    ("맛있다", "마싣따"),
+    
+    # morphology-dependent rules (kiwipiepy integration)
+    ("맛없다", "마덥따"),
+    ("맛있다", "만닏따"),  # both 마싣따/만닏따 are standard; our rule strictly applies ㄴ-insertion
+    ("꽃잎", "꼰닙"),
+    ("물약", "물략"),
+    ("신다", "신따"),
+    ("넓게", "널께"),
+    ("읽고", "일꼬"),
+    ("밟다", "밥따"),
+    
     # multi-word sentences (word-internal rules only)
     ("만나서 반갑습니다", "만나서 반갑씀니다"),
     ("안녕하세요", "안녕하세요"),

@@ -1,0 +1,780 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>기획안: 한국어 학습 일본어 모어 화자를 위한 오디오 트레이닝 서비스</title><meta name="data-notion-page-icon" content="❤️‍🔥"/><link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20y%3D%22.9em%22%20font-size%3D%2290%22%3E%E2%9D%A4%EF%B8%8F%E2%80%8D%F0%9F%94%A5%3C%2Ftext%3E%3C%2Fsvg%3E"/><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+/* For default-background callouts, render the border outline. */
+.callout.block-color-default_background {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+figure,
+aside,
+details {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+
+	table.collection-content {
+		width: 100%;
+		table-layout: fixed;
+	}
+
+	table.collection-content th,
+	table.collection-content td {
+		overflow-wrap: anywhere;
+	}
+
+	table.collection-content td > .user,
+	table.collection-content td > time {
+		white-space: pre-wrap;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content-wrapper {
+	overflow-x: auto;
+}
+
+@media only print {
+	.collection-content-wrapper {
+		overflow-x: visible;
+	}
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	gap: 46px;
+}
+
+.column {
+	min-width: 0;
+	overflow: hidden;
+}
+
+.column > *:first-child {
+	margin-top: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding-inline: 0.125rem;
+	padding-block: 0.375rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+table {
+	border-collapse: collapse;
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol.numbered-list.numbered-list-digits-2 {
+	padding-inline-start: 2em;
+}
+
+ol.numbered-list.numbered-list-digits-3plus {
+	padding-inline-start: 2.4em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+/*
+ * Render emoji icons using a ::before pseudo-element to keep the glyph
+ * out of the DOM textContent traversal. This avoids double-rendering icons
+ * in callouts and page titles.
+ * NOTE(slim/html-export-pseudo-icons): I can't tagref this because it will
+ * flag as a duplicate tag after codegen.
+ */
+.icon[data-emoji]::before {
+	content: attr(data-emoji);
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	margin-right: 0.4em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.tab {
+	margin: 1.25em 0;
+	padding-inline: 1rem;
+	border: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style><style>@import url('https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex-swap.min.css')</style></head><body><article id="49b72350-b107-4fb0-94e0-ec792cff7d59" class="page sans" data-notion-page-icon="❤️‍🔥"><header><div class="page-header-icon undefined"><span class="icon" data-emoji="❤️‍🔥"></span></div><h1 class="page-title" dir="auto">기획안: 한국어 학습 <strong>일본어 모어 화자를 위한 오디오 트레이닝 서비스</strong></h1><p class="page-description" dir="auto"></p></header><div class="page-body"><figure id="f47316c1-bdf0-4bca-8694-bfbbbc5fddd1" dir="ltr"><div class="source"><a href="https://youtu.be/4SwwmzEcpZQ">https://youtu.be/4SwwmzEcpZQ</a></div></figure><figure id="0402404b-c25c-4ce5-8089-ceb639cbfb11" dir="ltr"><a href="https://www.youtube.com/shorts/2FElqMv7GWI?feature=share" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일본인이 못하는 신기한 한국어 #shorts</div><div class="bookmark-description">#한일커플 #국제부부 #shorts</div></div><div class="bookmark-href"><img src="https://www.youtube.com/s/desktop/80338919/img/favicon_144x144.png" class="icon bookmark-icon"/>https://www.youtube.com/shorts/2FElqMv7GWI?feature=share</div></div><img src="https://i.ytimg.com/vi/2FElqMv7GWI/hqdefault.jpg?sqp=-oaymwEoCOADEOgC8quKqQMcGADwAQH4Ac4FgAKACooCDAgAEAEYZSBVKFowDw==&amp;rs=AOn4CLCWJVTlA3_Gcl37sT4cJd5__s1MJg" class="bookmark-image"/></a></figure><h1 id="e440a935-3622-4c62-be38-d8323b2bf8c4" class="" dir="auto">1. 필요성</h1><h3 id="d98a0086-dac2-4753-b1be-0dde0cd50b76" class="" dir="auto">1. <strong>급성장하는 일본 내 한국어 교육 시장</strong></h3><p id="e36992e4-7830-4053-ae0f-5404a067f1a1" class="" dir="auto">이처럼 일본인 내 한국인 학습자는 폭증하고 있다.  한국어 공인어학시험 TOPIK의 일본인 응시자 수는 2005년경부터 급등하여  2019년 기준 30만명을 초과하였다. 그에 발맞춰 한국어 교육 시장 규모도 커지고 있다. </p><figure id="70527650-321e-4bc8-af6b-1ae3e8b7684d" dir="ltr"><a href="https://onlinechineseinfo.com/koreanstudy/2" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">韓国語の日本人学習者数の推移を分析してみた（2021年）</div><div class="bookmark-description">語学検定の受験者数から見る韓国語学習者数の推移 今回は、大韓民国教育部が主催として世界的に展開されている韓国語能力試験（TOPIK）の受験者数を元に韓国語学習者数の推移を見ていきたいと思います。 ちな</div></div><div class="bookmark-href"><img src="https://onlinechineseinfo.com/wp-content/uploads/2021/02/cropped-2001739_s-192x192.jpg" class="icon bookmark-icon"/>https://onlinechineseinfo.com/koreanstudy/2</div></div><img src="https://onlinechineseinfo.com/wp-content/uploads/2021/06/韓国語学習者数の推移.png" class="bookmark-image"/></a></figure><p id="936704b9-9b4e-4379-b6a4-8b89a18d581d" class="" dir="auto">또한 2021년 일본 내 한국어 공인어학 응시자수는 1위를 차지했다. 중국어에 이어 꾸준히 2위였던 한국어 공인어학시험 응시자수가 중국어 어학시험(HSK) 응시자수를 역전하여 1위로 올라섬은 괄목할만한 성장세다.</p><figure id="9ac18a96-ad7a-4314-9ab5-417bec1338c6" dir="ltr"><a href="https://news.yahoo.co.jp/expert/articles/f96317e8d54236b4a57b9ba06e0ad156123f8206" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">【前代未聞】韓国語の学習者数が中国語を超える日!?（トリリンガルのトミ） - エキスパート - Yahoo!ニュース</div><div class="bookmark-description">今回はなんと、日本における語学学習者数に、大きな異変が起こっていることを発見しましたのでご紹介いたします！なお、語学学習者数を正確に測定することは容易ではないため、今回は便宜上、主要な語学試験の出願者</div></div><div class="bookmark-href"><img src="https://s.yimg.jp/c/icon/s/bsc/2.0/news120.png" class="icon bookmark-icon"/>https://news.yahoo.co.jp/expert/articles/f96317e8d54236b4a57b9ba06e0ad156123f8206</div></div><img src="https://newsatcl-pctr.c.yimg.jp/dk/expert-image/trilingualnotomi/article/00227310/top_1663553347067.jpeg?exp=10800" class="bookmark-image"/></a></figure><h3 id="20f3a6d9-fc28-4187-8fc5-f0dbbc6ea0e5" class="" dir="auto">2. <strong>시장 규모에 비해 다소 제한적인 한국어 교육 환경</strong></h3><p id="a60b8021-06bb-46a0-98ba-d47a3e843b55" class="" dir="auto">일본 출판사 J리서치의 와다 요시히로에 의하면, 일본 내 유명 대형 서점에서 판매되는 어학 학습서 중 한국어 서적 비율은 12%로 일본 어학 시장에서 급부상하며 2위를 차지하고 있다고 한다. </p><figure id="76160ec8-c174-48ab-8263-cc6e17dc2bd4" dir="ltr"><a href="https://www.asiae.co.kr/article/2022071620584023825" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">&quot;영어 다음은 한국어&quot;…日 판매 어학서적 중 한국어 비율 2위로 높아 - 아시아경제</div><div class="bookmark-description">[아시아경제 김나연 인턴기자] 일본 출판사 &#x27;J리서치&#x27;에서 근무하는 와다 요시히로는 16일 도쿄 릿쿄대학에서 열린 &#x27;제1회 한국어능력시험(TOPIK) 포럼&#x27;에서 일본...</div></div><div class="bookmark-href"><img src="https://cwstatic.asiae.co.kr/icns/asiae.ico" class="icon bookmark-icon"/>https://www.asiae.co.kr/article/2022071620584023825</div></div><img src="https://cphoto.asiae.co.kr/listimglink/1/2022071620564452328_1657972604.png" class="bookmark-image"/></a></figure><p id="debd3ad0-5d80-4a9a-bd1c-35f2ba496de8" class="" dir="auto">이처럼 한국어 학습 시장이 큰 반면, 실제 한국어 교육 환경은 열악하다. 일본인들이 실제로 한국어 학습을 위해 선택할 수 있는 선택지는 개인단위의 독학(서적)이 주 학습 경로다. </p><figure id="fbf0e0f9-4cf8-4e5b-be86-ec47b4ffeafe" class="image" data-notion-image="Untitled.png" dir="ltr"><a href="Untitled.png"><img style="width:432px" src="Untitled.png"/></a></figure><p id="9baa0652-b782-4a2d-93d6-30a2ad86824b" class="" dir="auto">관련 논문  <a href="https://www.tezuka-gu.ac.jp/libresearch/kiyo/rTEZUKAYAMAGAKUIN-UNI/r54PDF/r54Inagawa.pdf">이나가와 우키(2017)</a> 에서도 대부분의 일본인들은 독학(60.7%)으로 한국어를 학습하고 있음을 확인할 수 있다.</p><figure id="10f89905-af87-4ea4-84cf-62227580295d" dir="ltr"><a href="https://www.tezuka-gu.ac.jp/libresearch/kiyo/rTEZUKAYAMAGAKUIN-UNI/r54PDF/r54Inagawa.pdf" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title"></div></div><div class="bookmark-href">https://www.tezuka-gu.ac.jp/libresearch/kiyo/rTEZUKAYAMAGAKUIN-UNI/r54PDF/r54Inagawa.pdf</div></div></a></figure><p id="c267976d-8636-45e5-8b29-84d47bff5020" class="" dir="auto"><a href="https://www.shin-gogaku.com/">신주쿠 소재 한 어학원</a>의 설문서도, 한국어를 학습하는 일본인 56.0%는 독학으로, 39%는 유튜브를 통해 학습하고 있음을 확인하였다. (2022년, 중복응답, n=1000) </p><figure id="649b77c6-a38b-48cd-918d-dda64d78a66f" dir="ltr"><a href="https://prtimes.jp/main/html/rd/p/000000001.000097770.html" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">【推しの言葉が理解できる…！】韓国語学習者のほとんどは趣味がきっかけ！6割以上が韓国語は他言語よりも勉強しやすいと回答</div><div class="bookmark-description">DEKIRU株式会社のプレスリリース（2022年4月27日 10時00分） 推しの言葉が理解できる…！ 韓国語学習者のほとんどは趣味がきっかけ！6割以上が韓国語は他言語よりも勉強しやすいと回答</div></div><div class="bookmark-href"><img src="https://prtimes.jp/common/v4.1/images/html/favicon/favicon-196x196.png" class="icon bookmark-icon"/>https://prtimes.jp/main/html/rd/p/000000001.000097770.html</div></div><img src="https://prtimes.jp/i/97770/1/ogp/d97770-1-3e4420f733946e7dcce4-0.png" class="bookmark-image"/></a></figure><h3 id="7f874af3-8c16-44cb-a34a-b4e343294e64" class="" dir="auto">3. <strong>한국어 학습 일본어 모어 화자의 한국어 발음 학습의 특수한 어려움</strong></h3><p id="a491d306-2a37-441a-b8da-9ede240f7632" class="" dir="auto">2021년의 한 조사에서는 한국어 학습 앱을 사용하기도 한다고 응답한 유저가 55%로 가장 많았다.(n=1400) 한국어 학습을 지원하는 앱 중 가장 높은 점유율을 갖고 있는 앱은 Duolingo로 확인되었다. </p><figure id="fda0aca0-1d88-4b74-9bf2-7c793c5e60f7" dir="ltr"><a href="https://prtimes.jp/main/html/rd/p/000000007.000069537.html" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">【日本人の語学学習に関する調査】約6割が「韓国映画やドラマ、音楽を楽しむため」に韓国語を学習！エンタメツールを活用して楽しく語学を学ぶ学習スタイル『語楽(ごら...</div><div class="bookmark-description">Duolingo, Inc.のプレスリリース（2021年5月31日 13時00分） 日本人の語学学習に関する調査 約6割が[韓国映画やドラマ、音楽を楽しむため]に韓国語を学習！エンタメツールを活用して楽しく語学を学ぶ学習スタイル『語楽(ごらく)』がトレンドに</div></div><div class="bookmark-href"><img src="https://prtimes.jp/common/v4.1/images/html/favicon/favicon-196x196.png" class="icon bookmark-icon"/>https://prtimes.jp/main/html/rd/p/000000007.000069537.html</div></div><img src="https://prtimes.jp/i/69537/7/ogp/d69537-7-382705-0.jpg" class="bookmark-image"/></a></figure><p id="a6be8922-8077-4066-86a8-b1fa1f64f260" class="" dir="auto">그러나 Duolingo 앱의 경우, 한국어에 특화된 서비스가 아니라 단순 알고리즘 기반 정오답 채점 프로그램 수준에 불과했다. 즉 발음 실력 향상을 위한 오디오 트레이닝 서비스는 제공되고 있지 않고,  실질적으로 한국어 학습 일본인을 위한 특화 서비스는 없는 상황임을 확인할 수 있었다.</p><figure id="5c0ce3fb-a35a-4ddf-af1a-1249466c4f35" class="image" data-notion-image="Untitled%201.png" dir="ltr"><a href="Untitled%201.png"><img style="width:707.9750366210938px" src="Untitled%201.png"/></a><figcaption>Duolingo 한국어 학습 페이지 화면 (일본어 유저)</figcaption></figure><p id="08061c98-f2a5-40e3-9f9d-5993a2f41405" class="" dir="auto">하지만 실질적으로 일본인이 한국어 학습에서 겪는 어려움들은 서적을 통한 독학이나, 유튜브 등으로는 충분히 해결하기 어려운 측면들이 있다. 사실 일본어 원어민은 통사론적 구조나 단어체계와 같은 점은 언어동조대이자 한자문화권으로써 서로 영향을 받으며 긴밀히 교류한 덕에 두 언어가 많은 유사성을 갖추어 있어 한국어 학습에 제3국 원어민보다 압도적으로 유리하다. 그런 한편, 한국어 학습에서 겪는 어려움은 음운론적 차이에서 오는 한국어의 특정한 발음 체계인데, 이는 개인 과외나, 현지 생활의 경험에서 체득하지 않는다면 스스로 바로잡기 어렵다. 엄밀히 이는 반대의 경우도 마찬가지이나, 일본어의 음운론적 체계의 고유한 특성 상 한국어 원어민이 일본어를 배울 때보다 더욱 특수한 어려움이 발생한다. 그러므로 이러한 결국 정밀한 오디오 트레이닝 서비스가 요구되는 실정이다.</p><h3 id="a7cdec55-8c3c-44db-b2a1-b656cb2efa4e" class="" dir="auto">4. 한국어 학습 <strong>일본어 모어 화자를 위한 오디오 트레이닝 서비스의 필요성</strong></h3><p id="492b6800-3904-4983-a69a-7ee45579800b" class="" dir="auto"><a href="https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002730504">이화진(2021)</a>에 따르면 한국어를 학습한 일본인들은 대표적으로 다음의 세 가지 정도를 한국어 학습의 음성학적 어려움으로 손꼽는다.</p><ol type="1" id="3d42d32a-840a-4ff7-add6-5d85bc43ad7b" class="numbered-list" start="1" dir="auto"><li>받침 발음: <a href="https://m.blog.naver.com/icn24525/222371640228">https://m.blog.naver.com/icn24525/222371640228</a></li></ol><ol type="1" id="baac043f-192f-44c9-b52c-3c733e08e44d" class="numbered-list" start="2" dir="auto"><li>된소리 발음: <a href="https://m.blog.naver.com/icn24525/222369861974">https://m.blog.naver.com/icn24525/222369861974</a></li></ol><ol type="1" id="c76ef09c-a8ec-406f-80e6-ea829d7d8377" class="numbered-list" start="3" dir="auto"><li>모음의 다양성과 음절의 구조: <a href="https://wikidocs.net/181132">https://wikidocs.net/181132</a></li></ol><p id="acd49ea9-013a-4f8f-b9ab-de9b569311d3" class="" dir="auto">하지만 이러한 세밀한 음운론적 차이는 개인화된 오디오 트레이닝 없이는 학습하기 어렵다. 이처럼 분명한 수요와 당위성이 뒷받침됨에도 불구하고, 아직까지 일본의 한국어 교육 시장에서는 이를 해결하기 위한 서비스가 전무한 실정이다.</p><p id="0add1c18-d011-4f1a-b1c9-79d62109d194" class="" dir="auto">그래서 한국어와 일본어의 음운체계 차이로 어려움을 겪는<strong> 일본어 모어 화자를 위한 한국어 오디오 트레이닝 서비스를 제안한다.</strong></p><p id="143a2fb8-d4be-801c-9daa-dc66ea783af2" class="" dir="auto">본 제안의 목적은 한국어를 배우는 일본어 모국어 화자에게 <strong>개인화된 발음 교정 서비스</strong>를 제공하여 발음 실력을 향상시키고 효과적인 학습 환경을 제공하는 것이다.</p><p id="143a2fb8-d4be-8071-b4d3-ee5d8a343c62" class="" dir="auto">
+</p><h1 id="143a2fb8-d4be-8067-89a9-d4753c772ba6" class="" dir="auto">2. 제안 내용 및 범위</h1><p id="143a2fb8-d4be-8095-943f-dfd63a8ebf92" class="" dir="auto"> <strong>세부 제안 내용 및 범위</strong></p><ul id="143a2fb8-d4be-809f-8da2-fb553cb958d1" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>Whisper와 Wav2Vec 2.0</strong> 모델을 결합하여 한국어 발음 오류를 탐지하고 교정하는 시스템을 구축함.</li></ul><ul id="143a2fb8-d4be-8037-b646-e68c3a64c32c" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>유튜브 데이터 수집</strong>: 일본어와 한국어로 대화하는 유튜브 영상에서 음성 데이터를 수집하여, 이를 학습 데이터로 사용함. 이를 통해 한국어와 일본어 간 발음 차이를 충분히 반영한 데이터셋을 확보함.</li></ul><ul id="143a2fb8-d4be-8061-b037-e3bbf19ee42d" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>데이터 전처리 및 필터링</strong>: 수집한 데이터를 전처리하여 노이즈를 제거하고 음질을 개선함. 학습용 데이터는 한국어와 일본어가 혼용되지 않은 <strong>일관된 발음 데이터</strong>로 구성하여 모델의 학습에 사용함.</li></ul><ul id="143a2fb8-d4be-807c-85dd-d713c7bf7a7d" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>발음 오류 탐지 및 교정 시스템 개발</strong>: Whisper와 Wav2Vec 2.0을 사용해 한국어 발음 오류를 탐지하고, 사용자가 쉽게 이해할 수 있도록 교정 피드백을 제공함.</li></ul><ul id="143a2fb8-d4be-80e1-bf1a-fb678a6967a2" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>langdetect를 활용한 언어 구간 구분</strong>: 한국어와 일본어가 혼용된 음성 데이터를 처리하기 위해 <strong>langdetect</strong>를 활용하여 언어 구간을 구분하고, 각 구간별로 발음 오류를 교정함.</li></ul><ul id="143a2fb8-d4be-80ae-8756-d18776de9d4d" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>웹 기반 서비스 제공</strong>: 최종적으로 사용자들이 <strong>실시간으로 발음 교정 피드백</strong>을 받을 수 있는 웹 기반 서비스를 개발함.</li></ul><ul id="143a2fb8-d4be-8091-aa49-d93d154337d4" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>최종 산출물</strong>: 발음 교정 웹 애플리케이션, 사용자 피드백 시스템, 발음 오류 교정 보고서.</li></ul><p id="143a2fb8-d4be-803f-91db-fd06f5582e7c" class="" dir="auto">□ <strong>구성도</strong></p><ul id="143a2fb8-d4be-805f-a280-c5dae4aee3f8" class="bulleted-list" dir="auto"><li style="list-style-type:disc">시스템 구성도는 아래와 같은 구조로 설계됨:<ul id="1b7880c5-009a-4c3d-a788-e40b322a7772" class="bulleted-list" dir="auto"><li style="list-style-type:circle"><strong>입력 음성</strong> -&gt; <strong>langdetect를 통한 언어 구간 구분</strong> -&gt; <strong>Whisper 모델로 의도된 발음 분석</strong> -&gt; <strong>Wav2Vec 2.0으로 실제 발음 분석</strong> -&gt; <strong>발음 오류 탐지 및 교정 피드백 제공</strong> -&gt; <strong>웹 인터페이스를 통한 사용자 피드백 제공</strong></li></ul></li></ul><p id="143a2fb8-d4be-80ce-a8e2-cfda4569848d" class="" dir="auto">□ <strong>주요특징</strong></p><ul id="143a2fb8-d4be-80f3-a465-e74647acf1ee" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>차별성</strong>: 기존의 한국어 학습 앱과 달리, 한국어 발음에 특화된 <strong>개인 맞춤형 발음 교정 시스템</strong>을 제공함.</li></ul><ul id="143a2fb8-d4be-80ba-9128-e1d1923a3504" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>혁신성</strong>: Whisper와 Wav2Vec 2.0을 결합하여 발음 오류를 탐지하고 교정하는 <strong>자동화된 시스템</strong>을 구축함.</li></ul><ul id="143a2fb8-d4be-8082-873d-fec5b43e762c" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>독창성</strong>: 한국어와 일본어의 음운론적 차이를 고려하여, langdetect를 통해 <strong>혼용된 언어 구간을 분리</strong>하고 각 언어에 맞춘 교정 피드백을 제공함.</li></ul><h1 id="ca53ff57-857e-4dc1-aa69-8af6962a4274" class="" dir="auto">3. 구현 계획 및 방법</h1><ul id="143a2fb8-d4be-80d0-9a53-d5457bcf6d89" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>ICT 기술 활용</strong>: Whisper와 Wav2Vec 2.0, langdetect, pytube, Streamlit 등을 활용하여 시스템을 구현할 계획임. Whisper와 Wav2Vec 2.0을 사용해 음성을 분석하고, langdetect를 통해 언어 구간을 자동으로 구분함.</li></ul><ul id="143a2fb8-d4be-80bf-baa5-e09d3a313efc" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>구현 과정</strong>: 프로젝트는 6단계로 진행됨:<ol type="1" id="143a2fb8-d4be-8079-91ea-d1e3c1335836" class="numbered-list" start="1" dir="auto"><li><strong>데이터 수집 및 전처리 (1-3주)</strong><ul id="143a2fb8-d4be-8030-9549-d8ab5d9e43dc" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>유튜브 영상 데이터 수집</strong>: <strong>pytube</strong> 라이브러리를 활용하여 일본어와 한국어 대화 영상을 다운로드하고, 해당 영상에서 음성 데이터를 추출함. 이 과정에서 한국어와 일본어의 발음 차이를 잘 반영할 수 있는 다양한 영상 콘텐츠를 선정함.</li></ul><ul id="143a2fb8-d4be-8017-9d2f-eda5ab57014b" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>데이터 전처리</strong>: 수집된 음성 데이터를 <strong>노이즈 제거</strong>와 <strong>음질 향상</strong>을 위한 필터링을 통해 전처리함. 특히 음성 내의 잡음을 최소화하여 발음 분석의 정확도를 높임. 또한, <strong>Konlpy와 Mecab</strong> 등 한국어 형태소 분석기와 <strong>Sudachi</strong>와 같은 일본어 형태소 분석기를 사용하여 발음 교정을 위한 텍스트 데이터 분석 준비를 완료함.</li></ul><ul id="143a2fb8-d4be-80b0-a679-c95f2a6c16e8" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>데이터 필터링</strong>: 언어 혼용 데이터와 일관된 발음 데이터를 구분하고, 학습에 적합한 고품질 데이터를 선별함.</li></ul></li></ol><ol type="1" id="143a2fb8-d4be-809f-893f-f7e328691c3d" class="numbered-list" start="2" dir="auto"><li><strong>발음 규칙 정의 및 모델 구현 (3-5주)</strong><ul id="143a2fb8-d4be-8074-a2f9-dd3e264d6f91" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>발음 규칙 수립</strong>: 한국어의 음운론적 규칙을 정의하고, 발음 오류를 탐지하기 위한 <strong>음소 및 음운 분석</strong>을 진행함. 이를 통해 정확한 발음 기준을 설정하고, 일본어 화자에게 어려운 발음 유형(예: 된소리, 받침 발음 등)을 명확히 정의함.</li></ul><ul id="143a2fb8-d4be-8056-b074-cef16a68a11a" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>발음 규칙 모델 구현</strong>: 수립된 발음 규칙을 바탕으로 발음 오류를 탐지하고 교정하는 규칙 기반 모델을 구현함. 사용자가 발음하는 음성을 이 규칙과 비교하여 오류를 탐지함.</li></ul></li></ol><ol type="1" id="143a2fb8-d4be-8015-9e4d-d7e227fc6f13" class="numbered-list" start="3" dir="auto"><li><strong>Whisper와 Wav2Vec 2.0 모델 학습 및 통합 (6-8주)</strong><ul id="143a2fb8-d4be-8047-9038-d4af2c388a39" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>Whisper 모델 학습</strong>: Whisper 모델을 활용해 음성 데이터를 텍스트로 변환하는 작업을 진행함. Whisper는 <strong>한국어 발음의 의도된 텍스트를 추정</strong>하여 이후 Wav2Vec 2.0과 비교할 기준 데이터를 생성함.</li></ul><ul id="143a2fb8-d4be-802d-8f88-c054e146f7e6" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>Wav2Vec 2.0 모델 학습</strong>: Wav2Vec 2.0을 활용하여 실제 발음 데이터를 분석함. 이 모델은 음성 신호를 음소 단위로 세분화하여, <strong>발음 오류가 발생하는 음소</strong>를 탐지함.</li></ul><ul id="143a2fb8-d4be-8049-9a5a-fe2460932973" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>모델 통합</strong>: Whisper와 Wav2Vec 2.0의 결과를 비교하는 알고리즘을 구현하여, 의도된 발음과 실제 발음 간의 차이를 분석함. 이를 통해 발음 오류를 정확하게 탐지하고, 학습자가 이해할 수 있는 구체적인 교정 피드백을 제공함.</li></ul></li></ol><ol type="1" id="143a2fb8-d4be-8038-91c7-d1c7d918cea5" class="numbered-list" start="4" dir="auto"><li><strong>언어 구간 분리 및 오류 교정 (9-11주)</strong><ul id="143a2fb8-d4be-8005-ae48-d7e73810acdc" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>langdetect 활용</strong>: <strong>langdetect</strong> 라이브러리를 사용하여 한국어와 일본어가 혼용된 음성 데이터를 자동으로 구분함. 학습자가 코드 스위칭을 사용하는 경우, 해당 언어 구간을 구분하여 각 구간에 맞는 교정을 제공함.</li></ul><ul id="143a2fb8-d4be-8091-b23a-efd9e2c57f63" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>구간별 발음 오류 교정</strong>: 한국어 구간에서는 Whisper와 Wav2Vec 2.0을 통해 발음 오류를 탐지하고 교정 피드백을 제공함. 일본어 구간에서는 일본어 화자의 발음을 분석하여 적절한 발음 여부를 판단하고 피드백을 제공함.</li></ul><ul id="143a2fb8-d4be-80b1-b8a9-e289fc940ff7" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>시각적 및 음성적 피드백 제공</strong>: 발음 오류가 탐지된 부분에 대해 시각적으로 해당 음소를 강조하고, 교정 방법을 텍스트와 음성으로 제공하여 학습자가 쉽게 이해할 수 있도록 함.</li></ul></li></ol><ol type="1" id="143a2fb8-d4be-801c-9dd1-e870a33cb21e" class="numbered-list" start="5" dir="auto"><li><strong>테스트 및 성능 개선 (12-14주)</strong><ul id="143a2fb8-d4be-808b-ac92-faa6db5a02a9" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>시스템 통합 테스트</strong>: Whisper, Wav2Vec 2.0, langdetect 모듈을 통합하여 전체 시스템의 동작을 테스트함. 다양한 발음을 포함한 데이터를 사용해 발음 오류 탐지와 교정 피드백의 정확도를 평가함.</li></ul><ul id="143a2fb8-d4be-804c-bdff-db1eadff156c" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>성능 개선</strong>: 테스트 결과를 바탕으로 모델의 성능을 개선함. 오류 탐지가 미흡한 부분을 분석하여 <strong>모델 학습 파라미터를 조정</strong>하고, 새로운 데이터셋을 추가 학습하여 탐지 정확도를 높임.</li></ul><ul id="143a2fb8-d4be-8099-b67f-ec9049885c51" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>사용자 테스트 및 피드백 반영</strong>: 초기 사용자 그룹을 대상으로 베타 테스트를 진행하고, 사용자로부터 피드백을 수집함. 이를 바탕으로 교정 피드백의 품질을 개선하고, 사용자 경험을 최적화함.</li></ul></li></ol><ol type="1" id="143a2fb8-d4be-8010-8bdb-c9690871c3c8" class="numbered-list" start="6" dir="auto"><li><strong>배포 및 사용자 피드백 수집 (15-16주)</strong><ul id="143a2fb8-d4be-80c3-adc3-c5297d8e33cd" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>웹 기반 서비스 배포</strong>: <strong>Streamlit</strong>을 사용하여 간단하고 직관적인 웹 인터페이스를 구축함. 사용자는 웹을 통해 자신의 발음을 녹음하고, 즉각적인 피드백을 받을 수 있음. 필요에 따라 <strong>Flask</strong>나 <strong>Django</strong>와 같은 더 복잡한 웹 프레임워크로 기능을 확장하여 다중 사용자 지원 및 확장성을 제공할 수 있음.</li></ul><ul id="143a2fb8-d4be-80ae-838f-d10c43742155" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>사용자 피드백 수집 및 개선</strong>: 사용자들이 실제로 서비스를 사용하면서 제공한 피드백을 수집하여 시스템의 발음 교정 정확도와 사용자 인터페이스의 편의성을 평가함. 수집된 피드백을 반영하여 시스템을 지속적으로 개선하고, 사용자 경험을 최적화함.</li></ul></li></ol></li></ul><ul id="143a2fb8-d4be-80b1-ae06-fa5f6d469a18" class="bulleted-list" dir="auto"><li style="list-style-type:disc"><strong>예상 장애 요소 및 해결방안</strong>:<ul id="143a2fb8-d4be-80e1-ad38-efb6a3c88462" class="bulleted-list" dir="auto"><li style="list-style-type:circle"><strong>데이터 품질 문제</strong>: 수집된 음성 데이터의 품질이 낮아 분석에 영향을 미칠 경우, 전처리 과정에서 <strong>노이즈 제거 및 필터링</strong>을 통해 음질을 개선하고, 고품질 데이터를 확보하여 문제를 해결함.</li></ul><ul id="143a2fb8-d4be-80f0-97dc-caf3a62ade5d" class="bulleted-list" dir="auto"><li style="list-style-type:circle"><strong>발음 오류 탐지 정확도 부족</strong>: 다양한 발음 데이터를 학습하여 모델의 성능을 개선하고, 지속적으로 <strong>사용자 피드백</strong>을 반영하여 시스템을</li></ul></li></ul><p id="143a2fb8-d4be-8095-8a37-cb7d4fdd3002" class="" dir="auto">
+</p><h1 id="0d7beea1-d771-434c-bdcb-f9e1ec8801fb" class="" dir="auto">3. 데이터셋 및 기술적 참고자료</h1><ol type="1" id="83835b0a-29b3-4254-8879-de6e6d70af40" class="numbered-list" start="1" dir="auto"><li><strong>인공지능 학습을 위한 외국인 한국어 발화 음성 데이터 (일본어 모어 화자 포함, AIHUB)</strong><figure id="36654536-38ee-4433-ac1b-55011d773657" dir="ltr"><a href="https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&amp;topMenu=100&amp;aihubDataSe=realm&amp;dataSetSn=505" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">AI-Hub</div><div class="bookmark-description">※샘플데이터는 데이터의 이해를 돕기 위해 별도로 가공하여 제공하는 정보로써 원본 데이터와 차이가 있을 수 있으며, 데이터에 따라서 민감한 정보는 일부 마스킹(*) 처리가 되어 있을 수 있습니다.</div></div><div class="bookmark-href"><img src="https://aihub.or.kr/favicon.ico" class="icon bookmark-icon"/>https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&amp;topMenu=100&amp;aihubDataSe=realm&amp;dataSetSn=505</div></div></a></figure></li></ol><ol type="1" id="a641b61e-82cd-4515-aeaa-c48cbef064a0" class="numbered-list" start="2" dir="auto"><li><strong> 한국어-일본어 번역 말뭉치 (AIHUB)</strong><figure id="0c28db17-8ae6-400e-ba59-3c405856a2c3" dir="ltr"><a href="https://aihub.or.kr/aihubdata/data/view.do?dataSetSn=127" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">AI-Hub</div><div class="bookmark-description">※샘플데이터는 데이터의 이해를 돕기 위해 별도로 가공하여 제공하는 정보로써 원본 데이터와 차이가 있을 수 있으며, 데이터에 따라서 민감한 정보는 일부 마스킹(*) 처리가 되어 있을 수 있습니다.</div></div><div class="bookmark-href"><img src="https://aihub.or.kr/favicon.ico" class="icon bookmark-icon"/>https://aihub.or.kr/aihubdata/data/view.do?dataSetSn=127</div></div></a></figure></li></ol><ol type="1" id="c3f9e675-d217-4f32-9b88-7a174e9b9811" class="numbered-list" start="3" dir="auto"><li><strong>방송 콘텐츠 한-일 번역 병렬 말뭉치 데이터(AIHUB)</strong><figure id="dd974808-4afa-4cc1-9dfb-50ec1a8e97a5" dir="ltr"><a href="https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&amp;topMenu=100&amp;aihubDataSe=realm&amp;dataSetSn=546" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">AI-Hub</div><div class="bookmark-description">※샘플데이터는 데이터의 이해를 돕기 위해 별도로 가공하여 제공하는 정보로써 원본 데이터와 차이가 있을 수 있으며, 데이터에 따라서 민감한 정보는 일부 마스킹(*) 처리가 되어 있을 수 있습니다.</div></div><div class="bookmark-href"><img src="https://www.aihub.or.kr/favicon.ico" class="icon bookmark-icon"/>https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&amp;topMenu=100&amp;aihubDataSe=realm&amp;dataSetSn=546</div></div></a></figure></li></ol><ol type="1" id="8e7d6df0-d27d-4d44-9b8e-a8c0e9ac8e7d" class="numbered-list numbered-list-digits-2" start="10" dir="auto"><li><strong>일상생활 및 구어체 한-일 번역 병렬 말뭉치 데이터(AIHUB)</strong><figure id="7cebc6d8-16a5-4c24-afa5-bf42ecdf4320" dir="ltr"><a href="https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&amp;topMenu=100&amp;aihubDataSe=realm&amp;dataSetSn=71263" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">AI-Hub</div><div class="bookmark-description">※샘플데이터는 데이터의 이해를 돕기 위해 별도로 가공하여 제공하는 정보로써 원본 데이터와 차이가 있을 수 있으며, 데이터에 따라서 민감한 정보는 일부 마스킹(*) 처리가 되어 있을 수 있습니다.</div></div><div class="bookmark-href"><img src="https://www.aihub.or.kr/favicon.ico" class="icon bookmark-icon"/>https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&amp;topMenu=100&amp;aihubDataSe=realm&amp;dataSetSn=71263</div></div></a></figure></li></ol><ol type="1" id="eba928a7-f164-4115-852a-7bf6a8ba95e1" class="numbered-list" start="5" dir="auto"><li><strong>한국어 모어 화자에게 수집한 일본어 발화 코퍼스  (LSAJ</strong><figure id="e25173b9-2ac7-4f8d-abf8-0e03c2656cdb" dir="ltr"><a href="https://www2.ninjal.ac.jp/jll/lsaj/" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">LSAJ</div><div class="bookmark-description">中国語母語話者3名、韓国語母語話者3名、計6名の日本語学習者を3年間縦断的に調査し、データを収集した、発話コーパスです。 コーパスの名称は「中国語・韓国語母語の日本語学習者縦断発話コーパス」、略称は「C-JAS（Corpus of Japanese as a Second Language）」です。収録したデータ量は、約46.5時間分で、総語数は約57万語です。 オンラインで検索システムが使え、形態素単位や文字列で用例を検索することができます。</div></div><div class="bookmark-href"><img src="https://www2.ninjal.ac.jp/jll/lsaj/favicon.ico" class="icon bookmark-icon"/>https://www2.ninjal.ac.jp/jll/lsaj/</div></div></a></figure></li></ol><ol type="1" id="0d1b72a8-9ffc-4aeb-865b-1e9d0d5117e5" class="numbered-list" start="6" dir="auto"><li><strong>일본 국립 일본어연구소 일본어 코퍼스 목록(NINJAL)</strong><figure id="673256de-189e-40b3-9f82-c61d822ccbe9" dir="ltr"><a href="https://clrd.ninjal.ac.jp/en/" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">, NINJAL</div><div class="bookmark-description">2022/04/01</div></div><div class="bookmark-href"><img src="https://clrd.ninjal.ac.jp/en/favicon/f_bccwj_96.png" class="icon bookmark-icon"/>https://clrd.ninjal.ac.jp/en/</div></div></a></figure></li></ol><ol type="1" id="1655b5f8-cc15-40fd-ad15-8540aae4652d" class="numbered-list" start="7" dir="auto"><li><strong>일본어 발음 평가 진단 프로그램 (ALL about Japanese)</strong><figure id="edcc3761-3845-462b-85f7-68d4893d8450" dir="ltr"><a href="http://www.japanese.or.kr/phonetic_main.aspx" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">AJ - All about Japanese - www.Japanese.or.kr</div><div class="bookmark-description">Researcher can test Japanese learner on hearing and pronunciation skills. And Japanese learners can practice and upgrade their hearing and pronunciation skills.</div></div><div class="bookmark-href">http://www.japanese.or.kr/phonetic_main.aspx</div></div></a></figure></li></ol><ol type="1" id="cffbdaed-d5dc-4b9b-86d3-057dab426828" class="numbered-list" start="8" dir="auto"><li><strong>세종 한일 병렬 말뭉치 검색 시스템(</strong>NARA ver. 2.0)<figure id="062efbf7-3550-4d80-af88-d7264c7299df" dir="ltr"><a href="http://corpus.mireene.com/ssh/publications/26-9.pdf" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title"></div></div><div class="bookmark-href">http://corpus.mireene.com/ssh/publications/26-9.pdf</div></div></a></figure></li></ol><ol type="1" id="27b460de-5303-45d9-ac1e-2d05a5df7906" class="numbered-list" start="9" dir="auto"><li><strong>외국인을 위한 발음 교정 서비스 (AI야어여) </strong><figure id="acd465fd-238a-4f8c-b229-a88877348925" dir="ltr"><a href="https://github.com/boostcampaitech5/level3_nlp_finalproject-nlp-13" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">GitHub - boostcampaitech5/level3_nlp_finalproject-nlp-13: level3_nlp_finalproject-nlp-13 created by GitHub Classroom</div><div class="bookmark-description">level3_nlp_finalproject-nlp-13 created by GitHub Classroom - GitHub - boostcampaitech5/level3_nlp_finalproject-nlp-13: level3_nlp_finalproject-nlp-13 created by GitHub Classroom</div></div><div class="bookmark-href"><img src="https://github.com/fluidicon.png" class="icon bookmark-icon"/>https://github.com/boostcampaitech5/level3_nlp_finalproject-nlp-13</div></div><img src="https://opengraph.githubassets.com/e97d72701c020c275921f782964a63bec97180a87d3a135ec727ae29e7cccfc7/boostcampaitech5/level3_nlp_finalproject-nlp-13" class="bookmark-image"/></a></figure></li></ol><ol type="1" id="6028d63c-68fd-4d87-bd1b-388cea21e694" class="numbered-list" start="8" dir="auto"><li>2022 데이터 청년 캠퍼스 우수 프로젝트 - 청각장애인 대상 영어 발음 교정 서비스<figure id="6f72f13c-66c4-420a-9aae-14bc794c5b9a" dir="ltr"><a href="https://www.youtube.com/watch?v=JRJ_xtxzV-I" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">[2022 데이터 청년 캠퍼스] 2022 데이터 청년 캠퍼스 우수 프로젝트 발표 (한국외국어대학교 빈센조!)</div><div class="bookmark-description">2022년 데이터 청년 캠퍼스 우수 프로젝트 발표영상입니다.
+
+발표팀은 운영대학 한국외국어대학교의 &#x27;빈센조!&#x27;팀이며,
+주제는 [청각장애인 대상 영어 발음 교정 서비스] 입니다.
+
+데이터 청년 캠퍼스는 12주간의 데이터 교육과 취업연계까지 지원하는 한국데이터산업진흥원 인재 양성 프로그램입니다.
+
+데이터 청년 캠퍼스에 대한 자세한 설명은 아래 링크를 참조해주세요.
+👉https://dataonair.or.kr/bigjob/</div></div><div class="bookmark-href"><img src="https://www.youtube.com/s/desktop/79c80fdc/img/favicon_144x144.png" class="icon bookmark-icon"/>https://www.youtube.com/watch?v=JRJ_xtxzV-I</div></div><img src="https://i.ytimg.com/vi/JRJ_xtxzV-I/maxresdefault.jpg" class="bookmark-image"/></a></figure><p id="b3c90899-0ebc-49a9-abb3-05197b15f298" class="" dir="auto">위 9,10번 프로젝트의 접근방법 참고하여, 기술적 측면에서 일본어 모어 화자에 최적화되도록 튜닝하여 차별화해 압도적인 성능을 구현한다면 기술적 경쟁력 및 서비스 타당성이 될 수 있을 것이다. 추가로 피드백 내용을 전달할 수 있는 UX/UI 구현하면 더욱 사용자 친화적 서비스로 발전 가능</p></li></ol><h1 id="edd3d574-d83b-4760-9a9c-2fc230ae3e22" class="" dir="auto">4. 참고문헌</h1><details id="645ba51c-fa34-4ea0-b9eb-0e9aeb2b5a81" open="" class="toggle" dir="auto"><summary>관련 논문</summary><div class="indented"><figure id="bf93b13f-bdaa-413d-9143-0803eddaf5b7" dir="ltr"><a href="https://www.eksss.org/archive/view_article?pid=pss-10-4-45" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">Phonetics Speech Sci.: Native language Interference in producing the Korean rhythmic structure: Focusing on Japanese</div><div class="bookmark-description">This study investigates the effect of Japanese (L1) on the production of the Korean rhythmic structure. Korean and Japanese have typologically different rhythmic structure as a syllable-timed language and mora-timed language, respectively. This rhythmic difference comes from the different phonological properties of the two languages. Due to this difference, Japanese speakers that are learning Korean may produce a different rhythm than native Korean speakers’ rhythm. To investigate the influence of the native language’s rhythm on the target language, we conducted an acoustic analysis using acoustic metrics such as %V, VarcoV, and VarcoS. Four Korean native speakers and ten advanced Japanese Korean learners participated in a production test. The analyzed material consisted of six Korean sentences that contained various syllable structures. The results showed that KS and JS’s rhythms are different in %V as well as in VarcoV. In the case of VarcoS, significant rhythmic difference was observed in the VC and CVC syllable, in which the coda segment is nasal sound. This study allowed us to observe the influence of L1 on production of L2 rhythm.</div></div><div class="bookmark-href"><img src="https://www.eksss.org/favicon.ico" class="icon bookmark-icon"/>https://www.eksss.org/archive/view_article?pid=pss-10-4-45</div></div><img src="https://www.eksss.org/journal/pss/pss-10-4/gif/pss-10-4-45-g3.gif" class="bookmark-image"/></a></figure><figure id="1985ed72-9ad5-4847-93cf-b3b9a414c0d6" dir="ltr"><a href="https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002606636" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일본인 한국어 학습자의 유음 습득에 있어서의 음향음성학적 특징에 관한 연구</div><div class="bookmark-description">An Acoustic Study in the Japanese Learners of Korean Language‘s Acquisition of Liquid - liquid;Japanese learners of Korean;contrastive analysis hypothesis;preclusive interference;intrusive interference</div></div><div class="bookmark-href"><img src="https://www.kci.go.kr/favicon.ico" class="icon bookmark-icon"/>https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002606636</div></div></a></figure><figure id="bea9e0d5-3082-441e-84a7-d96f500bbe6c" dir="ltr"><a href="https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002730504" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일본인 학습자의 한국어 발음 오류에 대한 종적 연구 ─ 자연 발화 데이터 분석을 중심으로</div><div class="bookmark-description">A Longitudinal Study of Korean Pronunciation Errors of Japanese Learners — Focusing on the Analysis of Spontaneous Speech Data - Longitudinal Study;Spontaneous Speech;Pronunciation Error;Alternation;Open Syllabification;Final Consonant Deletion;Velar Insertion</div></div><div class="bookmark-href"><img src="https://www.kci.go.kr/favicon.ico" class="icon bookmark-icon"/>https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002730504</div></div></a></figure><figure id="0d6b76f7-cb95-4952-931a-eb6a2e2482b2" dir="ltr"><a href="https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002158469" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">모음 체계와 자질에 의한 일본인 학습자의 한국어 모음 발음 분석</div><div class="bookmark-description">Analysis of Japanese learner’s Korean vowel pronunciation based on vowel system and vowel feature - opposition of roundness;restriction of glide distribution;vowel coalescence;hiatus resolution;glide formation;active feature</div></div><div class="bookmark-href"><img src="https://www.kci.go.kr/favicon.ico" class="icon bookmark-icon"/>https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002158469</div></div></a></figure><figure id="b36a08f1-d2bc-4237-afb8-58bacf6be4f7" dir="ltr"><a href="https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART000999318" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">한일 병렬 코퍼스 구축의 실제와 문제점</div><div class="bookmark-description">The facts and problem of corpus build-up - 병렬코퍼스;한일병렬코퍼스;마크업;정렬;코드;태그</div></div><div class="bookmark-href"><img src="https://www.kci.go.kr/favicon.ico" class="icon bookmark-icon"/>https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART000999318</div></div></a></figure><figure id="866c3978-ef3f-413e-b046-0b36832fae7d" dir="ltr"><a href="https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART001250398" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일본에서의 한국어 듣기 교재 분석 연구:듣기 자료의 담화 유형 및 듣기 활동 분석을 중심으로</div><div class="bookmark-description">Analysis of Listening Textbooks Published in Japan - Analysis of listening textbooks;listening materials;listening activities</div></div><div class="bookmark-href"><img src="https://www.kci.go.kr/favicon.ico" class="icon bookmark-icon"/>https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART001250398</div></div></a></figure><figure id="37a1208c-0e2d-49a4-8f16-daa98a48fc1b" dir="ltr"><a href="https://www.kci.go.kr/kciportal/landing/article.kci?arti_id=ART001970757" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일본인 학습자 대상 한국어교육 관련 연구 최근 동향 분석 -2008~2014년의 연구 성과를 중심으로-</div><div class="bookmark-description">한국어교육, 2015, 26 (1), 155</div></div><div class="bookmark-href"><img src="https://www.kci.go.kr/kciportal/resources/landing/img/favicon.png" class="icon bookmark-icon"/>https://www.kci.go.kr/kciportal/landing/article.kci?arti_id=ART001970757</div></div><img src="https://www.kci.go.kr/kciportal/resources/landing/img/kci_facebook_2.png" class="bookmark-image"/></a></figure><figure id="346480a8-41f6-499c-9de8-e7076f9bc9d9" dir="ltr"><a href="https://www.krm.or.kr/krmts/search/detailView.html?dbGubun=SD&amp;category=Report&amp;m201_id=10003629&amp;local_id=10002804" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일본인 학습자들의 한국어 학습 과정에 나타난 오류 분석</div><div class="bookmark-description">관리 책임자 : 인문사회학술지원팀 팀장 문덕현</div></div><div class="bookmark-href">https://www.krm.or.kr/krmts/search/detailView.html?dbGubun=SD&amp;category=Report&amp;m201_id=10003629&amp;local_id=10002804</div></div><img src="http://krm.or.kr/include/images/top_logo.gif" class="bookmark-image"/></a></figure><figure id="67a9f8e6-8826-4ffd-9c9b-196886475fbe" dir="ltr"><a href="https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE02349434" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일본인을 위한 한국어 교재 개발과 교수 방법 | DBpia</div><div class="bookmark-description">간노 | 교육한글 | 1991.12</div></div><div class="bookmark-href"><img src="https://www.dbpia.co.kr/images/favicon.ico" class="icon bookmark-icon"/>https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE02349434</div></div><img src="https://www.dbpia.co.kr/img_cover/is_Cover_s/is_116666.jpg" class="bookmark-image"/></a></figure><figure id="59106661-495f-420d-a9a2-bcf365aefdf1" dir="ltr"><a href="https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11037540&amp;nodeId=NODE11037540&amp;medaTypeCode=185005&amp;language=ko_KR&amp;hasTopBanner=true" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일본에서의 한국어 교재 개발의 문제점 및 해결 방안 | DBpia</div><div class="bookmark-description">후지이시 다카요 | 국어교육연구 | 2000.12</div></div><div class="bookmark-href"><img src="https://www.dbpia.co.kr/images/favicon.ico" class="icon bookmark-icon"/>https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11037540&amp;nodeId=NODE11037540&amp;medaTypeCode=185005&amp;language=ko_KR&amp;hasTopBanner=true</div></div><img src="https://www.dbpia.co.kr/images/common/dbpia.jpg" class="bookmark-image"/></a></figure><figure id="f6c788ab-11c9-475d-acc6-cfb4ed020fc2" dir="ltr"><a href="https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE02269367" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일본인의 영어와 한국어 발음의 오류 분석 : 영어와 한국어를 발음할 때 공통적으로 나타나는 문제점 | DBpia</div><div class="bookmark-description">森香奈 | 한국언어학회 학술대회지 | 2008.6</div></div><div class="bookmark-href"><img src="https://www.dbpia.co.kr/images/favicon.ico" class="icon bookmark-icon"/>https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE02269367</div></div><img src="https://www.dbpia.co.kr/img_cover/is_Cover_s/is_114062.jpg" class="bookmark-image"/></a></figure><figure id="e65c1680-78d2-405b-98c1-19ee23aa969b" dir="ltr"><a href="https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE10761462" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">중국어와 일본어 모어 화자의 한국어 음절 종성 산출 차이 연구 | DBpia</div><div class="bookmark-description">장향실 | 우리어문연구 | 2016.1</div></div><div class="bookmark-href"><img src="https://www.dbpia.co.kr/images/favicon.ico" class="icon bookmark-icon"/>https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE10761462</div></div><img src="https://www.dbpia.co.kr/images/common/dbpia.jpg" class="bookmark-image"/></a></figure><figure id="7ffb0cf2-11e3-4578-86f0-0966cd82e682" dir="ltr"><a href="https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE08838909" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">한국어 비음화의 오류 유형과 원인 분석 - 중국인 학습자와 일본인 학습자를 중심으로 - | DBpia</div><div class="bookmark-description">이화진 | 언어사실과 관점 | 2018.1</div></div><div class="bookmark-href"><img src="https://www.dbpia.co.kr/images/favicon.ico" class="icon bookmark-icon"/>https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE08838909</div></div><img src="https://www.dbpia.co.kr/images/common/dbpia.jpg" class="bookmark-image"/></a></figure><figure id="70e93deb-388b-4102-ba7e-273cec517852" dir="ltr"><a href="https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE09235049" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">음절 연쇄에서 나타나는 일본인 학습자의 한국어 종성 발음 유형 | DBpia</div><div class="bookmark-description">하호빈, 이화진 | 언어사실과 관점 | 2019.1</div></div><div class="bookmark-href"><img src="https://www.dbpia.co.kr/images/favicon.ico" class="icon bookmark-icon"/>https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE09235049</div></div><img src="https://www.dbpia.co.kr/images/common/dbpia.jpg" class="bookmark-image"/></a></figure><figure id="e13c42bc-a93e-45aa-af8a-a49f7788f609" dir="ltr"><a href="https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11280986" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">언어 유형을 활용한 한국어 종성 발음 교육 방안 | DBpia</div><div class="bookmark-description">김선정 | 언어와 문화 | 2022.11</div></div><div class="bookmark-href"><img src="https://www.dbpia.co.kr/images/favicon.ico" class="icon bookmark-icon"/>https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11280986</div></div><img src="https://www.dbpia.co.kr/images/common/dbpia.jpg" class="bookmark-image"/></a></figure><figure id="6b3f14e4-c4c4-4668-a7cf-12033d578aa1" dir="ltr"><a href="https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11438586" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">형태소 분석기반 외국인 발화 한국어 발음평가 개선 방법 | DBpia</div><div class="bookmark-description">조현진, 김병욱 | 한국정보통신학회논문지 | 2023.06</div></div><div class="bookmark-href"><img src="https://www.dbpia.co.kr/images/favicon.ico" class="icon bookmark-icon"/>https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11438586</div></div><img src="https://www.dbpia.co.kr/img_cover/is_Cover_s/is_566251.jpg" class="bookmark-image"/></a></figure><figure id="d104b41d-40aa-4edd-8f8d-bd9fc1c9504c" dir="ltr"><a href="https://s-space.snu.ac.kr/handle/10371/86983" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일본에서의 한국어 교육 방법 - 동경외국어대학의 경우 -</div></div><div class="bookmark-href"><img src="https://s-space.snu.ac.kr/favicon.ico" class="icon bookmark-icon"/>https://s-space.snu.ac.kr/handle/10371/86983</div></div></a></figure><figure id="302775c5-2061-4c53-b0d9-cb8b25a23667" dir="ltr"><a href="https://repository.hanyang.ac.kr/handle/20.500.11754/126217" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일본인 학습자를 위한 한글 자모 교재 개발 연구</div><div class="bookmark-description">Master</div></div><div class="bookmark-href"><img src="https://repository.hanyang.ac.kr/favicon.ico" class="icon bookmark-icon"/>https://repository.hanyang.ac.kr/handle/20.500.11754/126217</div></div></a></figure><figure id="f9b43cc1-e9f7-423e-81cf-aa47732bb6ba" dir="ltr"><a href="https://dspace.ewha.ac.kr/handle/2015.oak/214420?mode=full" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">중급 일본인 대상 한국어 발음 교재 개발</div><div class="bookmark-description">Full metadata record</div></div><div class="bookmark-href"><img src="https://dspace.ewha.ac.kr/favicon.ico" class="icon bookmark-icon"/>https://dspace.ewha.ac.kr/handle/2015.oak/214420?mode=full</div></div></a></figure><figure id="2b93e6c9-6446-4adf-aa81-892a37828c6d" dir="ltr"><a href="https://dspace.ewha.ac.kr/handle/2015.oak/174644" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일본인 학습자를 위한 한국어 한자 발음 교재 개발 방안 연구</div></div><div class="bookmark-href"><img src="https://dspace.ewha.ac.kr/favicon.ico" class="icon bookmark-icon"/>https://dspace.ewha.ac.kr/handle/2015.oak/174644</div></div></a></figure><figure id="77f49769-9672-4492-ac86-68f148f40091" dir="ltr"><a href="https://dspace.ewha.ac.kr/handle/2015.oak/209263" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일어권 초급 한국어 학습자의 철자 오류 분석</div></div><div class="bookmark-href"><img src="https://dspace.ewha.ac.kr/favicon.ico" class="icon bookmark-icon"/>https://dspace.ewha.ac.kr/handle/2015.oak/209263</div></div></a></figure><figure id="f2e8adcf-42dc-42da-85de-ba64bcb425d4" dir="ltr"><a href="https://scienceon.kisti.re.kr/srch/selectPORSrchArticle.do?cn=DIKO0007508029&amp;dbt=DIKO" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">[논문]일본인 한국어 학습자의 평음·격음·경음 발음에 관한 연구</div><div class="bookmark-description">한국어교육은 최근 양적으로나 질적으로 많은 성장올 이루었다. 특히 양적인 면에서 한국어를 배우는 외국인의 숫자나 가르치는 기관의 수가 꾸준히 늘고 있다. 이처럼 한국어를 배우는 외국인 중에서도 수적으로 가장 많은 비중을 차지하고 있는 것이 일본인이다. 이러한 일본인 학습자들이 한국어를 배울 때 가장 어려움을 느끼는 것은 발음(72.5%)이라는 간노(1991)의 지적이 있었다. 그는 일본인 중에는 상당히 높은 수준의 회화를 할 수 있는 경우에도 모국어에 없는 한국어 음운의 잘못된 발음 및 청취로 인하여 많은 어려움을 겪고 있다고 하였다. 그러나 실제 한국어 교육 현장에서 이루어지고 있는 발음 교육은 아직 체계적이지 못하고 다른 교수 항목들에 비해서 상대적으로 소홀히 다루어지고 있는 것이 사실이다. 이것은 발음 지도가 하루아침에 이루어지는 것이 아니고 효과도 가시적으로 드러나기 힘든 과정이라는 것을 감안하더라도 아주 안타까운 일이라고 할 수 있다. 따라서 본 연구는 일본인 학습자들의 발음 학습에 대한 욕구(needs) 평음/격음/경음을 발음할 때 사용하는 발음 방법, 한국인들은 일본인의 이러한 발음을 어떻게 알아듣는지에 대해서 알아봄으로써 일본인 학습자를 대상으로 하는 발음 교수에 도움을 주고자 했다. 먼저 설문 조사를 통해 일본인 학습차의 발음 학습에 대한 욕구와 평음,격음, 경음을 발음할 때 사용하고 있는 구체적인 발음 방법을 조사하였다. 또한 이들 평음, 격음, 경음이 3지적 상관속을 이루는 단음절과 단문 단위의 발음 항목을 만들어 일본인에게 발음하도록 하고 그 발음을 녹음하여 한국인 모어화자들에게 들려주고 어떤 소리로 들리는지 판정하도록 하였다. 그 결론과 교육적 시사점은 다음과 같다. 첫째, 학습자들은 발음 학습에 대한 욕구가 강했다. 따라서 학습자들을 만족시킬 수 있는 발음 교육에 대한 개발이 적극적으로 이루어져야 할 것으로 본다. 둘째, 학습자들은 평음, 격음, 경음을 발음할 때 다양하고 구체적인 발음 방법을 사용하고 있었다. 따라서 교사는 학습자들이 어떤 발음 방법을 사용하고 있는지 언제나 관심을 가져야 할 것이며 만약 옳지 않은 방법을 사용하고 있는 학습자가 있다면 그에 대한 적절한 지도가 이루어져야 할 것이다. 한편 일본인 학습자의 발음에 대한 한국인 모어화자를 대상으로 한 청취 실험에서 얻은 결론은 다음과 같다. 첫째, 한국인 모어화자들은 일본인의 평음, 격음, 경음 총 28개(단음절:14개, 단문14개)발음 중에 평균 절반 정도(14.18개 50.6%)를 알아들었다. 따라서 이들 발음에 대한 지도가 절실하다고 할 것이다. 둘째, 한국인 모어화자들은 일본인의 격음과 경음 발음을 평음보다 알아듣기 힘든 것으로 나타났다. 따라서 앞으로는 일본인을 대상으로 하는 발음 지도에 있어서 격음과 경음에 대한 지도를 더 늘려야 할 것으로 보인다. 셋째, 한국인 모어화자들은 일본인 학습자의 격음 발음을 대부분 평음으로 들었으며 경음/ㄸ, ㅉ, ㄲ/은 오답 중에 격음이 높게 나타났으며 /ㅃ/은 평음이 높게 나타났다. 이를 통해 격음은 평음과의 차이를 지도해야 할 것으로 보이며, 경음은 격음/ 평음과의 구별되는 조건을 체계적으로 교수해야 할 것으로 보인다. 넷째, 잘못된 발음은 듣기에도 영향을 미치는 것으로 보인다. 따라서 Shimamune &amp; smith(1995)의 연구처럼 듣기를 향상시키기 위해서는 듣기 또한 발음 지도에서부터 시작하는 것이 효과적일 것이다. 다섯째, 한국인 모어화자들이 제일 알아듣기 힘든 일본인의 발음은 격음/ㅊ/이었다. /ㅊ/외에도 /ㅌ, ㅍ/ 등의 격음의 판정률이 낮게 나타났다. 한편 /人/ 계열은 상대적으로 판정률이 높았다. 따라서 /人/ 계열을 제외한 /ㄱ/, /ㄷ/, /ㅂ/, /ㅈ/계열의 격음, 경음에 대한 발음 교육이 더 강화되어야 할 것으로 보인다. 여섯째, 한국인 모어화자들은 일본인이 평음, 격음, 경음을 단음절 단위로 발음할 때보다 단문 단위로 발음할 경우에 더 판정률이 낮았다. 따라서 앞으로는 음절 단위의 발음교육에서 그칠 것이 아니라 더 큰 단위의 발음 지도가 꼭 병행되어야 할 것이다. 일곱째, 각 피실험자의 평음, 격음, 경음의 판정률과 학습 시간과의 상관관계를 알아본 결과 경음만이 판정률과 학습 시간간에 상관관계가 있음이 밝혀졌다. 따라서 중급이나 고급 과정에서도 평음과 격음에 대한 지도가 지속적으로 이루어져야 할 것으로 보인다. 여넓째, 판정률과 각 피실험자의 한국 체류 기간간에 상관관계가 있음이 밝혀졌다. 따라서 교사들은 발음 교육에 있어서도 다른 언어 기능과 마찬가지로 학습자들이 최대한 한국어 환경에 노출될 수 있도록 배려하는 것이 발음 교육에도 효과적일 것이다.Korean Education as a foreign language has developed a lot both quantitatively and qualitatively. Among the students who study Korean as a foreign language, Japanese people is one of the major groups. Ganno(1991) indicates one of the most difficult areas for the Japanese is the &#x27;pronunciation&#x27;. Even though Japanese students reach the high level in Korean language, they still have some difficulties in pronouncing and recognizing of some Korean phonemes which they do not have in their phonemic system. Yet, unfortunately, there is not a systematic way of teaching pronunciation, and pronunciation education is not counted so important. When we think the importance of pronunciation education, it is really regrettable. Therefore, this study aims to help teaching Korean pronunciation for Japanese students. Through questionnaire, I investigated the desires for the pronunciation learning and the concrete way of pronouncing aspirated and tensed consonants: Japanese students were supposed to pronounce several words and sentences which contain aspirated and tensed consonants, and native speakers of Korean language were asked to judge each pronunciation. Its pedagogical implications are as follows. Firstly, KFL learners had the strong desires for the pronunciation study. Therefore, there should be more active researches and developments on teaching pronunciation which can satisfy students&#x27; needs. Secondly, KFL learners used various and concrete ways of pronunciation when they pronounce &#x27; unaspirated, aspirated, glottalized consonants&#x27;. So, the teacher should have an interest about students&#x27;way of pronouncing, and also, when there are students who use wrong way of pronouncing, there should be a proper teaching. On the other hand, the results of listening experiments about Japanese learner&#x27;s pronunciation are as follows. Firstly, native speakers of Korean language could understand about half of the pronunciations that Japanese students made. Secondly, aspirated consonants was the most difficult consonants to be understood. Hence, for the pronunciation teaching to the Japanese students, aspirated consonants should be paid more attention. Thirdly, native speakers of Korean language misunderstood aspirated consonants for unaspirated consonants, &#x27;ㄸ, ㅉ, ㄲ&#x27; for tensed consonants, &#x27;ㅃ&#x27; for untensed consonant. As a result, Korean language teachers should teach the differences between tensed consonants and untensed consonants, and aspirated consonants should be taught more systematically regarding the way of articulation. Fourth, pronunciation is related with listening. By comparing the mistakes of this thesis and Jung-suk Kim&#x27;s thesis(1988), Korean learners showed that they could not recognize the pronunciations which they could not pronounce correctly. Therefore, teaching listening should be done in teaching pronunciation, just as Shimamun&amp;smith said in their study. Fifthly, the most difficult pronunciation for the native speakers of Korean language to understand was &#x27;ㅊ&#x27;. So, there should be more attention to the teaching of aspirated and tensed consonants. Sixthly, in understanding Japanese students&#x27; pronunciation, it was much difficult to understand when those consonants were in a sentence rather than to pronounce them in a word. That indicates there should be the way of teaching pronunciation not only in a word chunk, but in a sentence chunk. Seventhly, pronunciation of tensed consonants has improved as the students go on studying. Still, there was no differences in aspirated and untensed consonants. Therefore, there should be the teaching of aspirated and untensed consonants in the intermediate and advanced classes. Eightly, the exposures to the Korean environment has a affirmative effect on pronunciation. Hence, Korean language teachers should help students to be exposed to Korean environment as much as possible.</div></div><div class="bookmark-href"><img src="https://scienceon.kisti.re.kr/images/favicon.ico" class="icon bookmark-icon"/>https://scienceon.kisti.re.kr/srch/selectPORSrchArticle.do?cn=DIKO0007508029&amp;dbt=DIKO</div></div><img src="https://scienceon.kisti.re.kr/images/usr/scienceon_og.png" class="bookmark-image"/></a></figure><figure id="1ca7d468-3269-49f0-a6ec-432ee6744799" dir="ltr"><a href="https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART001733081" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">한일 대조언어학적 관점에서 본 한국어 문법학습의 과제와 코퍼스의 활용 가능성</div><div class="bookmark-description">Some Contrastive Problems in Korean Language Learning of Japanese Learners&#x27; and Corpus Linguistic Suggestion - correspondence between Koren and Japanese;general corpus;reference corpus;learner&#x27;s corpus;parallel corpus</div></div><div class="bookmark-href"><img src="https://www.kci.go.kr/favicon.ico" class="icon bookmark-icon"/>https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART001733081</div></div></a></figure><figure id="f1bfd9e8-d807-45df-8f3f-ecdcafc77632" dir="ltr"><a href="https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11308006" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">일본인 한국어 학습자를 위한외래어 교육 방안 연구 | DBpia</div><div class="bookmark-description">윤경미, 이미정 | 학습자중심교과교육연구 | 2018.2</div></div><div class="bookmark-href"><img src="https://www.dbpia.co.kr/images/favicon.ico" class="icon bookmark-icon"/>https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11308006</div></div><img src="https://www.dbpia.co.kr/images/common/dbpia.jpg" class="bookmark-image"/></a></figure></div></details><h1 id="f2c8aaab-21f8-4b1d-8677-8e10018a0611" class="" dir="auto">5. 향후 발전 가능성</h1><p id="eab1afc4-2017-4a89-b234-c1ad8a1da0da" class="" dir="auto">지난 2020년 네이버는 보도자료를 통해 한국어-일본어 AI언어모델을 구축하겠다고 밝혔다. 해당 모델은 마침 약 보름 후인 2023년 8월 24일 하이퍼클로바X 라는 이름으로 공개 예정이다. <strong>시의성 측면에서도 유의미</strong>한 프로젝트다. </p><figure id="112532b1-d91d-41d6-96c2-8546249cdd0b" dir="ltr"><a href="https://www.aitimes.kr/news/articleView.html?idxno=17963" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">네이버, GPT-3 능가할 한국어, 일본어 초거대 인공지능 언어 모델 만든다</div><div class="bookmark-description">네이버가 인공지능(AI) 기술 경쟁력 향상에 박차를 가하고 있다. 네이버는 AI연구조직을 확대해 별도 선행 기술연구로 ‘네이버 AI LAB’을 개설한데 이어 국내 기업 최초로 수퍼 컴퓨터를 구축하며, AI 기술 경쟁력을 한단계 끌어올릴 계획이라고 8일 밝혔다.네이버는 독자적인 AI 플랫폼 ‘클로바’를 구축하고, 음성 인식 및 합성, 이미지·영상 분석, 자연어처리(NLP) 등 다양한 분야에서의 AI 연구 개발을 진행하고 있다.최근에는 한국, 일본, 유럽, 베트남 등을 잇는 글로벌 AI 연구 벨트를 조성하며 글로벌 기술 경쟁력을 더욱</div></div><div class="bookmark-href"><img src="https://cdn.aitimes.kr/image/logo/favicon.png" class="icon bookmark-icon"/>https://www.aitimes.kr/news/articleView.html?idxno=17963</div></div><img src="https://cdn.aitimes.kr/news/thumbnail/202010/17963_19573_4214_v150.jpg" class="bookmark-image"/></a></figure><figure id="ab93eab7-5b3f-4c43-ba80-784dffb4d8ce" dir="ltr"><a href="https://www.thelec.kr/news/articleView.html?idxno=22130" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">네이버, 초거대 AI ‘하이퍼클로바X’ 생태계 공개</div><div class="bookmark-description">네이버가 초거대 인공지능 ‘하이퍼클로바X’ 띄우기에 나섰다. 네이버는 8월 하이퍼클로바X를 공개할 예정이다.네이버는 하이퍼클로바X를 8월 공개하고 연말까지 하이퍼클로바X 기반 서비스를 순차 출시한다고 21일 밝혔다.하이퍼클로바X는 2021년 발표한 ‘하이퍼클로바’의 업그레이드 버전이다.네이버는 하이퍼클로바X 출시와 함께 대화형 에이전트 ‘클로바X’ 시범 서비스를 개시한다. 질문과 답변은 물론 창작과 요약 등을 제공한다. 플러그인 형태로 다른 서비스를 결합할 수 있다.생성형 AI 검색 서비스 ‘큐:(Cue:)’는 9월 시범 서비스를</div></div><div class="bookmark-href"><img src="https://cdn.thelec.kr/image/logo/favicon.ico" class="icon bookmark-icon"/>https://www.thelec.kr/news/articleView.html?idxno=22130</div></div><img src="https://cdn.thelec.kr/news/thumbnail/202307/22130_19599_534_v150.jpg" class="bookmark-image"/></a></figure><p id="79853097-46fe-4e6e-9a87-578a6ced9b21" class="" dir="auto">향후 하이퍼클로바X와 같은<strong> 한국어-일본어 집중 언어 모델과 연계하여 성능 및 서비스 품질 향상 가능한 점도 일본어 모어 화자를 타겟으로 한 한국어 오디오 트레이닝 서비스가 사업타당성이 있는 또 하나의 이유</strong>다.  </p><p id="5b1538b7-2a1c-4373-9a3f-62d26e1e44c4" class="" dir="auto">나아가 네이버는 현재 일본 시장을 타겟으로도 AI모델을 구축하고 있는데, 이러한 국내 기업의 사업 방향성과도 시너지를 낼 수 있는 서비스로서 추진력 및 시장 경쟁력을 선제적으로 확보할 수 있다.</p><figure id="20d12802-54c1-4a0d-843a-1b56d3f31c42" dir="ltr"><a href="https://www.etnews.com/20230315000220" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">네이버, 日 초대규모 AI 공략 &quot;신문 2700년치 일본어 학습&quot;</div><div class="bookmark-description">네이버가 관계사 라인과 함께 하이퍼클로바X를 이용해 일본 초대규모 인공지능(AI) 시장 공략에 속도를 낸다. 그동안 한국어 못지않게 일본어도 대규모로 학습한 경험이 있어 승산이 충분한 것으로 판단했다. 일본...</div></div><div class="bookmark-href"><img src="https://img.etnews.com/2019/mobile_et/images/favicon.png" class="icon bookmark-icon"/>https://www.etnews.com/20230315000220</div></div><img src="https://img.etnews.com/photonews/2303/1630810_20230315165923_076_0002.jpg" class="bookmark-image"/></a></figure><p id="bd692eee-67c7-4433-a7c0-1983a0733eb9" class="" dir="auto">
+</p><h1 id="c21e4b65-f587-4c60-9dbe-14a06c800155" class="" dir="auto">6. 최종 서비스 형태</h1><p id="faa0e7a7-63ee-4765-ab15-3d526f919afb" class="" dir="auto">아래와 같은 형태로, 오락성 문화 콘텐츠와 연계하되, 단순 회화 학습보다는 오디오 트레이닝을 중점적으로 학습 동기를 자극하면서도 해당 미디어 콘텐츠의 적합한 대사 등을 발췌하여 발음 학습 능률에 집중하도록 서비스. 단, 저작권 이슈가 해소되어야 할 것. </p><ul id="4960afe6-326c-4bc3-a839-075caf36e6f0" class="bulleted-list" dir="auto"><li style="list-style-type:disc">한국 드라마 대사로 배우는 한국어 (앱)<figure id="196428d5-d6cd-4a02-b786-bc164d099995" dir="ltr"><a href="https://play.google.com/store/apps/details?id=jp.jhmedia.dorakan" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">ドラマで学ぶ韓国語 - 名シーンとセリフで韓国語勉強 - Apps on Google Play</div><div class="bookmark-description">&quot;Korean Learning with Drama&quot; is a Hangul learning app for you who like Korean dramas. Become an actor and read the lines while watching the drama scenes.</div></div><div class="bookmark-href"><img src="https://app.notion.com//www.gstatic.com/android/market_images/web/favicon_v3.ico" class="icon bookmark-icon"/>https://play.google.com/store/apps/details?id=jp.jhmedia.dorakan</div></div><img src="https://play-lh.googleusercontent.com/1kIBYJ431hlrNCe8pwwvD_HnbPVKwmSPID9NcE-GXecYNOXqb-YZBWF_QurfGuyRkQ=w600-h300-pc0xffffff-pd" class="bookmark-image"/></a></figure></li></ul><ul id="a01398c5-3492-4b35-b81d-e375c6f05132" class="bulleted-list" dir="auto"><li style="list-style-type:disc">일본 애니로 배우는 일본어 (대학 강의)<figure id="a517b8ad-8988-4266-82e7-e63000309b43" dir="ltr"><a href="https://hypebeast.kr/2022/8/demon-slayer-kimetsu-no-yaiba-japanese-lecture-in-korea-university-news" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">고려대학교에 &#x27;귀멸의 칼날&#x27; 일본어 강의가 개설됐다</div><div class="bookmark-description">교수가 직접 &#x27;하입비스트&#x27;에 밝힌 수업 개설 이유는?</div></div><div class="bookmark-href"><img src="https://static.hypebeast.com/dist/hypebeast/favicon/apple-touch-icon-1024x1024.png?v4" class="icon bookmark-icon"/>https://hypebeast.kr/2022/8/demon-slayer-kimetsu-no-yaiba-japanese-lecture-in-korea-university-news</div></div><img src="https://image-cdn.hypb.st/https%3A%2F%2Fkr.hypebeast.com%2Ffiles%2F2022%2F08%2Fdemon-slayer-kimetsu-no-yaiba-japanese-lecture-in-korea-university-news-tw.jpg?w=960&amp;cbr=1&amp;q=90&amp;fit=max" class="bookmark-image"/></a></figure></li></ul><ul id="e3ac9efd-cd5c-438c-a013-0c16b94c9df2" class="bulleted-list" dir="auto"><li style="list-style-type:disc">한국 드라마 대사로 한국어 공부법<figure id="fdb35f68-78d5-4a8f-9eba-44fc3ec64df4" dir="ltr"><a href="https://www.kanko-gaigo.ac.jp/sp/helpful/tips069.html" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">駿台観光＆外語ビジネス専門学校｜スンダイ観光は就職に自信100％！</div><div class="bookmark-description">スンダイ観光は就職に自信100％！キャビンアテンダント・客室乗務員・グランドスタッフ・エアライン・ホテル・ブライダル・トラベル・鉄道・韓国語・英語…リアルな実習室＆インターンシップで即戦力＆経済的にサポート！</div></div><div class="bookmark-href">https://www.kanko-gaigo.ac.jp/sp/helpful/tips069.html</div></div><img src="https://www.kanko-gaigo.ac.jp/img/sundai001.jpg" class="bookmark-image"/></a></figure></li></ul><ul id="0eefd872-e2dd-4b5b-9e5d-538a96f8e204" class="bulleted-list" dir="auto"><li style="list-style-type:disc">한국 드라마 대사로 한국어 학습 시 주의사항<figure id="3692f0bd-ebd2-4dbd-b565-d1db9286b5ed" dir="ltr"><a href="https://allabout-kankoku.info/52/" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">韓国語の勉強に最適なオススメ韓国ドラマ5選！【2023年最新版】｜all about 韓国</div><div class="bookmark-description">[chat face=&quot;調べハム.jpg&quot; name=&quot;ハムくん&quot; align=&quot;left&quot; border=&quot;yello</div></div><div class="bookmark-href"><img src="https://allabout-kankoku.info/wp-content/uploads/2019/06/cropped-9DCDC1E6-DA18-4023-BE97-4CB03E052358-3-192x192.jpeg" class="icon bookmark-icon"/>https://allabout-kankoku.info/52/</div></div><img src="https://allabout-kankoku.info/wp-content/uploads/2019/06/オススメ-韓国ドラマ5選！-1.jpg" class="bookmark-image"/></a></figure></li></ul><p id="cc5e9001-2397-442a-a45d-e6e2df0e1d36" class="" dir="auto">
+</p><p id="a56945d1-d48d-40c8-8061-41758efc6b72" class="" dir="auto">
+</p><figure id="8cefa9f4-4774-4a42-ab76-7d53b5c4f6f7" class="link-to-page"><a href="https://app.notion.com/p/8cefa9f447744a42ab767d53b5c4f6f7?pvs=21" data-notion-page-id="8cefa9f4-4774-4a42-ab76-7d53b5c4f6f7" data-notion-space-id="ab946b8d-9d3f-48c2-ab50-67bd1914216a">아이디어 초안: 한국어를 학습하는 일본인들이 겪는 언어학적 어려움</a></figure><figure id="143a2fb8-d4be-8058-badf-f571661a0def" class="link-to-page"><a href="https://app.notion.com/p/legacy-143a2fb8d4be8058badff571661a0def?pvs=21" data-notion-page-id="143a2fb8-d4be-8058-badf-f571661a0def" data-notion-space-id="ab946b8d-9d3f-48c2-ab50-67bd1914216a">기술적 구현 아이디어 (legacy)</a></figure><figure id="221e5705-6aad-40f8-9c1c-734bd666ba68" class="link-to-page"><a href="https://app.notion.com/p/221e57056aad40f89c1c734bd666ba68?pvs=21" data-notion-page-id="221e5705-6aad-40f8-9c1c-734bd666ba68" data-notion-space-id="ab946b8d-9d3f-48c2-ab50-67bd1914216a">참고자료 </a></figure></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

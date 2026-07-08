@@ -8,3 +8,4 @@ google-genai
 matplotlib
 imageio-ffmpeg
 edge-tts
+kiwipiepy
