@@ -174,7 +174,7 @@ streamlit run app.py
 2. Confirm the target sentence; its standard surface pronunciation and IPA are shown immediately.
 3. Listen to native reference audio (edge-tts neural voices: SunHi / InJoon / Hyunsu).
 4. Record with the browser mic or upload a file, then run the analysis.
-5. Review the 4-channel contrastive view, the jamo-level diff, and the Japanese coaching feedback.
+5. Review the 4-channel contrastive view, the jamo-level diff, and the Japanese coaching feedback. Click on the error tags to instantly play back the exact timestamp of the mispronunciation via Wav2Vec2-CTC forced alignment.
 
 ![Analysis result](docs/assets/demo_result.png)
 
@@ -194,7 +194,6 @@ Known limitations of the rule engine (documented in [`src/g2p.py`](src/g2p.py)):
 - Morphology-conditioned rules depend on Kiwipiepy's POS disambiguation; genuinely ambiguous eojeols (e.g. bare 신고: noun [신고] vs verb [신꼬]) resolve to Kiwi's most probable reading
 
 Planned:
-- **Forced alignment** (CTC segmentation) to localize errors in time and play back the offending segment
 - **K-drama shadowing mode** — preset target sentences from popular content
 - **Fine-tuning Wav2Vec2 on Japanese-accented L2 Korean speech** — primary candidate: [AI-Hub 외국인 한국어 발화 음성 데이터](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=505) (includes Japanese-L1 speakers) — to attack the ASR-error confound documented in Experiments 2 and 4
 

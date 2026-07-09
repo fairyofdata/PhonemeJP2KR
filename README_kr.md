@@ -159,7 +159,7 @@ streamlit run app.py
 2. 목표 문장 확인 — 표준 표면 발음과 IPA가 즉시 표시됩니다
 3. 원어민 참조 음성 듣기 (edge-tts 뉴럴 보이스: SunHi / InJoon / Hyunsu)
 4. 브라우저 마이크 녹음 또는 파일 업로드 후 분석 실행
-5. 4채널 대조 뷰, 자모 수준 diff, 일본어 코칭 피드백 확인
+5. 4채널 대조 뷰, 자모 수준 diff, 일본어 코칭 피드백 확인 (오류 태그 클릭 시 Wav2Vec2-CTC 강제 정렬에 의해 해당 타임스탬프 오디오 즉시 재생)
 
 ![분석 결과](docs/assets/demo_result.png)
 
@@ -179,7 +179,6 @@ python -m pytest tests/ -q
 - 형태음운 규칙은 Kiwipiepy의 품사 중의성 해소에 의존 — 진성 중의 어절(예: 단독 '신고': 명사 [신고] vs 동사 [신꼬])은 Kiwi의 최우선 해석을 따름
 
 향후 예정된 기능:
-- **강제 정렬 (Forced alignment)** (CTC segmentation): 오류 발생 지점을 시간 축에서 특정하여 해당 구간만 다시 듣기
 - **K-드라마 섀도잉 모드**: 인기 콘텐츠에서 추출한 목표 문장 프리셋 제공
 - **일본어 억양 L2 한국어 음성으로 Wav2Vec2 파인튜닝**: 1차 후보는 [AI-Hub 외국인 한국어 발화 음성 데이터](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=505)(일본어 모어 화자 포함) — 실험 2·4에서 문서화된 ASR 오류 교란을 공략
 
