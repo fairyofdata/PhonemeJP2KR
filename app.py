@@ -88,6 +88,7 @@ def run_analysis(target: str, audio_bytes: bytes) -> dict:
         "diff_markdown": render_diff_markdown(report.pairs),
         "error_tags": report.error_tags,
         "waveform": waveform,
+        "audio_bytes": audio_bytes,
         "llm": None,
         "llm_error": None,
     }
@@ -155,6 +156,85 @@ def render_result(res: dict):
     st.markdown("### 🧬 音素レベル差分 (Target vs 実際の発音)")
     st.caption("上段: 目標のjamo列 / 下段: 実際に発音されたjamo列（**太字** = 不一致、· = 欠落/挿入）")
     st.markdown(res["diff_markdown"])
+
+    error_tags = res.get("error_tags", [])
+    timestamped_errors = [t for t in error_tags if "timestamp" in t]
+    
+    if timestamped_errors and "audio_bytes" in res:
+        import base64
+        import streamlit.components.v1 as components
+        
+        b64_audio = base64.b64encode(res["audio_bytes"]).decode()
+        audio_src = f"data:audio/wav;base64,{b64_audio}"
+        
+        html_code = f"""
+        <style>
+            .error-btn {{
+                background-color: #ff4b4b;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                margin: 4px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: background 0.3s;
+                font-family: sans-serif;
+            }}
+            .error-btn:hover {{
+                background-color: #ff3333;
+            }}
+            .player-container {{
+                margin-top: 20px;
+                padding: 15px;
+                background-color: #f0f2f6;
+                border-radius: 8px;
+                color: #31333F;
+            }}
+            .player-container h4 {{
+                margin-top: 0;
+                margin-bottom: 15px;
+                font-family: sans-serif;
+            }}
+        </style>
+        <div class="player-container">
+            <h4>▶️ 発音エラーのタイミングを確認 (クリックで再生)</h4>
+            <audio id="coach-player" controls style="width: 100%; margin-bottom: 10px;">
+                <source src="{audio_src}" type="audio/wav">
+            </audio>
+            <div>
+        """
+        
+        for err in timestamped_errors:
+            t = err["timestamp"]
+            tag = err.get("tag", "error")
+            ref = err.get("ref", "")
+            hyp = err.get("hyp", "")
+            if ref and hyp:
+                label = f"[{t:.2f}s] {tag} ({ref}→{hyp})"
+            elif ref:
+                label = f"[{t:.2f}s] {tag} ({ref} 脱落)"
+            elif hyp:
+                label = f"[{t:.2f}s] {tag} ({hyp} 挿入)"
+            else:
+                label = f"[{t:.2f}s] {tag}"
+            
+            # Start 0.1s before the error for better context
+            seek_time = max(0.0, t - 0.1)
+            html_code += f'<button class="error-btn" onclick="seekAndPlay({seek_time})">{label}</button>\\n'
+            
+        html_code += """
+            </div>
+        </div>
+        <script>
+        function seekAndPlay(time) {
+            const player = document.getElementById('coach-player');
+            player.currentTime = time;
+            player.play();
+        }
+        </script>
+        """
+        components.html(html_code, height=220)
 
     st.write("---")
     st.subheader("💡 専門家フィードバック (Gemini)")
