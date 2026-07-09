@@ -50,3 +50,8 @@ app.db
 vertex_key_new.md
 Project_Evaluation.md
 *.pdf
+
+# Planning-doc source dumps (kept local, never committed)
+extracted_docs/
+*.zip
+output_test.txt

@@ -8,4 +8,4 @@ google-genai
 matplotlib
 imageio-ffmpeg
 edge-tts
-kiwipiepy
+kiwipiepy==0.23.2  # pinned: morphology layer must stay deterministic across installs

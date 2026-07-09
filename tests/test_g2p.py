@@ -43,17 +43,39 @@ from src.g2p import to_surface, to_ipa, to_jamo_sequence
     ("학교", "학꾜"),
     ("국밥", "국빱"),
     ("읽다", "익따"),
-    
-    # morphology-dependent rules (kiwipiepy integration)
+    # morphology-conditioned: liaison exceptions (§15 & §15 다만)
     ("맛없다", "마덥따"),
-    ("맛있다", "만닏따"),  # both 마싣따/만닏따 are standard; our rule strictly applies ㄴ-insertion
+    ("맛있다", "마싣따"),   # §15 다만 lexical exception (마싣따/마딛따 both standard)
+    ("멋있다", "머싣따"),
+    ("헛웃음", "허두슴"),
+    ("값어치", "가버치"),
+    # morphology-conditioned: ㄴ-insertion (§29)
     ("꽃잎", "꼰닙"),
+    ("나뭇잎", "나문닙"),
+    ("풀잎", "풀립"),
     ("물약", "물략"),
+    ("색연필", "생년필"),
+    ("식용유", "시굥뉴"),
+    ("한여름", "한녀름"),
+    ("맨입", "맨닙"),
+    ("솜이불", "솜니불"),
+    ("서울역", "서울력"),
+    # morphology-conditioned: stem tensification & coda choice (§24-25, §10-11 단서)
     ("신다", "신따"),
+    ("안고", "안꼬"),
     ("넓게", "널께"),
     ("읽고", "일꼬"),
     ("밟다", "밥따"),
-    
+    ("밟아", "발바"),      # before a vowel the ㄼ cluster liaisons normally
+    # morphology-conditioned: ㄴ+ㄹ → [ㄴㄴ] in Sino-Korean derivation (§20 다만)
+    ("의견란", "의견난"),
+    # regression guards: boundaries that must NOT trigger morphology rules
+    ("학생입니다", "학쌩임니다"),   # copula 이- is bound: no ㄴ-insertion
+    ("책입니다", "채김니다"),
+    ("절약", "저략"),              # Sino-Korean single morphemes: plain liaison
+    ("선약", "서냑"),
+    ("밀약", "미략"),
+    ("한류", "할류"),              # lateralization intact where §20 다만 does not apply
     # multi-word sentences (word-internal rules only)
     ("만나서 반갑습니다", "만나서 반갑씀니다"),
     ("안녕하세요", "안녕하세요"),

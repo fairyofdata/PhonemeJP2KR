@@ -13,11 +13,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      # The linguistic core (g2p, scoring) is dependency-free, so the test
-      # job stays fast: no torch/transformers install needed.
+      # The linguistic core needs only kiwipiepy (morphology layer), so the
+      # test job stays fast: no torch/transformers install needed.
       - name: Install test dependencies
-        run: pip install pytest
-      - name: Unit tests (G2P rules, alignment, error taxonomy)
+        run: pip install pytest kiwipiepy==0.23.2
+      - name: Unit tests (G2P rules, morphology, alignment, error taxonomy)
         run: python -m pytest tests/ -q
-      - name: G2P held-out regression gate (in-scope must stay 100%)
+      - name: G2P held-out regression gate (core & morph must stay 100%)
         run: python experiments/exp3_g2p_heldout.py --check

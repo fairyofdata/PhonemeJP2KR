@@ -5,8 +5,10 @@ as a pure-Python rule pipeline, then maps the resulting surface form to
 IPA with basic allophony. Being rule-based, the output is fully
 deterministic and reproducible — unlike LLM-generated transcriptions.
 
-Pipeline order (applied to decomposed jamo syllables):
-    0. Morphological Preprocessing (Kiwipiepy rules)
+Pipeline order:
+    0. Morphology-conditioned rewrite (src/morphology.py, optional)
+       ㄴ-insertion §29, stem tensification §24-25, coda overrides
+       §10-11 단서, liaison blocking §15, ㄴ+ㄹ→[ㄴㄴ] §20 다만
     1. ㅎ-cluster rules      (aspiration, ㅎ-deletion)        표준발음법 12항
     2. Palatalization        (굳이 → 구지, 같이 → 가치)        표준발음법 17항
     3. Liaison               (한국어 → 한구거)                 표준발음법 13-14항
@@ -14,18 +16,13 @@ Pipeline order (applied to decomposed jamo syllables):
     5. Post-obstruent tensification (학교 → 학꾜)              표준발음법 23항
     6. Nasal/liquid assimilation (합니다 → 함니다, 신라 → 실라) 표준발음법 18-20항
 
-Now handles previously known limitations using morphological POS tagging:
-    - ㄴ-insertion in compounds (꽃잎 → [꼰닙])
-    - Context-dependent 겹받침 choice (밟다 → [밥따], 읽고 → [일꼬])
-    - Vocative/semantic liaison exceptions (맛없다 → [마덥따])
-    - Verb/Adjective stem tensification (신다 → [신따], 넓게 → [널께])
-"""
+Steps 1-6 are pure, dependency-free, context-free rules. Step 0 needs
+the Kiwipiepy POS tagger; without it the engine degrades gracefully to
+the context-free pipeline (see src/morphology.py for the rule split).
 
-try:
-    from kiwipiepy import Kiwi
-    _kiwi = Kiwi()
-except ImportError:
-    _kiwi = None
+Remaining known limitations (need semantics, not just morphology):
+    - 사잇소리 tensification in native compounds (강가 → [강까])
+"""
 
 CHOSEONG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
 JUNGSEONG = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ"
@@ -226,89 +223,29 @@ def _word_to_surface(syls):
     return syls
 
 
-def _preprocess_morphology(text: str) -> str:
-    """Apply morphology-dependent phonological rules using Kiwipiepy."""
-    if _kiwi is None:
-        return text
-        
-    words = text.split(" ")
-    out_words = []
-    
-    for word in words:
-        if not word:
-            out_words.append("")
-            continue
-            
-        chars = list(word)
-        
-        # Patch for known compound roots that Kiwi lumps into single tokens
-        for i in range(len(chars) - 1):
-            if is_hangul_syllable(chars[i]) and decompose(chars[i])[2]:  # preceding char has coda
-                if chars[i+1] == "잎": chars[i+1] = "닢"
-                elif chars[i+1] == "약": chars[i+1] = "냑"
-                
-        tokens = _kiwi.tokenize("".join(chars), split_complex=True)
-        
-        for i in range(len(tokens) - 1):
-            t1, t2 = tokens[i], tokens[i+1]
-            
-            # Ensure tokens are adjacent in the original string
-            if t1.start + t1.len != t2.start:
-                continue
-                
-            c1_idx = t1.start + t1.len - 1
-            c2_idx = t2.start
-            
-            char1 = chars[c1_idx]
-            char2 = chars[c2_idx]
-            
-            if not (is_hangul_syllable(char1) and is_hangul_syllable(char2)):
-                continue
-                
-            cho1, jung1, jong1 = decompose(char1)
-            cho2, jung2, jong2 = decompose(char2)
-            
-            is_t1_verb = t1.tag.startswith('V')
-            # For phonology, Suffixes (XS) often act as substantives (e.g., 식용유 -> 시굥뉴)
-            # so we only consider Josa and Eomi as formal.
-            is_t2_formal = t2.tag.startswith('J') or t2.tag.startswith('E')
-            is_t2_eomi = t2.tag.startswith('E')
-            
-            # 1. ㄴ-insertion (ㄴ 첨가) - Rule 29
-            # Preceding ends in consonant, following is substantive starting with 이,야,여,요,유
-            if jong1 and not is_t2_formal and cho2 == "ㅇ" and jung2 in ("ㅣ", "ㅑ", "ㅕ", "ㅛ", "ㅠ", "ㅒ", "ㅖ"):
-                chars[c2_idx] = compose("ㄴ", jung2, jong2)
-                cho2 = "ㄴ"
-                
-            # 2. Verb/Adjective Stem Tensification (어간 경음화) - Rules 24, 25
-            if is_t1_verb and is_t2_eomi and cho2 in TENSE:
-                if jong1 in ("ㄴ", "ㄵ", "ㅁ", "ㄻ", "ㄼ", "ㄾ"):
-                    chars[c2_idx] = compose(TENSE[cho2], jung2, jong2)
-                elif jong1 == "ㄺ" and cho2 == "ㄱ":
-                    chars[c1_idx] = compose(cho1, jung1, "ㄹ")
-                    chars[c2_idx] = compose("ㄲ", jung2, jong2)
-                    
-            # 2-b. 밟다 / 넓다 special coda (Rule 10 exception)
-            if is_t1_verb and jong1 == "ㄼ":
-                if char1 == "밟":
-                    chars[c1_idx] = compose(cho1, jung1, "ㅂ")
-                    
-            # 3. Meaningful Liaison Exception (의미 경계 연음 예외) - Rule 15
-            # t1 ends in consonant, t2 is substantive starting with ㅏ,ㅓ,ㅗ,ㅜ,ㅟ
-            if jong1 and not is_t2_formal and cho2 == "ㅇ" and jung2 in ("ㅏ", "ㅓ", "ㅗ", "ㅜ", "ㅟ"):
-                neutral_coda = CODA_NEUTRAL.get(jong1, jong1)
-                chars[c1_idx] = compose(cho1, jung1, neutral_coda)
-                
-        out_words.append("".join(chars))
-        
-    return " ".join(out_words)
+# --- morphology hook ---------------------------------------------------------
+
+_morphology = None  # resolved lazily: module | False (unavailable)
+
+
+def _pronunciation_spelling(text: str) -> str:
+    """Morphology-conditioned rewrite (see src/morphology.py); identity
+    when kiwipiepy is not installed."""
+    global _morphology
+    if _morphology is None:
+        try:
+            from . import morphology
+            _morphology = morphology
+        except ImportError:
+            _morphology = False
+    return _morphology.apply(text) if _morphology else text
 
 
 # --- public API -------------------------------------------------------------
 
 def to_surface(text: str) -> str:
     """Orthographic text → surface pronunciation in Hangul (감사합니다 → 감사함니다)."""
-    text = _preprocess_morphology(text)
+    text = _pronunciation_spelling(text)
     words = [_word_to_surface(w) for w in _tokenize(text)]
     return " ".join("".join(compose(*s) for s in w) for w in words)
 
@@ -319,7 +256,7 @@ def to_jamo_sequence(text: str):
     Spaces and punctuation are excluded so the score is insensitive to
     tokenization differences between ASR outputs.
     """
-    text = _preprocess_morphology(text)
+    text = _pronunciation_spelling(text)
     seq = []
     for word in (_word_to_surface(w) for w in _tokenize(text)):
         for cho, jung, jong in word:
@@ -337,7 +274,7 @@ def to_ipa(text: str) -> str:
     Allophony implemented: intervocalic lenis voicing (k→ɡ etc.) and
     ㅅ/ㅆ palatalization before front-glide vowels (s→ɕ).
     """
-    text = _preprocess_morphology(text)
+    text = _pronunciation_spelling(text)
     words = [_word_to_surface(w) for w in _tokenize(text)]
     out_words = []
     for word in words:

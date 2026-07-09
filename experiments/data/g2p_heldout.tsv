@@ -2,8 +2,11 @@
 # Gold labels follow 표준발음법 (Standard Korean Pronunciation) as listed in
 # the 표준국어대사전 pronunciation field.
 # Columns: scope <TAB> orthography <TAB> gold_surface
-# scope: core = rule categories implemented by the engine
-#        oos  = out-of-scope (requires morphological analysis; documented limitation)
+# scope: core  = context-free phonological rules (no morphology needed)
+#        morph = morphology-conditioned rules (need the Kiwipiepy layer;
+#                regression gate for src/morphology.py)
+#        oos   = out-of-scope (need semantics, e.g. 사잇소리 tensification
+#                in native compounds; documented limitation)
 core	꽃	꼳
 core	밖	박
 core	젖	젇
@@ -55,12 +58,25 @@ core	정말 고맙습니다	정말 고맙씀니다
 core	잘 먹겠습니다	잘 먹껟씀니다
 core	처음 뵙겠습니다	처음 뵙껟씀니다
 core	어떻게 지내세요	어떠케 지내세요
-oos	앉고	안꼬
-oos	신고	신꼬
-oos	밟다	밥따
-oos	넓게	널께
-oos	꽃잎	꼰닙
-oos	색연필	생년필
-oos	맨입	맨닙
-oos	의견란	의견난
-oos	맛없다	마덥따
+morph	앉고	안꼬
+morph	신발을 신고	신바를 신꼬
+morph	껴안고	껴안꼬
+morph	밟다	밥따
+morph	넓게	널께
+morph	꽃잎	꼰닙
+morph	깻잎	깬닙
+morph	콩잎	콩닙
+morph	알약	알략
+morph	색연필	생년필
+morph	맨입	맨닙
+morph	한입	한닙
+morph	담요	담뇨
+morph	콩엿	콩녇
+morph	의견란	의견난
+morph	맛없다	마덥따
+morph	맛있는 김치	마신는 김치
+oos	강가	강까
+oos	문고리	문꼬리
+oos	밤길	밤낄
+oos	술잔	술짠
+oos	산새	산쌔

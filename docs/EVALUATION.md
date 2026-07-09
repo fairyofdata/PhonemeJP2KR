@@ -82,25 +82,32 @@ recordings of Japanese learners; see Future Work.
 **Question.** The rule engine was developed against ~30 textbook examples
 (now unit tests). Does it generalize to unseen items?
 
-**Method.** A 60-item evaluation set disjoint from the development/test
-examples, gold labels from 표준국어대사전 pronunciation fields:
-51 items within the engine's rule scope, 9 items requiring morphological
-analysis (out of scope by design). Data:
+**Method.** A 73-item evaluation set with gold labels from 표준국어대사전
+pronunciation fields, in three buckets: 51 items exercising the
+context-free rule pipeline (disjoint from the unit-test examples),
+17 items exercising the morphology-conditioned layer (added with
+`src/morphology.py`; serves as its regression gate), and 5 items that are
+out of scope by design (사잇소리 tensification in native compounds, which
+needs semantic compound analysis). Data:
 [`experiments/data/g2p_heldout.tsv`](../experiments/data/g2p_heldout.tsv).
-This benchmark runs in CI as a regression gate (`--check`).
+The core and morph buckets run in CI as a regression gate (`--check`).
 
 **Results.**
 
 | Bucket | Accuracy |
 |---|---|
-| In-scope (core phonological rules) | **51/51 = 100%** |
-| Out-of-scope (morphology-dependent) | 0/9 = 0% (expected) |
+| Core (context-free phonological rules) | **51/51 = 100%** |
+| Morph (morphology-conditioned, Kiwipiepy layer) | **17/17 = 100%** |
+| Out-of-scope (semantics-dependent 사잇소리) | 0/5 = 0% (expected) |
 
-Out-of-scope failures are exactly the documented limitation categories:
-stem-final nasal tensification (앉고→[안꼬]), exceptional cluster resolution
-(밟다→[밥따]), ㄴ-insertion in compounds (꽃잎→[꼰닙]), and
-semantic-boundary liaison (맛없다→[마덥따]). Fixing these requires a
-morphological analyzer, which is on the roadmap.
+The morphology-conditioned bucket covers the categories that were
+out-of-scope failures before the Kiwipiepy layer existed: ㄴ-insertion
+(꽃잎→[꼰닙]), stem tensification with POS disambiguation in context
+(신발을 신고→[신바를 신꼬] vs the noun 신고→[신고]), exceptional cluster
+resolution (밟다→[밥따]), liaison blocking (맛없다→[마덥따]), and
+Sino-Korean ㄴ+ㄹ→[ㄴㄴ] (의견란→[의견난]). Remaining out-of-scope items
+(강가→[강까], 밤길→[밤낄]) require knowing whether a compound is a native
+사잇소리 compound — information not present in POS tags.
 
 **Note on library comparison.** A head-to-head with `g2pK` was attempted but
 the library cannot be installed on Windows/Python 3.13 (its `python-mecab-ko`

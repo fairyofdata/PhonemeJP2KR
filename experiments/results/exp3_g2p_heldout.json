@@ -5,54 +5,40 @@
     "failures": [],
     "accuracy": 1.0
   },
+  "morph": {
+    "n": 17,
+    "correct": 17,
+    "failures": [],
+    "accuracy": 1.0
+  },
   "oos": {
-    "n": 9,
+    "n": 5,
     "correct": 0,
     "failures": [
       {
-        "orthography": "앉고",
-        "gold": "안꼬",
-        "pred": "안고"
+        "orthography": "강가",
+        "gold": "강까",
+        "pred": "강가"
       },
       {
-        "orthography": "신고",
-        "gold": "신꼬",
-        "pred": "신고"
+        "orthography": "문고리",
+        "gold": "문꼬리",
+        "pred": "문고리"
       },
       {
-        "orthography": "밟다",
-        "gold": "밥따",
-        "pred": "발다"
+        "orthography": "밤길",
+        "gold": "밤낄",
+        "pred": "밤길"
       },
       {
-        "orthography": "넓게",
-        "gold": "널께",
-        "pred": "널게"
+        "orthography": "술잔",
+        "gold": "술짠",
+        "pred": "술잔"
       },
       {
-        "orthography": "꽃잎",
-        "gold": "꼰닙",
-        "pred": "꼬칩"
-      },
-      {
-        "orthography": "색연필",
-        "gold": "생년필",
-        "pred": "새견필"
-      },
-      {
-        "orthography": "맨입",
-        "gold": "맨닙",
-        "pred": "매닙"
-      },
-      {
-        "orthography": "의견란",
-        "gold": "의견난",
-        "pred": "의결란"
-      },
-      {
-        "orthography": "맛없다",
-        "gold": "마덥따",
-        "pred": "마섭따"
+        "orthography": "산새",
+        "gold": "산쌔",
+        "pred": "산새"
       }
     ],
     "accuracy": 0.0
