@@ -16,11 +16,12 @@
 3. [Architecture](#architecture)
 4. [The Deterministic G2P Engine](#the-deterministic-g2p-engine)
 5. [Scoring & L1 Error Taxonomy](#scoring--l1-error-taxonomy)
-6. [Empirical Validation](#empirical-validation)
-7. [Installation](#installation)
-8. [Usage](#usage)
-9. [Testing](#testing)
-10. [Limitations & Roadmap](#limitations--roadmap)
+6. [Academic Background](#academic-background)
+7. [Empirical Validation](#empirical-validation)
+8. [Installation](#installation)
+9. [Usage](#usage)
+10. [Testing](#testing)
+11. [Limitations & Roadmap](#limitations--roadmap)
 
 ---
 
@@ -79,7 +80,17 @@ flowchart TD
 | Post-obstruent tensification | §23 | 학교 → [학꾜], 국밥 → [국빱] |
 | Nasal / liquid assimilation | §18–20 | 합니다 → [함니다], 신라 → [실라], 독립 → [동닙] |
 
-The surface form is then mapped to IPA with basic allophony (intervocalic lenis voicing /k/→[ɡ], ㅅ-palatalization [s]→[ɕ] before front glides): `만나서 반갑습니다` → `/mannasʌ panɡap̚s͈ɯmnida/`.
+Rules that depend on *morpheme boundaries* — invisible to a context-free engine — are handled by a separate layer, [`src/morphology.py`](src/morphology.py), which uses the Kiwipiepy POS tagger (version-pinned for determinism) to rewrite the orthography into a pronunciation spelling before the pipeline runs. The copula/ending distinction matters: naive boundary detection turns 학생입니다 into \*[학쌩님니다]; this layer keeps it [학쌩임니다].
+
+| Morphology-conditioned rule | 표준발음법 | Example |
+|---|---|---|
+| ㄴ-insertion at compound boundaries | §29 | 꽃잎 → [꼰닙], 한여름 → [한녀름] |
+| Verb-stem tensification | §24–25 | 신다 → [신따], 넓게 → [널께] |
+| Stem coda choices | §10–11 단서 | 밟다 → [밥따], 읽고 → [일꼬] |
+| Liaison blocking before lexical morphemes | §15 | 맛없다 → [마덥따] (§15 다만: 맛있다 → [마싣따]) |
+| ㄴ+ㄹ → [ㄴㄴ] in Sino-Korean derivation | §20 다만 | 의견란 → [의견난] (vs 신라 → [실라]) |
+
+Without Kiwipiepy installed the engine degrades gracefully to the context-free pipeline. The surface form is then mapped to IPA with basic allophony (intervocalic lenis voicing /k/→[ɡ], ㅅ-palatalization [s]→[ɕ] before front glides): `만나서 반갑습니다` → `/mannasʌ panɡap̚s͈ɯmnida/`.
 
 Because **both** the target and the ASR hypothesis pass through the same G2P, orthographic variance is neutralized — e.g. *감사합니다* and its surface spelling *감사함니다* score identically (100), as they should.
 
@@ -101,15 +112,37 @@ Because **both** the target and the ASR hypothesis pass through the same G2P, or
 
 These structured tags — not raw strings — are what the LLM receives, so its feedback cites concrete evidence instead of guessing.
 
+## Academic Background
+
+The rule-based L1 classifier is grounded in contrastive-phonology studies of Japanese learners of Korean; each error tag in `src/scoring.py` corresponds to an empirically documented phenomenon:
+
+- **Vowel epenthesis & open resyllabification (`vowel_epenthesis`, `coda_deletion`)**: Japanese learners map Korean codas onto the moraic templates /Q/ (促音) and /N/ (撥音), repairing CVC into CV.CV; longitudinal spontaneous-speech data confirms open syllabification and final-consonant deletion as persistent error classes.
+  - 🔗 [중국어와 일본어 모어 화자의 한국어 음절 종성 산출 차이 연구 (장향실, 우리어문연구, 2016)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE10761462)
+  - 🔗 [음절 연쇄에서 나타나는 일본인 학습자의 한국어 종성 발음 유형 (하호빈·이화진, 언어사실과 관점, 2019)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE09235049)
+  - 🔗 [일본인 학습자의 한국어 발음 오류에 대한 종적 연구 (이화진, 2021)](https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002730504)
+- **Mora-timed rhythm transfer**: acoustic metrics (%V, VarcoV, VarcoS) show that even advanced Japanese learners produce Korean with mora-timed rhythm, deviating most in closed syllables with nasal codas — precisely the environments the jamo alignment flags.
+  - 🔗 [Native language interference in producing the Korean rhythmic structure: Focusing on Japanese (Phonetics and Speech Sciences 10(4))](https://www.eksss.org/archive/view_article?pid=pss-10-4-45)
+- **Nasal over-assimilation (`nasal_coda_confusion`)**: when nasalization is required, Japanese learners redundantly copy the place of articulation from the following consonant (redundant place assimilation).
+  - 🔗 [한국어 비음화의 오류 유형과 원인 분석 (이화진, 언어사실과 관점, 2018)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE08838909)
+- **Vowel-inventory mergers (`vowel_ʌ_o_confusion`, `vowel_ɯ_u_confusion`)**: the absence of /ʌ/ and /ɯ/ in the Japanese vowel system causes systematic mergers.
+  - 🔗 [모음 체계와 자질에 의한 일본인 학습자의 한국어 모음 발음 분석 (KCI)](https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002158469)
+- **Text-level similarity as an intelligibility proxy**: recent work shows that scoring L2 Korean speech by morpheme-level similarity between the reference and the ASR transcript tracks native listeners' comprehension better than off-the-shelf pronunciation-scoring APIs — independent support for this project's choice to score jamo-level similarity over ASR output rather than trust a single black-box score.
+  - 🔗 [형태소 분석기반 외국인 발화 한국어 발음평가 개선 방법 (DBpia)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11438586)
+
+For the full bibliography with abstracts, see [`docs/REFERENCES.md`](docs/REFERENCES.md).
+
 ## Empirical Validation
 
-Three reproducible experiments ([`experiments/`](experiments/), full report in [docs/EVALUATION.md](docs/EVALUATION.md)):
+Four reproducible experiments ([`experiments/`](experiments/), full report in [docs/EVALUATION.md](docs/EVALUATION.md)):
 
 | # | Question | Result |
 |---|---|---|
 | 1 | Is LLM-generated IPA a valid scorer? | **No** — on identical input, the v1 LLM scorer fluctuated 89–93 (sd 1.45) across 10 runs, producing 4 different IPA transcriptions of the same word. The deterministic scorer: sd 0.0. |
 | 2 | Does the pipeline detect injected L1 errors? (TTS perturbation study) | **80% pairwise ranking accuracy** over 10 sentence pairs; mean gap 10.3 points. Both failures trace to the documented ASR-error confound and are analyzed in the report. |
-| 3 | Does the G2P engine generalize beyond its dev examples? | **100% (51/51)** on a held-out 표준발음법 set; 0/9 on morphology-dependent items, exactly matching the documented scope. Runs in CI as a regression gate. |
+| 3 | Does the G2P engine generalize beyond its dev examples? | **100% (51/51)** on held-out context-free rules and **100% (17/17)** on morphology-conditioned items; 0/5 on semantics-dependent 사잇소리 items, matching the documented scope. Runs in CI as a regression gate. |
+| 4 | Does the score track error *severity*? (graded 0–3 injection) | **Spearman ρ = −0.702** [95% CI −0.928, −0.325]; mean score strictly decreasing by severity (91.8→74.8), 87% monotonic steps. |
+
+The decisive human-rater correlation study is fully designed and harness-ready (protocol: [docs/HUMAN_EVAL_PROTOCOL.md](docs/HUMAN_EVAL_PROTOCOL.md), self-tested analysis script: [`experiments/exp5_human_correlation.py`](experiments/exp5_human_correlation.py)) — it awaits L2 recordings.
 
 ## Installation
 
@@ -147,7 +180,7 @@ streamlit run app.py
 
 ## Testing
 
-The linguistic core is fully unit-tested (47 tests): 30+ surface-form conversions verified against Standard Korean pronunciation, IPA mapping, alignment ops, and every L1 error tag.
+The linguistic core is fully unit-tested (82 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, statistics helpers, and every L1 error tag.
 
 ```bash
 pip install -r requirements-dev.txt
@@ -156,16 +189,14 @@ python -m pytest tests/ -q
 
 ## Limitations & Roadmap
 
-Known limitations of the rule engine (documented in [`src/g2p.py`](src/g2p.py)) — all require morphological analysis:
-- ㄴ-insertion in compounds (꽃잎 → [꼰닙])
-- Context-dependent cluster resolution (밟다 → [밥따] vs 여덟 → [여덜])
-- Semantic-boundary liaison exceptions (맛없다 → [마덥따])
+Known limitations of the rule engine (documented in [`src/g2p.py`](src/g2p.py)):
+- 사잇소리 tensification in native compounds (강가 → [강까], 밤길 → [밤낄]) — requires semantic compound analysis, beyond POS tagging
+- Morphology-conditioned rules depend on Kiwipiepy's POS disambiguation; genuinely ambiguous eojeols (e.g. bare 신고: noun [신고] vs verb [신꼬]) resolve to Kiwi's most probable reading
 
 Planned:
-- **Forced alignment** (e.g. CTC segmentation) to localize errors in time and play back the offending segment
+- **Forced alignment** (CTC segmentation) to localize errors in time and play back the offending segment
 - **K-drama shadowing mode** — preset target sentences from popular content
-- **Fine-tuning Wav2Vec2** on Japanese-accented Korean speech for accent-aware acoustic modeling
-- Morpheme-aware G2P via a Korean morphological analyzer
+- **Fine-tuning Wav2Vec2 on Japanese-accented L2 Korean speech** — primary candidate: [AI-Hub 외국인 한국어 발화 음성 데이터](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=505) (includes Japanese-L1 speakers) — to attack the ASR-error confound documented in Experiments 2 and 4
 
 ## License
 

@@ -5,7 +5,10 @@ as a pure-Python rule pipeline, then maps the resulting surface form to
 IPA with basic allophony. Being rule-based, the output is fully
 deterministic and reproducible — unlike LLM-generated transcriptions.
 
-Pipeline order (applied to decomposed jamo syllables):
+Pipeline order:
+    0. Morphology-conditioned rewrite (src/morphology.py, optional)
+       ㄴ-insertion §29, stem tensification §24-25, coda overrides
+       §10-11 단서, liaison blocking §15, ㄴ+ㄹ→[ㄴㄴ] §20 다만
     1. ㅎ-cluster rules      (aspiration, ㅎ-deletion)        표준발음법 12항
     2. Palatalization        (굳이 → 구지, 같이 → 가치)        표준발음법 17항
     3. Liaison               (한국어 → 한구거)                 표준발음법 13-14항
@@ -13,10 +16,12 @@ Pipeline order (applied to decomposed jamo syllables):
     5. Post-obstruent tensification (학교 → 학꾜)              표준발음법 23항
     6. Nasal/liquid assimilation (합니다 → 함니다, 신라 → 실라) 표준발음법 18-20항
 
-Known limitations (require morphological analysis, out of scope):
-    - ㄴ-insertion in compounds (꽃잎 → [꼰닙])
-    - Context-dependent 겹받침 choice (밟다 → [밥따] vs 여덟 → [여덜])
-    - Vocative/semantic liaison exceptions (맛없다 → [마덥따])
+Steps 1-6 are pure, dependency-free, context-free rules. Step 0 needs
+the Kiwipiepy POS tagger; without it the engine degrades gracefully to
+the context-free pipeline (see src/morphology.py for the rule split).
+
+Remaining known limitations (need semantics, not just morphology):
+    - 사잇소리 tensification in native compounds (강가 → [강까])
 """
 
 CHOSEONG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
@@ -218,28 +223,81 @@ def _word_to_surface(syls):
     return syls
 
 
+# --- morphology hook ---------------------------------------------------------
+
+_morphology = None  # resolved lazily: module | False (unavailable)
+
+
+def _pronunciation_spelling(text: str) -> str:
+    """Morphology-conditioned rewrite (see src/morphology.py); identity
+    when kiwipiepy is not installed."""
+    global _morphology
+    if _morphology is None:
+        try:
+            from . import morphology
+            _morphology = morphology
+        except ImportError:
+            _morphology = False
+    return _morphology.apply(text) if _morphology else text
+
+
 # --- public API -------------------------------------------------------------
 
 def to_surface(text: str) -> str:
     """Orthographic text → surface pronunciation in Hangul (감사합니다 → 감사함니다)."""
+    text = _pronunciation_spelling(text)
     words = [_word_to_surface(w) for w in _tokenize(text)]
     return " ".join("".join(compose(*s) for s in w) for w in words)
 
 
-def to_jamo_sequence(text: str):
+def to_jamo_sequence(text: str, char_timestamps=None):
     """Orthographic text → flat list of surface-form jamo (scoring unit).
 
+    If char_timestamps (list of (char, start_time, end_time)) is provided,
+    returns a list of (jamo, start_time, end_time).
     Spaces and punctuation are excluded so the score is insensitive to
     tokenization differences between ASR outputs.
     """
+    char_to_time = {}
+    if char_timestamps:
+        time_idx = 0
+        for i, ch in enumerate(text):
+            if not ch.strip():
+                continue
+            while time_idx < len(char_timestamps) and char_timestamps[time_idx][0] != ch:
+                time_idx += 1
+            if time_idx < len(char_timestamps):
+                char_to_time[i] = (char_timestamps[time_idx][1], char_timestamps[time_idx][2])
+                time_idx += 1
+
+    text = _pronunciation_spelling(text)
+    
+    words = []
+    current_word = []
+    current_indices = []
+    for i, ch in enumerate(text):
+        if is_hangul_syllable(ch):
+            current_word.append(decompose(ch))
+            current_indices.append(i)
+        else:
+            if current_word:
+                words.append((current_word, current_indices))
+                current_word = []
+                current_indices = []
+    if current_word:
+        words.append((current_word, current_indices))
+
     seq = []
-    for word in (_word_to_surface(w) for w in _tokenize(text)):
-        for cho, jung, jong in word:
+    for word, indices in words:
+        surface_word = _word_to_surface(word)
+        for (cho, jung, jong), orig_i in zip(surface_word, indices):
+            ts = char_to_time.get(orig_i) if char_timestamps else None
+            
             if cho != "ㅇ":
-                seq.append(cho)
-            seq.append(jung)
+                seq.append((cho, ts[0], ts[1]) if ts else (cho, None, None) if char_timestamps else cho)
+            seq.append((jung, ts[0], ts[1]) if ts else (jung, None, None) if char_timestamps else jung)
             if jong:
-                seq.append(jong)
+                seq.append((jong, ts[0], ts[1]) if ts else (jong, None, None) if char_timestamps else jong)
     return seq
 
 
@@ -249,6 +307,7 @@ def to_ipa(text: str) -> str:
     Allophony implemented: intervocalic lenis voicing (k→ɡ etc.) and
     ㅅ/ㅆ palatalization before front-glide vowels (s→ɕ).
     """
+    text = _pronunciation_spelling(text)
     words = [_word_to_surface(w) for w in _tokenize(text)]
     out_words = []
     for word in words:

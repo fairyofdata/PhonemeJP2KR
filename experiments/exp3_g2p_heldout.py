@@ -36,13 +36,24 @@ def load_items():
     return items
 
 
+# scopes whose accuracy must stay at 100% (CI regression gate via --check)
+_GATED_SCOPES = ("core", "morph")
+
+_SCOPE_LABELS = {
+    "core": "core  (context-free rules)",
+    "morph": "morph (morphology-conditioned)",
+    "oos": "oos   (semantics-dependent)",
+}
+
+
 def main():
     items = load_items()
-    results = {"core": {"n": 0, "correct": 0, "failures": []},
-               "oos": {"n": 0, "correct": 0, "failures": []}}
+    results = {}
     for item in items:
+        bucket = results.setdefault(
+            item["scope"], {"n": 0, "correct": 0, "failures": []}
+        )
         pred = to_surface(item["orthography"])
-        bucket = results[item["scope"]]
         bucket["n"] += 1
         if pred == item["gold"]:
             bucket["correct"] += 1
@@ -58,15 +69,15 @@ def main():
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
 
-    print(f"core (in-scope) : {results['core']['correct']}/{results['core']['n']}"
-          f" = {results['core']['accuracy']:.1%}")
-    print(f"oos  (morphology): {results['oos']['correct']}/{results['oos']['n']}"
-          f" = {results['oos']['accuracy']:.1%}")
-    for scope in ("core", "oos"):
-        for fail in results[scope]["failures"]:
+    for scope, r in results.items():
+        label = _SCOPE_LABELS.get(scope, scope)
+        print(f"{label}: {r['correct']}/{r['n']} = {r['accuracy']:.1%}")
+        for fail in r["failures"]:
             print(f"  [{scope}] {fail['orthography']}: gold={fail['gold']} pred={fail['pred']}")
 
-    if "--check" in sys.argv and results["core"]["accuracy"] < 1.0:
+    if "--check" in sys.argv and any(
+        results.get(s, {}).get("accuracy", 1.0) < 1.0 for s in _GATED_SCOPES
+    ):
         sys.exit(1)
 
 

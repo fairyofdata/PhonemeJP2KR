@@ -57,12 +57,25 @@ def transcribe_intelligibility(audio_path: str, processor, model) -> str:
     return processor.batch_decode(generated_ids, skip_special_tokens=True)[0].strip()
 
 
-def transcribe_acoustics(audio_path: str, processor, model) -> str:
-    """Wav2Vec2-CTC greedy decoding — the physical phone sequence produced."""
+def transcribe_acoustics(audio_path: str, processor, model) -> tuple[str, list[tuple[str, float, float]]]:
+    """Wav2Vec2-CTC greedy decoding — returns (text, [(char, start_time, end_time), ...])."""
     audio = _load_audio(audio_path)
     inputs = processor(audio, return_tensors="pt", sampling_rate=AUDIO_SAMPLE_RATE)
     inputs = {k: v.to(DEVICE) for k, v in inputs.items()}
     with torch.no_grad():
         logits = model(**inputs).logits
     predicted_ids = torch.argmax(logits, dim=-1)
-    return processor.batch_decode(predicted_ids)[0].strip()
+    
+    outputs = processor.batch_decode(predicted_ids, output_char_offsets=True)
+    text = outputs.text[0].strip()
+    
+    frame_duration = 0.02  # 320 / 16000 for standard wav2vec2
+    char_timestamps = []
+    if hasattr(outputs, "char_offsets") and outputs.char_offsets and outputs.char_offsets[0]:
+        for char_info in outputs.char_offsets[0]:
+            char = char_info["char"]
+            start_time = float(char_info["start_offset"]) * frame_duration
+            end_time = float(char_info["end_offset"]) * frame_duration
+            char_timestamps.append((char, start_time, end_time))
+            
+    return text, char_timestamps
