@@ -30,6 +30,8 @@ class AlignedPair:
     op: str          # "match" | "sub" | "del" | "ins"
     ref: str         # target jamo ("" for insertions)
     hyp: str         # produced jamo ("" for deletions)
+    start_time: float = None
+    end_time: float = None
 
 
 @dataclass
@@ -43,7 +45,14 @@ class ScoreReport:
 
 def align_jamo(ref, hyp):
     """Levenshtein alignment with backtrace → list[AlignedPair]."""
-    n, m = len(ref), len(hyp)
+    if hyp and isinstance(hyp[0], tuple):
+        hyp_chars = [h[0] for h in hyp]
+        hyp_times = [(h[1], h[2]) for h in hyp]
+    else:
+        hyp_chars = hyp
+        hyp_times = [(None, None) for _ in hyp]
+
+    n, m = len(ref), len(hyp_chars)
     dp = [[0] * (m + 1) for _ in range(n + 1)]
     for i in range(n + 1):
         dp[i][0] = i
@@ -51,7 +60,7 @@ def align_jamo(ref, hyp):
         dp[0][j] = j
     for i in range(1, n + 1):
         for j in range(1, m + 1):
-            cost = 0 if ref[i - 1] == hyp[j - 1] else 1
+            cost = 0 if ref[i - 1] == hyp_chars[j - 1] else 1
             dp[i][j] = min(dp[i - 1][j] + 1,        # deletion
                            dp[i][j - 1] + 1,        # insertion
                            dp[i - 1][j - 1] + cost)  # match/sub
@@ -59,15 +68,17 @@ def align_jamo(ref, hyp):
     pairs = []
     i, j = n, m
     while i > 0 or j > 0:
-        if i > 0 and j > 0 and dp[i][j] == dp[i - 1][j - 1] + (0 if ref[i - 1] == hyp[j - 1] else 1):
-            op = "match" if ref[i - 1] == hyp[j - 1] else "sub"
-            pairs.append(AlignedPair(op, ref[i - 1], hyp[j - 1]))
+        if i > 0 and j > 0 and dp[i][j] == dp[i - 1][j - 1] + (0 if ref[i - 1] == hyp_chars[j - 1] else 1):
+            op = "match" if ref[i - 1] == hyp_chars[j - 1] else "sub"
+            start_time, end_time = hyp_times[j - 1]
+            pairs.append(AlignedPair(op, ref[i - 1], hyp_chars[j - 1], start_time, end_time))
             i, j = i - 1, j - 1
         elif i > 0 and dp[i][j] == dp[i - 1][j] + 1:
-            pairs.append(AlignedPair("del", ref[i - 1], ""))
+            pairs.append(AlignedPair("del", ref[i - 1], "", None, None))
             i -= 1
         else:
-            pairs.append(AlignedPair("ins", "", hyp[j - 1]))
+            start_time, end_time = hyp_times[j - 1]
+            pairs.append(AlignedPair("ins", "", hyp_chars[j - 1], start_time, end_time))
             j -= 1
     pairs.reverse()
     return pairs, dp[n][m]
@@ -87,35 +98,39 @@ def classify_errors(pairs):
     for idx, p in enumerate(pairs):
         if p.op == "match":
             continue
+            
+        tag_dict = {"ref": p.ref, "hyp": p.hyp}
+        if p.start_time is not None:
+            tag_dict["timestamp"] = round(p.start_time, 2)
+            
         if p.op == "ins" and p.hyp in _EPENTHETIC_VOWELS:
-            # e.g. 밥 → 바브: mora-timed L1 repairs closed syllables with a vowel
-            tags.append({"tag": "vowel_epenthesis", "ref": "", "hyp": p.hyp})
+            tag_dict["tag"] = "vowel_epenthesis"
         elif p.op == "del" and p.ref in _CODA_LIKE and p.ref not in _VOWELS:
             prev_is_vowel = idx > 0 and pairs[idx - 1].ref in _VOWELS
-            tag = "coda_deletion" if prev_is_vowel else "consonant_deletion"
-            tags.append({"tag": tag, "ref": p.ref, "hyp": ""})
+            tag_dict["tag"] = "coda_deletion" if prev_is_vowel else "consonant_deletion"
         elif p.op == "sub" and _same_laryngeal_family(p.ref, p.hyp):
-            # 평음/경음/격음 confusion — JP has only a voiced/voiceless contrast
-            tags.append({"tag": "laryngeal_confusion", "ref": p.ref, "hyp": p.hyp})
+            tag_dict["tag"] = "laryngeal_confusion"
         elif p.op == "sub" and {p.ref, p.hyp} <= {"ㅓ", "ㅗ"}:
-            tags.append({"tag": "vowel_ʌ_o_confusion", "ref": p.ref, "hyp": p.hyp})
+            tag_dict["tag"] = "vowel_ʌ_o_confusion"
         elif p.op == "sub" and {p.ref, p.hyp} <= {"ㅡ", "ㅜ"}:
-            tags.append({"tag": "vowel_ɯ_u_confusion", "ref": p.ref, "hyp": p.hyp})
+            tag_dict["tag"] = "vowel_ɯ_u_confusion"
         elif p.op == "sub" and {p.ref, p.hyp} == {"ㄴ", "ㅇ"}:
-            tags.append({"tag": "nasal_coda_confusion", "ref": p.ref, "hyp": p.hyp})
+            tag_dict["tag"] = "nasal_coda_confusion"
         elif p.op == "sub":
-            tags.append({"tag": "substitution", "ref": p.ref, "hyp": p.hyp})
+            tag_dict["tag"] = "substitution"
         elif p.op == "ins":
-            tags.append({"tag": "insertion", "ref": "", "hyp": p.hyp})
+            tag_dict["tag"] = "insertion"
         else:
-            tags.append({"tag": "deletion", "ref": p.ref, "hyp": ""})
+            tag_dict["tag"] = "deletion"
+            
+        tags.append(tag_dict)
     return tags
 
 
-def score_pronunciation(target_text: str, actual_text: str) -> ScoreReport:
+def score_pronunciation(target_text: str, actual_text: str, char_timestamps=None) -> ScoreReport:
     """Compare target vs ASR hypothesis at the jamo level after G2P."""
     ref = to_jamo_sequence(target_text)
-    hyp = to_jamo_sequence(actual_text)
+    hyp = to_jamo_sequence(actual_text, char_timestamps)
     if not ref:
         return ScoreReport(score=0, distance=0, ref_len=0)
     pairs, distance = align_jamo(ref, hyp)

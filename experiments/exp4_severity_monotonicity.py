@@ -93,7 +93,7 @@ def main():
             ladder_scores = []
             for sev, text in enumerate(texts):
                 wav = synthesize_wav(text, workdir, f"{li}_{sev}")
-                hyp = transcribe_acoustics(wav, processor, model)
+                hyp = transcribe_acoustics(wav, processor, model)[0]
                 score = score_pronunciation(ladder["target"], hyp).score
                 ladder_scores.append(score)
                 severities.append(sev)

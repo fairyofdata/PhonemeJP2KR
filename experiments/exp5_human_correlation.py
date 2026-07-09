@@ -92,7 +92,7 @@ def analyze(manifest, ratings_rows, audio_dir):
                 print(f"  warning: no ratings for {fname}, skipping")
                 continue
             wav = to_wav16k(os.path.join(audio_dir, fname), workdir, str(i))
-            hyp = transcribe_acoustics(wav, processor, model)
+            hyp = transcribe_acoustics(wav, processor, model)[0]
             score = score_pronunciation(row["target_text"], hyp).score
             clips.append({
                 "audio_file": fname, "speaker_id": row["speaker_id"],

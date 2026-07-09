@@ -67,8 +67,8 @@ def main():
         for i, (target, injected, pattern) in enumerate(PAIRS):
             wav_ok = synthesize_wav(target, workdir, f"{i}_ok")
             wav_err = synthesize_wav(injected, workdir, f"{i}_err")
-            hyp_ok = transcribe_acoustics(wav_ok, processor, model)
-            hyp_err = transcribe_acoustics(wav_err, processor, model)
+            hyp_ok = transcribe_acoustics(wav_ok, processor, model)[0]
+            hyp_err = transcribe_acoustics(wav_err, processor, model)[0]
             score_ok = score_pronunciation(target, hyp_ok).score
             score_err = score_pronunciation(target, hyp_err).score
             rows.append({

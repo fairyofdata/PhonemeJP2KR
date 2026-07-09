@@ -250,21 +250,54 @@ def to_surface(text: str) -> str:
     return " ".join("".join(compose(*s) for s in w) for w in words)
 
 
-def to_jamo_sequence(text: str):
+def to_jamo_sequence(text: str, char_timestamps=None):
     """Orthographic text → flat list of surface-form jamo (scoring unit).
 
+    If char_timestamps (list of (char, start_time, end_time)) is provided,
+    returns a list of (jamo, start_time, end_time).
     Spaces and punctuation are excluded so the score is insensitive to
     tokenization differences between ASR outputs.
     """
+    char_to_time = {}
+    if char_timestamps:
+        time_idx = 0
+        for i, ch in enumerate(text):
+            if not ch.strip():
+                continue
+            while time_idx < len(char_timestamps) and char_timestamps[time_idx][0] != ch:
+                time_idx += 1
+            if time_idx < len(char_timestamps):
+                char_to_time[i] = (char_timestamps[time_idx][1], char_timestamps[time_idx][2])
+                time_idx += 1
+
     text = _pronunciation_spelling(text)
+    
+    words = []
+    current_word = []
+    current_indices = []
+    for i, ch in enumerate(text):
+        if is_hangul_syllable(ch):
+            current_word.append(decompose(ch))
+            current_indices.append(i)
+        else:
+            if current_word:
+                words.append((current_word, current_indices))
+                current_word = []
+                current_indices = []
+    if current_word:
+        words.append((current_word, current_indices))
+
     seq = []
-    for word in (_word_to_surface(w) for w in _tokenize(text)):
-        for cho, jung, jong in word:
+    for word, indices in words:
+        surface_word = _word_to_surface(word)
+        for (cho, jung, jong), orig_i in zip(surface_word, indices):
+            ts = char_to_time.get(orig_i) if char_timestamps else None
+            
             if cho != "ㅇ":
-                seq.append(cho)
-            seq.append(jung)
+                seq.append((cho, ts[0], ts[1]) if ts else (cho, None, None) if char_timestamps else cho)
+            seq.append((jung, ts[0], ts[1]) if ts else (jung, None, None) if char_timestamps else jung)
             if jong:
-                seq.append(jong)
+                seq.append((jong, ts[0], ts[1]) if ts else (jong, None, None) if char_timestamps else jong)
     return seq
 
 

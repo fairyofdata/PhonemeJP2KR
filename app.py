@@ -70,12 +70,12 @@ def run_analysis(target: str, audio_bytes: bytes) -> dict:
     wav_path = convert_to_wav16k(audio_bytes)
     try:
         whisper_text = transcribe_intelligibility(wav_path, whisper_proc, whisper_mod)
-        wav2vec_text = transcribe_acoustics(wav_path, wav2vec_proc, wav2vec_mod)
+        wav2vec_text, char_timestamps = transcribe_acoustics(wav_path, wav2vec_proc, wav2vec_mod)
         waveform, _ = librosa.load(wav_path, sr=16000)
     finally:
         os.unlink(wav_path)
 
-    report = score_pronunciation(target, wav2vec_text)
+    report = score_pronunciation(target, wav2vec_text, char_timestamps)
     result = {
         "target": target,
         "target_surface": to_surface(target),
