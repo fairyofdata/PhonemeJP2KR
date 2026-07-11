@@ -55,3 +55,6 @@ Project_Evaluation.md
 extracted_docs/
 *.zip
 output_test.txt
+
+# Personal study/planning docs (never published)
+docs/private/

@@ -59,3 +59,41 @@ def test_vowel_confusion_detection():
     # 서울 pronounced as 소울 (ㅓ → ㅗ)
     report = score_pronunciation("서울", "소울")
     assert any(t["tag"] == "vowel_ʌ_o_confusion" for t in report.error_tags)
+
+
+# --- CTC char-timestamp threading (forced-alignment path) -------------------
+
+def test_timestamps_thread_through_to_error_tags():
+    # 밥 → 바브: the epenthetic ㅡ comes from the 2nd syllable's time span
+    char_timestamps = [("바", 0.0, 0.2), ("브", 0.2, 0.4)]
+    report = score_pronunciation("밥", "바브", char_timestamps)
+    epenthesis = [t for t in report.error_tags if t["tag"] == "vowel_epenthesis"]
+    assert epenthesis and epenthesis[0]["timestamp"] == 0.2
+
+
+def test_no_timestamps_keeps_plain_tags():
+    report = score_pronunciation("밥", "바브")
+    assert all("timestamp" not in t for t in report.error_tags)
+
+
+def test_timestamped_jamo_sequence_matches_plain_sequence():
+    from src.g2p import to_jamo_sequence
+
+    text = "감사합니다"
+    char_timestamps = [(ch, i * 0.1, (i + 1) * 0.1) for i, ch in enumerate(text)]
+    tagged = to_jamo_sequence(text, char_timestamps)
+    plain = to_jamo_sequence(text)
+    # same jamo content, each carrying its source syllable's time span
+    assert [t[0] for t in tagged] == plain
+    assert all(isinstance(t, tuple) and len(t) == 3 for t in tagged)
+    # 합 is the 3rd syllable → its jamo inherit the (0.2, 0.3) span
+    ham_jamos = [t for t in tagged if t[0] in ("ㅎ",)]
+    assert ham_jamos[0][1] == 0.2
+
+
+def test_timestamps_survive_spacing_differences():
+    # timestamps are matched against non-space chars only
+    char_timestamps = [("감", 0.0, 0.1), ("사", 0.1, 0.2), ("합", 0.2, 0.3),
+                       ("니", 0.3, 0.4), ("다", 0.4, 0.5)]
+    report = score_pronunciation("감사합니다", "감사 합니다", char_timestamps)
+    assert report.score == 100

@@ -180,7 +180,7 @@ streamlit run app.py
 
 ## Testing
 
-The linguistic core is fully unit-tested (82 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, statistics helpers, and every L1 error tag.
+The linguistic core is fully unit-tested (86 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
 
 ```bash
 pip install -r requirements-dev.txt

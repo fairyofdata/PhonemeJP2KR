@@ -291,13 +291,13 @@ def to_jamo_sequence(text: str, char_timestamps=None):
     for word, indices in words:
         surface_word = _word_to_surface(word)
         for (cho, jung, jong), orig_i in zip(surface_word, indices):
-            ts = char_to_time.get(orig_i) if char_timestamps else None
-            
-            if cho != "ㅇ":
-                seq.append((cho, ts[0], ts[1]) if ts else (cho, None, None) if char_timestamps else cho)
-            seq.append((jung, ts[0], ts[1]) if ts else (jung, None, None) if char_timestamps else jung)
-            if jong:
-                seq.append((jong, ts[0], ts[1]) if ts else (jong, None, None) if char_timestamps else jong)
+            # every jamo of a syllable inherits that syllable's time span
+            jamos = ([cho] if cho != "ㅇ" else []) + [jung] + ([jong] if jong else [])
+            if char_timestamps is None:
+                seq.extend(jamos)
+            else:
+                start, end = char_to_time.get(orig_i, (None, None))
+                seq.extend((j, start, end) for j in jamos)
     return seq
 
 

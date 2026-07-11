@@ -221,7 +221,7 @@ def render_result(res: dict):
             
             # Start 0.1s before the error for better context
             seek_time = max(0.0, t - 0.1)
-            html_code += f'<button class="error-btn" onclick="seekAndPlay({seek_time})">{label}</button>\\n'
+            html_code += f'<button class="error-btn" onclick="seekAndPlay({seek_time})">{label}</button>\n'
             
         html_code += """
             </div>
