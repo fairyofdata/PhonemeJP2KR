@@ -68,8 +68,10 @@ def transcribe_acoustics(audio_path: str, processor, model) -> tuple[str, list[t
     
     outputs = processor.batch_decode(predicted_ids, output_char_offsets=True)
     text = outputs.text[0].strip()
-    
-    frame_duration = 0.02  # 320 / 16000 for standard wav2vec2
+
+    # one CTC frame = inputs_to_logits_ratio samples (320 for wav2vec2-large)
+    ratio = getattr(model.config, "inputs_to_logits_ratio", 320)
+    frame_duration = ratio / AUDIO_SAMPLE_RATE
     char_timestamps = []
     if hasattr(outputs, "char_offsets") and outputs.char_offsets and outputs.char_offsets[0]:
         for char_info in outputs.char_offsets[0]:
