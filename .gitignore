@@ -58,3 +58,7 @@ output_test.txt
 
 # Personal study/planning docs (never published)
 docs/private/
+
+# AI-Hub L2 corpus extracts (license forbids redistribution; aggregate
+# results in experiments/results/ are committed instead)
+experiments/data/l2_aihub/

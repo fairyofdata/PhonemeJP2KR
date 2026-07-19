@@ -1,11 +1,13 @@
 # Empirical Evaluation
 
-Four executed experiments validate the system's core claims, and a fifth
-(the decisive human-rater study) is fully designed and harness-ready.
+Five executed experiments validate the system's core claims — including
+one on real Japanese-accented Korean speech (Exp 6) — and a recruited-rater
+study (Exp 5) is fully designed and harness-ready.
 All scripts live in [`experiments/`](../experiments/) and write raw
 results to `experiments/results/*.json`. Every number below is
 reproducible by re-running the scripts (Exp 1 requires a Gemini API key;
-Exp 2/4 require the ASR models).
+Exp 2/4/6 require the ASR models; Exp 6 additionally requires a local
+copy of the AI-Hub corpus, which its license forbids redistributing).
 
 ---
 
@@ -167,20 +169,86 @@ Everything except the data is done:
 - **Harness verified** end-to-end via `--selftest` (synthesizes 5 TTS
   clips + dummy ratings and runs the identical code path).
 
-An alternative to speaker recruitment — AI-Hub L2 Korean speech corpora —
-is documented in the protocol (§9) and should be license-reviewed before
-recruiting.
+The corpus-label route documented in the protocol (§9) has since been
+executed as **Experiment 6** below: it validates the score against AI-Hub
+human signals at scale, but its labels rate overall speech level and its
+transcriptions are orthographic — the anchored pronunciation-specific
+ratings of this protocol remain the missing precision axis.
+
+---
+
+## Experiment 6 — Validation on real Japanese-accented Korean speech (AI-Hub L2 corpus)
+
+**Question.** Everything up to Exp 4 used synthetic (TTS-perturbed) audio.
+Does the score carry signal on *genuine* L2 speech — and how much of it is
+drowned by the ASR-error confound that Exp 2/4 identified?
+
+**Data.** AI-Hub dataset 131 (외국인 한국어 발화 음성 데이터, Japanese-L1
+subset), Validation split: 16,435 read-aloud utterances with three human
+signals per clip — the script the learner read (`Reading`), what native
+transcribers actually heard (`ReadingLabelText`, deviating from the script
+in ~20% of clips), and a per-utterance speech-level rating
+(`SentenceSpeechLV` 상/중/하). A stratified sample of **615 clips from 198
+speakers** (all 215 하-rated read-aloud clips + 200 each of 상/중, fixed
+seed) ran through the full acoustics pipeline (Wav2Vec2-CTC → G2P → jamo
+alignment). Script: [`exp6_l2_validation.py`](../experiments/exp6_l2_validation.py);
+the corpus itself is license-restricted and stays local (gitignored).
+
+**Results.**
+
+| Axis | Metric | Value |
+|---|---|---|
+| A. Agreement with human transcribers | Spearman ρ, system score vs jamo deviation transcribers heard | **0.322** [95% CI 0.246, 0.391] |
+| | AUC detecting transcriber-noted reading deviations | **0.717** [0.665, 0.764] |
+| B. Proficiency association | Spearman ρ, system score vs speech-level rating | **0.473** [0.409, 0.535] |
+| | AUC 상 vs 하 / 상 vs 중 / 중 vs 하 | **0.818** / 0.637 / 0.720 |
+| | Speaker-level ρ vs TOPIK grade (n=55 speakers) | 0.317 |
+| | Mean system score by level 상/중/하 | 83.1 / 79.2 / 71.8 (monotone) |
+| ASR noise floor | Mean system-vs-heard score on faithful readings (n=483) | **79.6** (median 81, p10 68) |
+
+**Interpretation.**
+
+1. **The ordinal signal is real.** On genuine accented speech the score
+   separates 상 from 하 speech-level ratings at AUC 0.818 and decreases
+   monotonically across levels. This is the first evidence on real L2
+   audio, not synthetic perturbations.
+2. **Absolute scores are not calibrated.** Even when transcribers heard a
+   faithful reading, the acoustics channel scored it 79.6 on average —
+   the ASR-error confound of Exp 2/4, now quantified on real data. A
+   learner-facing absolute score ("your pronunciation is 80/100") is not
+   defensible with the current off-the-shelf acoustic model; rankings and
+   within-learner progress deltas are.
+3. **The floor is partly signal, not noise.** 하-rated speakers also read
+   faithfully (mean heard-score 98.8 vs 99.7 for 상) — the transcription
+   channel is ceiling-limited — yet the system still separates the levels.
+   The acoustics channel is responding systematically to accent strength,
+   which is exactly the property a pronunciation scorer needs; fine-tuning
+   should convert this raw sensitivity into calibrated measurement.
+
+**Threats to validity.** `SentenceSpeechLV` rates overall speech level
+(fluency included), not pronunciation alone, and speakers skew proficient
+(TOPIK 5–6) — both attenuate correlations (range restriction), so the
+reported values are conservative lower bounds. `ReadingLabelText` is
+orthographic: transcribers normalise phone-level accent into standard
+spelling, so axis A validates *deviation detection*, not fine phonetic
+scoring. Axis-A ρ is further attenuated by the ceiling in heard scores
+(median 100 at every level).
 
 ---
 
 ## Future Work (evaluation)
 
 1. **Execute Experiment 5** — collect recordings per
-   [HUMAN_EVAL_PROTOCOL.md](HUMAN_EVAL_PROTOCOL.md), or substitute an
-   AI-Hub L2 corpus after license review; then run the existing harness.
+   [HUMAN_EVAL_PROTOCOL.md](HUMAN_EVAL_PROTOCOL.md) with anchored 1–5
+   *pronunciation* ratings; Exp 6 covered the scale axis with corpus
+   labels, Exp 5 covers the precision axis that those labels cannot
+   (speech-level ratings conflate fluency; transcriptions are
+   orthographic).
 2. **GOP baseline** — implement Goodness of Pronunciation (Witt & Young,
    2000) from Wav2Vec2 phoneme posteriors and compare error-detection
-   performance against the alignment-based method.
-3. **Accent-aware acoustic model** — fine-tune Wav2Vec2 on
-   Japanese-accented Korean to attack the ASR-error confound that appears
-   as the dominant failure mode in Exp 2 and Exp 4.
+   performance against the alignment-based method on the Exp 6 sample.
+3. **Accent-aware acoustic model** — fine-tune Wav2Vec2 on the AI-Hub
+   Japanese-L1 training split (131k read-aloud utterances, 255 speakers,
+   607 h, acquired locally). Success criterion is now concrete, thanks to
+   Exp 6: raise the faithful-reading noise floor (79.6) toward the
+   high 90s while keeping or improving the 상/하 AUC (0.818).

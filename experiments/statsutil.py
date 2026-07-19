@@ -45,6 +45,19 @@ def spearman_rho(x, y):
     return pearson_r(average_ranks(x), average_ranks(y))
 
 
+def rank_auc(scores, labels):
+    """Mann-Whitney AUC: P(score of a positive > score of a negative),
+    ties counted as 0.5. `labels` are truthy for positives."""
+    pos = [i for i, l in enumerate(labels) if l]
+    neg = [i for i, l in enumerate(labels) if not l]
+    if not pos or not neg:
+        raise ValueError("need both positive and negative labels")
+    ranks = average_ranks(scores)
+    r_pos = sum(ranks[i] for i in pos)
+    n1, n2 = len(pos), len(neg)
+    return (r_pos - n1 * (n1 + 1) / 2) / (n1 * n2)
+
+
 def bootstrap_ci(x, y, statistic, n_boot=2000, alpha=0.05, seed=42):
     """Percentile bootstrap CI for a paired statistic(x, y)."""
     rng = random.Random(seed)

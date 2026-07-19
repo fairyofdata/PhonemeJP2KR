@@ -1,0 +1,76 @@
+{
+  "n_clips": 615,
+  "n_speakers": 198,
+  "strata": {
+    "하": 215,
+    "중": 200,
+    "상": 200
+  },
+  "deviation_rate": 0.215,
+  "A_deviation_agreement": {
+    "spearman_system_vs_heard": 0.322,
+    "spearman_95ci": [
+      0.246,
+      0.391
+    ],
+    "deviation_detection_auc": 0.717,
+    "auc_95ci": [
+      0.665,
+      0.764
+    ]
+  },
+  "B_proficiency_association": {
+    "spearman_system_vs_speechLV": 0.473,
+    "spearman_95ci": [
+      0.409,
+      0.535
+    ],
+    "pairwise_auc": {
+      "상>하": 0.818,
+      "상>중": 0.637,
+      "중>하": 0.72
+    },
+    "speaker_level_spearman_vs_topik": 0.317,
+    "n_speakers_with_topik": 55
+  },
+  "asr_noise_floor": {
+    "n_faithful": 483,
+    "mean_asr_vs_heard_score": 79.6,
+    "median": 81,
+    "p10": 68
+  },
+  "system_score_by_level": {
+    "상": {
+      "n": 200,
+      "mean": 83.1,
+      "median": 84.0
+    },
+    "중": {
+      "n": 200,
+      "mean": 79.2,
+      "median": 80.0
+    },
+    "하": {
+      "n": 215,
+      "mean": 71.8,
+      "median": 72
+    }
+  },
+  "heard_score_by_level": {
+    "상": {
+      "n": 200,
+      "mean": 99.7,
+      "median": 100.0
+    },
+    "중": {
+      "n": 200,
+      "mean": 99.4,
+      "median": 100.0
+    },
+    "하": {
+      "n": 215,
+      "mean": 98.8,
+      "median": 100
+    }
+  }
+}
