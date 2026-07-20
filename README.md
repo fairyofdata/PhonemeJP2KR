@@ -133,7 +133,7 @@ For the full bibliography with abstracts, see [`docs/REFERENCES.md`](docs/REFERE
 
 ## Empirical Validation
 
-Five reproducible experiments ([`experiments/`](experiments/), full report in [docs/EVALUATION.md](docs/EVALUATION.md)):
+Six reproducible experiments ([`experiments/`](experiments/), full report in [docs/EVALUATION.md](docs/EVALUATION.md)):
 
 | # | Question | Result |
 |---|---|---|
@@ -142,6 +142,9 @@ Five reproducible experiments ([`experiments/`](experiments/), full report in [d
 | 3 | Does the G2P engine generalize beyond its dev examples? | **100% (51/51)** on held-out context-free rules and **100% (17/17)** on morphology-conditioned items; 0/5 on semantics-dependent 사잇소리 items, matching the documented scope. Runs in CI as a regression gate. |
 | 4 | Does the score track error *severity*? (graded 0–3 injection) | **Spearman ρ = −0.702** [95% CI −0.928, −0.325]; mean score strictly decreasing by severity (91.8→74.8), 87% monotonic steps. |
 | 6 | Does the score carry signal on **real Japanese-accented speech**? (615 clips, 198 speakers, AI-Hub L2 corpus) | **Yes, ordinally** — AUC 0.818 separating 상/하 speech-level ratings, ρ = 0.473 vs human ratings; detects transcriber-noted reading deviations at AUC 0.717. Also measures the ASR noise floor (mean 79.6 on faithful readings): absolute scores are not calibrated until the acoustic model is accent-tuned. |
+| 6b | Does it beat the classic **GOP baseline** (Witt & Young, 2000)? | **Yes, on every axis** — same 615 clips, same acoustic model, CTC likelihood-ratio GOP: 상/하 AUC 0.818 vs 0.606, ρ vs human ratings 0.473 vs 0.153, deviation detection 0.717 vs 0.635. Independent real-data support for scoring text-level similarity over raw model confidences. |
+
+![ROC: jamo-alignment score vs CTC-GOP baseline](docs/assets/exp6_roc.png)
 
 The recruited-rater correlation study with pronunciation-specific ratings (Experiment 5) remains designed and harness-ready (protocol: [docs/HUMAN_EVAL_PROTOCOL.md](docs/HUMAN_EVAL_PROTOCOL.md), analysis script: [`experiments/exp5_human_correlation.py`](experiments/exp5_human_correlation.py)); Experiment 6 covers its scale axis with corpus labels, Experiment 5 will cover its precision axis with anchored 1–5 pronunciation ratings.
 

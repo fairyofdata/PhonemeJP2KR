@@ -1,12 +1,13 @@
 # Empirical Evaluation
 
-Five executed experiments validate the system's core claims — including
-one on real Japanese-accented Korean speech (Exp 6) — and a recruited-rater
-study (Exp 5) is fully designed and harness-ready.
+Six executed experiments validate the system's core claims — including
+real Japanese-accented Korean speech (Exp 6) and a head-to-head against
+the classic GOP baseline (Exp 6b) — and a recruited-rater study (Exp 5)
+is fully designed and harness-ready.
 All scripts live in [`experiments/`](../experiments/) and write raw
 results to `experiments/results/*.json`. Every number below is
 reproducible by re-running the scripts (Exp 1 requires a Gemini API key;
-Exp 2/4/6 require the ASR models; Exp 6 additionally requires a local
+Exp 2/4/6/6b require the ASR models; Exp 6/6b additionally require a local
 copy of the AI-Hub corpus, which its license forbids redistributing).
 
 ---
@@ -236,6 +237,64 @@ scoring. Axis-A ρ is further attenuated by the ceiling in heard scores
 
 ---
 
+## Experiment 6b — GOP baseline: three-way comparison on the same sample
+
+**Question.** The field's classic pronunciation scorer is Goodness of
+Pronunciation (Witt & Young, 2000) — a likelihood-ratio statistic from the
+acoustic model, no text decoding involved. Does this project's
+decode-then-align approach actually beat it, or merely differ from it?
+
+**Method.** A CTC variant of GOP was computed for the same 615 clips from
+the same Wav2Vec2 model the pipeline already uses:
+`GOP = (ll_forced − ll_free) / n_frames`, where `ll_forced` is the CTC
+log-likelihood of the target transcript (summed over all valid alignments)
+and `ll_free` is the unconstrained greedy-path log-likelihood — the
+standard denominator that cancels audio-quality and duration effects. The
+CTC target is the orthographic script (the model's own training-transcript
+convention; 0.27% of target tokens are out-of-vocabulary and dropped,
+touching 77/615 clips). Script:
+[`exp6b_gop_baseline.py`](../experiments/exp6b_gop_baseline.py); raw
+results: [`exp6b_gop_threeway.json`](../experiments/results/exp6b_gop_threeway.json).
+
+**Results — System (jamo alignment) vs GOP against every human signal:**
+
+| Metric | System | GOP |
+|---|---|---|
+| Spearman ρ vs transcriber-heard deviation | **0.322** [0.246, 0.391] | 0.197 [0.120, 0.266] |
+| Deviation-detection AUC | **0.717** [0.665, 0.764] | 0.635 [0.582, 0.683] |
+| Spearman ρ vs speech-level rating | **0.473** [0.409, 0.535] | 0.153 [0.073, 0.228] |
+| AUC 상 vs 하 / 상 vs 중 / 중 vs 하 | **0.818** / 0.637 / 0.720 | 0.606 / 0.541 / 0.568 |
+| Speaker-level ρ vs TOPIK | **0.317** | 0.144 |
+
+Scorer agreement: ρ(System, GOP) = 0.666 — correlated but far from
+redundant.
+
+![Score distributions by speech level](assets/exp6_score_by_level.png)
+
+![ROC curves: System vs GOP](assets/exp6_roc.png)
+
+**Interpretation.** The alignment-based score dominates the GOP baseline
+on every axis, and the margin is largest exactly where it matters for a
+CAPT product (상/하 discrimination: 0.818 vs 0.606). A plausible
+mechanism: the likelihood ratio absorbs everything that makes the audio
+unlike the model's training distribution — channel, speaking rate,
+accent-global effects — while decoding-then-aligning quantises frame-level
+uncertainty into a discrete hypothesis before comparison, discarding
+nuisance variance but keeping segmental errors. This is independent,
+real-data support for the project's core architectural bet (score text-level
+similarity over ASR output rather than raw model confidences), consistent
+with the morpheme-similarity findings of the 발음평가 개선 literature cited
+in the README.
+
+**Threats to validity.** This GOP is utterance-level and uses the same
+non-adapted acoustic model as the system — it is a fair same-budget
+baseline, not the strongest possible GOP (phone-level GOP over a
+fine-tuned, phoneme-output model would be stronger, and is exactly what
+the fine-tuning roadmap enables). Both scorers share one acoustic model,
+so their errors are not independent.
+
+---
+
 ## Future Work (evaluation)
 
 1. **Execute Experiment 5** — collect recordings per
@@ -244,11 +303,14 @@ scoring. Axis-A ρ is further attenuated by the ceiling in heard scores
    labels, Exp 5 covers the precision axis that those labels cannot
    (speech-level ratings conflate fluency; transcriptions are
    orthographic).
-2. **GOP baseline** — implement Goodness of Pronunciation (Witt & Young,
-   2000) from Wav2Vec2 phoneme posteriors and compare error-detection
-   performance against the alignment-based method on the Exp 6 sample.
+2. ~~GOP baseline~~ — **done as Experiment 6b** (utterance-level CTC-GOP;
+   the alignment-based method wins on every axis). The remaining stronger
+   variant — phone-level GOP over a fine-tuned phoneme-output model — folds
+   into item 3.
 3. **Accent-aware acoustic model** — fine-tune Wav2Vec2 on the AI-Hub
    Japanese-L1 training split (131k read-aloud utterances, 255 speakers,
-   607 h, acquired locally). Success criterion is now concrete, thanks to
-   Exp 6: raise the faithful-reading noise floor (79.6) toward the
-   high 90s while keeping or improving the 상/하 AUC (0.818).
+   607 h, acquired locally and CRC-verified via `tools/verify_aihub131.py`).
+   Success criterion is now concrete, thanks to Exp 6: raise the
+   faithful-reading noise floor (79.6) toward the high 90s while keeping
+   or improving the 상/하 AUC (0.818), then re-run the Exp 6b three-way
+   comparison including phone-level GOP.
