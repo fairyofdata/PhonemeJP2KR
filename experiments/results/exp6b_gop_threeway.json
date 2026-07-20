@@ -1,0 +1,69 @@
+{
+  "n_clips": 615,
+  "unk_dropped_clips": 77,
+  "scorers": {
+    "system_jamo_alignment": {
+      "spearman_vs_heard": 0.322,
+      "heard_95ci": [
+        0.246,
+        0.391
+      ],
+      "deviation_detection_auc": 0.717,
+      "dev_auc_95ci": [
+        0.665,
+        0.764
+      ],
+      "spearman_vs_speechLV": 0.473,
+      "speechLV_95ci": [
+        0.409,
+        0.535
+      ],
+      "pairwise_auc": {
+        "상>하": 0.818,
+        "상>중": 0.637,
+        "중>하": 0.72
+      },
+      "speaker_spearman_vs_topik": 0.317,
+      "mean_by_level": {
+        "상": 83.14,
+        "중": 79.185,
+        "하": 71.823
+      }
+    },
+    "gop_ctc": {
+      "spearman_vs_heard": 0.197,
+      "heard_95ci": [
+        0.12,
+        0.266
+      ],
+      "deviation_detection_auc": 0.635,
+      "dev_auc_95ci": [
+        0.582,
+        0.683
+      ],
+      "spearman_vs_speechLV": 0.153,
+      "speechLV_95ci": [
+        0.073,
+        0.228
+      ],
+      "pairwise_auc": {
+        "상>하": 0.606,
+        "상>중": 0.541,
+        "중>하": 0.568
+      },
+      "speaker_spearman_vs_topik": 0.144,
+      "mean_by_level": {
+        "상": -0.167,
+        "중": -0.181,
+        "하": -0.203
+      }
+    }
+  },
+  "scorer_agreement": {
+    "spearman_system_vs_gop": 0.666
+  },
+  "gop_distribution": {
+    "mean": -0.184,
+    "median": -0.173
+  }
+}
