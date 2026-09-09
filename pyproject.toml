@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phoneme-jp2kr"
+version = "0.1.0"
+description = "Phoneme-level Korean Pronunciation Coaching for Japanese Native Speakers"
+authors = [
+    { name = "Jiheon Baek", email = "fairyofdata@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["korean", "pronunciation", "capt", "g2p", "phoneme", "speech-recognition", "whisper", "wav2vec2", "kiwipiepy"]
+
+dependencies = [
+    "streamlit>=1.30.0",
+    "kiwipiepy==0.23.2",
+    "torch",
+    "transformers",
+    "librosa",
+    "soundfile",
+    "google-genai",
+    "matplotlib",
+    "edge-tts",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-mock>=3.12.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
