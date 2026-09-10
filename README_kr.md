@@ -176,6 +176,14 @@ pip install -r requirements-dev.txt
 python -m pytest tests/ -q
 ```
 
+## 프로덕션 엔지니어링 및 운영 고려사항 (Production & Operations)
+
+현실적인 서빙 환경에서의 저지연(Low-latency), 장애 허용성(Fault Tolerance), 예측 가능한 비용 관리를 위한 실무 설계:
+
+- **장애 격리 및 Graceful Degradation**: 측정 레이어(결정론적 G2P, CTC 정렬, 음소 채점)는 LLM과 완전히 분리되어 있습니다. 외부 Gemini API 호출이 지연되거나 Rate Limit, 네트워크 단절이 발생하더라도 핵심 정량 분석과 음소 단위 오류 시각화는 100% 정상 작동합니다.
+- **추론 지연시간(Latency) 및 메모리 관리**: 무거운 ASR 모델(Whisper & Wav2Vec2)은 `@st.cache_resource`를 통해 메모리 상에 싱글톤으로 캐싱되어 불필요한 콜드 스타트를 원천 차단합니다. 오디오 전처리는 최적화된 `ffmpeg` 파이프라인과 임시 파일 즉시 언링크(Unlink)를 결합하여 디스크 I/O 병목 및 메모리 누수를 방지합니다.
+- **토큰 비용 최적화**: 고비용의 멀티모달 오디오 스트리밍 대신 로컬 음향 모델로 1차 정형화된 최소 진단 증거(`error_tags`, 표면형 IPA, 정렬 점수)만 Gemini 2.5 Flash(`temperature=0.2`)로 전달하여 요청당 프롬프트 크기를 ~350 토큰 이내(회당 $0.0001 미만)로 극대화하여 비용을 통제합니다.
+
 ## 한계와 로드맵
 
 규칙 엔진의 알려진 한계([`src/g2p.py`](src/g2p.py)에 문서화):

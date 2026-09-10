@@ -21,7 +21,8 @@
 8. [Installation](#installation)
 9. [Usage](#usage)
 10. [Testing](#testing)
-11. [Limitations & Roadmap](#limitations--roadmap)
+11. [Production & Operational Engineering](#production--operational-engineering)
+12. [Limitations & Roadmap](#limitations--roadmap)
 
 ---
 
@@ -190,6 +191,14 @@ The linguistic core is fully unit-tested (90 tests): 60+ surface-form conversion
 pip install -r requirements-dev.txt
 python -m pytest tests/ -q
 ```
+
+## Production & Operational Engineering
+
+Designed with practical engineering constraints for low latency, fault tolerance, and predictable operating costs:
+
+- **Graceful Degradation & Fault Tolerance**: The measurement layer (deterministic G2P, CTC alignment, scoring) is strictly decoupled from the LLM. If the external Gemini API encounters rate limits or network outages, the core quantitative analysis and phoneme error diff remain 100% functional.
+- **Inference Latency & Memory Management**: ASR models (Whisper & Wav2Vec2) are cached as in-memory singletons (`@st.cache_resource`) to eliminate redundant cold-starts. Audio preprocessing utilizes an optimized `ffmpeg` pipeline with immediate ephemeral file unlinking, preventing disk I/O bloat and memory leaks.
+- **Token Cost Optimization**: Raw audio waveforms are processed locally by acoustic models rather than streamed to costly multimodal LLM APIs. Only concise, structured diagnostic evidence (`error_tags`, IPA, score) is passed to Gemini 2.5 Flash (`temperature=0.2`), keeping payload under ~350 tokens ($<0.0001 per coaching session).
 
 ## Limitations & Roadmap
 
