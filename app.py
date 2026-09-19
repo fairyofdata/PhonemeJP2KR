@@ -27,11 +27,13 @@ from src.asr import (
     transcribe_intelligibility,
 )
 from src.database import (
-    delete_record, get_all_records, get_weak_points, init_db, save_record,
+    delete_record, get_all_records, get_previous_score, get_weak_points,
+    init_db, save_record,
 )
 from src.drills import DRILL_BY_TAG, DRILLS
 from src.g2p import to_ipa, to_surface
 from src.llm import GeminiUnavailableError, generate_feedback, translate_jp_to_kr
+from src.reference import load_reference, score_band
 from src.scoring import render_diff_markdown, score_pronunciation
 from src.tts import VOICES, generate_tts_audio
 
@@ -40,6 +42,17 @@ FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
 st.set_page_config(page_title="Korean Pronunciation Coach", layout="wide")
 
 init_db()
+SCORE_REFERENCE = load_reference()
+
+# how a score reads against faithful readings (see src/reference.py)
+_BAND_TEXT = {
+    "typical_faithful": ("🟢 正確な音読と同じ水準",
+                         "正確に読んだ発話の約半数がこの範囲に入ります"),
+    "indeterminate": ("🟡 判定保留ゾーン",
+                      "正確に読んでもよく出る範囲です — 誤りかASRの揺れかは区別できません。もう一度録音して比べてみましょう"),
+    "rare_for_faithful": ("🟠 正確な音読では稀なスコア",
+                          "正確に読んだ発話でこの範囲に入るのは約10%のみです — 下のエラー箇所を確認しましょう"),
+}
 
 
 @st.cache_resource(show_spinner="AIモデルを読み込んでいます... (初回のみ時間がかかります)")
@@ -88,6 +101,7 @@ def run_analysis(target: str, audio_bytes: bytes) -> dict:
         "wav2vec_text": wav2vec_text,
         "actual_ipa": to_ipa(wav2vec_text),
         "score": report.score,
+        "previous_score": get_previous_score(target),  # read before saving this one
         "diff_markdown": render_diff_markdown(report.pairs),
         "error_tags": report.error_tags,
         "waveform": waveform,
@@ -118,9 +132,24 @@ def run_analysis(target: str, audio_bytes: bytes) -> dict:
 
 
 def render_result(res: dict):
-    st.markdown(f"### 🏆 音素スコア (Phoneme Score): **{res['score']} / 100**")
-    st.caption("スコアはG2P音韻規則エンジンによるjamoアライメント（1 − 音素誤り率）で決定論的に算出されます。")
+    band = score_band(res["score"], SCORE_REFERENCE)
+    label, meaning = _BAND_TEXT[band["band"]]
+    st.markdown(f"### {label}")
+    st.markdown(f"**{band['low']}–{band['high']}** ・ {meaning}")
+
+    delta = ""
+    if res.get("previous_score") is not None:
+        diff = res["score"] - res["previous_score"]
+        delta = f"　｜　この文の前回 {res['previous_score']}点から **{diff:+d}**"
+    st.markdown(f"音素スコア: **{res['score']}** / 100{delta}")
     st.progress(res["score"] / 100.0)
+    st.caption(
+        "スコアは決定論的（同じ音声なら常に同じ点数）ですが、絶対値は未較正です。"
+        f"日本語母語話者が正確に読んだ発話{SCORE_REFERENCE['n_faithful']}件でも中央値は"
+        f"{SCORE_REFERENCE['median']}点、下位10%の境界は{SCORE_REFERENCE['p10']}点でした"
+        "（AI-Hub コーパス、実験6）。上級者中心の話者によるコーパス音読文での基準のため、特に短い文（1字の誤りで点数が大きく動く）では目安としてご覧ください。"
+        "最も信頼できるのは、同じ文での前回との比較です。"
+    )
 
     st.write("**Audio Waveform**")
     fig, ax = plt.subplots(figsize=(10, 2))

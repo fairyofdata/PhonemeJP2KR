@@ -119,6 +119,8 @@ Coda tags are position-aware: an onset ㄴ/ㅁ or ㄱ/ㄷ/ㅂ swap is not tagged
 
 These structured tags — not raw strings — are what the LLM receives, so its feedback cites concrete evidence instead of guessing.
 
+**How the app presents the score.** Experiment 6 found the score ordinally valid but not calibrated: even jamo-faithful readings average 79.6. The app therefore leads with where the score falls among faithful readings — ≥ median (81): *as high as a typical faithful reading*; p10–median (68–80): *indeterminate, ASR noise and error overlap*; < p10: *rare for a faithful reading* (deliberately not labelled "error" — Exp 6 deviation-detection AUC is 0.717) — followed by the raw score and its change since the previous attempt at the same sentence, the use Exp 1 and Exp 4 support most directly. Cut points are read from `experiments/results/exp6_l2_validation.json` ([`src/reference.py`](src/reference.py)), so re-running Exp 6 after fine-tuning moves them automatically.
+
 ## Academic Background
 
 The rule-based L1 classifier is grounded in contrastive-phonology studies of Japanese learners of Korean; each error tag in `src/scoring.py` corresponds to an empirically documented phenomenon:
@@ -195,7 +197,7 @@ streamlit run app.py
 
 ## Testing
 
-The linguistic core is fully unit-tested (105 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
+The linguistic core is fully unit-tested (110 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
 
 ```bash
 pip install -r requirements-dev.txt
