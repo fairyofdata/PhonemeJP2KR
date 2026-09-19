@@ -187,17 +187,17 @@ Alternatively put `GEMINI_API_KEY = "your-key"` in `.streamlit/secrets.toml`.
 streamlit run app.py
 ```
 
-1. (Optional) Type a Japanese sentence → auto-translate to natural spoken Korean.
-2. Confirm the target sentence; its standard surface pronunciation and IPA are shown immediately.
-3. Listen to native reference audio (edge-tts neural voices: SunHi / InJoon / Hyunsu).
-4. Record with the browser mic or upload a file, then run the analysis.
-5. Review the 4-channel contrastive view, the jamo-level diff, and the Japanese coaching feedback. Click on the error tags to instantly play back the exact timestamp of the mispronunciation via Wav2Vec2-CTC forced alignment.
+1. Pick a sentence: type Korean, generate it from Japanese (「日本語から作る」), or choose a weak-point drill in the sidebar. Its standard surface pronunciation and IPA are shown immediately.
+2. Listen to the native reference (edge-tts neural voices: SunHi / InJoon / Hyunsu, chosen in the sidebar).
+3. Record with the browser mic or upload a file, then run the analysis.
+4. Read the result: the reference band and score with the change since your last attempt at the same sentence; a waveform player whose red markers (Wav2Vec2-CTC timestamps) replay each detected error; then tabs for the syllable-grouped jamo diff with named errors, the Whisper / Wav2Vec2 / katakana comparison, and the LLM coaching.
+5. The 学習記録 tab charts your scores and aggregates recurring errors into a weak-point profile.
 
 ![Analysis result](docs/assets/demo_result.png)
 
 ## Testing
 
-The linguistic core is fully unit-tested (110 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
+The linguistic core is fully unit-tested (117 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
 
 ```bash
 pip install -r requirements-dev.txt
