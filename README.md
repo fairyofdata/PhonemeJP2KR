@@ -80,6 +80,7 @@ flowchart TD
 | Coda neutralization (7종성) | §8–11 | 부엌 → [부억], 있다 → [읻따] |
 | Post-obstruent tensification | §23 | 학교 → [학꾜], 국밥 → [국빱] |
 | Nasal / liquid assimilation | §18–20 | 합니다 → [함니다], 신라 → [실라], 독립 → [동닙] |
+| Vowel realization (ㅢ, 져/쪄/쳐) | §5 | 희망 → [히망], 회의 → [회이], 가져 → [가저] |
 
 Rules that depend on *morpheme boundaries* — invisible to a context-free engine — are handled by a separate layer, [`src/morphology.py`](src/morphology.py), which uses the Kiwipiepy POS tagger (version-pinned for determinism) to rewrite the orthography into a pronunciation spelling before the pipeline runs. The copula/ending distinction matters: naive boundary detection turns 학생입니다 into \*[학쌩님니다]; this layer keeps it [학쌩임니다].
 
@@ -109,7 +110,12 @@ Because **both** the target and the ASR hypothesis pass through the same G2P, or
 | `laryngeal_confusion` | lenis/aspirated/tense collapse | 딸 → 달 |
 | `vowel_ʌ_o_confusion` | ㅓ/ㅗ merger (no /ʌ/ in JP) | 서울 → 소울 |
 | `vowel_ɯ_u_confusion` | ㅡ/ㅜ merger (no /ɯ/ in JP) | 그 → 구 |
-| `nasal_coda_confusion` | ㄴ/ㅇ collapse into JP moraic ん | 산 → 상 |
+| `vowel_jʌ_jo_confusion` | the ʌ/o merger carried onto the j-glide | 여기 → 요기 |
+| `diphthong_ɰi_monophthongization` | word-initial ㅢ flattened (no ɰ-glide in JP) | 의사 → 이사 |
+| `nasal_coda_confusion` | ㄴ/ㅁ/ㅇ codas collapse into JP moraic ん | 산 → 상, 감 → 간 |
+| `stop_coda_confusion` | unreleased ㄱ/ㄷ/ㅂ codas lose place (JP 促音 っ has none) | 밥 → 박 |
+
+Coda tags are position-aware: an onset ㄴ/ㅁ or ㄱ/ㄷ/ㅂ swap is not tagged as a coda error. The taxonomy covers 8 of the 11 frequent-error categories that Lee (2022) compiles for Japanese learners; the other three (voicing, phonological-rule application, intonation) are structurally invisible to text-output ASR — see the coverage audit in [`docs/L1_TAXONOMY.md`](docs/L1_TAXONOMY.md). In the app, each tag has a matching drill set, and the history tab aggregates tags into a per-learner weak-point profile that recommends the next drill.
 
 These structured tags — not raw strings — are what the LLM receives, so its feedback cites concrete evidence instead of guessing.
 
@@ -129,6 +135,10 @@ The rule-based L1 classifier is grounded in contrastive-phonology studies of Jap
   - 🔗 [모음 체계와 자질에 의한 일본인 학습자의 한국어 모음 발음 분석 (KCI)](https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002158469)
 - **Text-level similarity as an intelligibility proxy**: recent work shows that scoring L2 Korean speech by morpheme-level similarity between the reference and the ASR transcript tracks native listeners' comprehension better than off-the-shelf pronunciation-scoring APIs — independent support for this project's choice to score jamo-level similarity over ASR output rather than trust a single black-box score.
   - 🔗 [형태소 분석기반 외국인 발화 한국어 발음평가 개선 방법 (DBpia)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11438586)
+
+- **Curriculum & taxonomy coverage**: Lee (2022) derives eleven frequent error categories for Japanese learners from the contrastive literature and designs an ASR-based mobile app around them, but leaves implementation and evaluation open. This project implements the detectable subset and audits the rest; corpus evidence on the same AI-Hub L2 data (Yeo et al., 2023: /ɯ/ insertion specific to Japanese L1; diphthong monophthongization and plain-for-aspirated/tense substitution common across L1s) grounds `vowel_epenthesis`, `diphthong_ɰi_monophthongization`, and `laryngeal_confusion`.
+  - 🔗 [일본인 학습자를 위한 한국어 발음 학습용 모바일 애플리케이션 설계 연구 (이유나, 경기대학교 석사학위논문, 2022)](https://www.dbpia.co.kr/journal/detail?nodeId=T16143963)
+  - 🔗 [Comparison of L2 Korean pronunciation error patterns from five L1 backgrounds by using automatic phonetic transcription (Yeo et al., ICPhS 2023)](https://arxiv.org/abs/2306.10821)
 
 For the full bibliography with abstracts, see [`docs/REFERENCES.md`](docs/REFERENCES.md).
 
@@ -185,7 +195,7 @@ streamlit run app.py
 
 ## Testing
 
-The linguistic core is fully unit-tested (90 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
+The linguistic core is fully unit-tested (105 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
 
 ```bash
 pip install -r requirements-dev.txt
@@ -206,9 +216,13 @@ Known limitations of the rule engine (documented in [`src/g2p.py`](src/g2p.py)):
 - 사잇소리 tensification in native compounds (강가 → [강까], 밤길 → [밤낄]) — requires semantic compound analysis, beyond POS tagging
 - Morphology-conditioned rules depend on Kiwipiepy's POS disambiguation; genuinely ambiguous eojeols (e.g. bare 신고: noun [신고] vs verb [신꼬]) resolve to Kiwi's most probable reading
 
+Known limits of the error taxonomy ([`docs/L1_TAXONOMY.md`](docs/L1_TAXONOMY.md)): voicing, phonological-rule application (e.g. saying [합니다] without nasalization), and question intonation cannot be detected, because the acoustic channel emits spelling, which the G2P re-normalizes.
+
 Planned:
+- **Experiment 7 — which error categories track proficiency** ([`experiments/exp7_error_profile.py`](experiments/exp7_error_profile.py)): per-tag rates by 상/중/하 on the Experiment 6 sample, with a noise baseline; script ready, run pending on the data machine
+- **Intonation channel** — final-syllable F0 contour (rise for yes/no, fall for wh-questions), independent of ASR
 - **K-drama shadowing mode** — preset target sentences from popular content
-- **Fine-tuning Wav2Vec2 on Japanese-accented L2 Korean speech** — the [AI-Hub 외국인 한국어 발화 음성 데이터](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=505) Japanese-L1 training split (131k read-aloud utterances, 255 speakers, 607 h) is acquired locally; Experiment 6 quantified the ASR-error confound this will attack (noise floor 79.6 on faithful readings)
+- **Fine-tuning Wav2Vec2 on Japanese-accented L2 Korean speech** — the [AI-Hub 외국인 한국어 발화 음성 데이터](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=505) Japanese-L1 training split (131k read-aloud utterances, 255 speakers, 607 h) is acquired locally; Experiment 6 quantified the ASR-error confound this will attack (noise floor 79.6 on faithful readings). Note: the corpus labels are orthographic, so this lowers noise but will not expose rule-application errors — that needs pronunciation-faithful (phone-level) labels
 
 ## License
 

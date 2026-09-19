@@ -15,6 +15,7 @@ Pipeline order:
     4. Coda neutralization   (7종성: 꽃 → 꼳)                  표준발음법 8-11항
     5. Post-obstruent tensification (학교 → 학꾜)              표준발음법 23항
     6. Nasal/liquid assimilation (합니다 → 함니다, 신라 → 실라) 표준발음법 18-20항
+    7. Vowel realization     (희망 → 히망, 가져 → 가저, 회의 → 회이) 표준발음법 5항
 
 Steps 1-6 are pure, dependency-free, context-free rules. Step 0 needs
 the Kiwipiepy POS tagger; without it the engine degrades gracefully to
@@ -213,6 +214,25 @@ def _apply_assimilation(syls):
     return syls
 
 
+def _apply_vowel_rules(syls):
+    """표준발음법 제5항 다만 1·3·4. Runs last: liaison and palatalization
+    can hand ㅢ/ㅕ a new onset (협의 → 혀븨 → 혀비, 붙여 → 부쳐 → 부처).
+
+    Required: ㅈ/ㅉ/ㅊ + ㅕ → ㅓ; consonant onset + ㅢ → ㅣ.
+    Permitted: non-initial 의 → [이]. Canonicalizing the permitted variant
+    is safe because target and ASR hypothesis pass the same G2P, so a
+    learner saying either [회의] or [회이] matches — only word-initial
+    의 (의사), whose monophthongization is a real error, stays ㅢ.
+    (조사 의 → [에], also permitted, is not modelled.)
+    """
+    for i, syl in enumerate(syls):
+        if syl[1] == "ㅕ" and syl[0] in ("ㅈ", "ㅉ", "ㅊ"):
+            syl[1] = "ㅓ"
+        elif syl[1] == "ㅢ" and (syl[0] != "ㅇ" or i > 0):
+            syl[1] = "ㅣ"
+    return syls
+
+
 def _word_to_surface(syls):
     syls = _apply_h_rules(syls)
     syls = _apply_palatalization(syls)
@@ -220,6 +240,7 @@ def _word_to_surface(syls):
     syls = _neutralize_codas(syls)
     syls = _apply_tensification(syls)
     syls = _apply_assimilation(syls)
+    syls = _apply_vowel_rules(syls)
     return syls
 
 

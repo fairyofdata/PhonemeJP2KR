@@ -43,6 +43,14 @@ from src.g2p import to_surface, to_ipa, to_jamo_sequence
     ("학교", "학꾜"),
     ("국밥", "국빱"),
     ("읽다", "익따"),
+    # vowel realization (§5 다만 1·3·4)
+    ("희망", "히망"),
+    ("무늬", "무니"),
+    ("의사", "의사"),       # word-initial 의 keeps the ɰ-glide
+    ("회의", "회이"),       # permitted variant, canonicalized
+    ("가져", "가저"),
+    ("다쳐", "다처"),
+    ("여기", "여기"),       # ㅕ after non-palatal onset untouched
     # morphology-conditioned: liaison exceptions (§15 & §15 다만)
     ("맛없다", "마덥따"),
     ("맛있다", "마싣따"),   # §15 다만 lexical exception (마싣따/마딛따 both standard)

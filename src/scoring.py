@@ -23,6 +23,8 @@ _LARYNGEAL_SETS = [
 _VOWELS = set("ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ")
 _EPENTHETIC_VOWELS = {"ㅡ", "ㅜ", "ㅗ"}  # typical CV-repair vowels for JP speakers
 _CODA_LIKE = {"ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅇ"}
+_NASAL_CODAS = {"ㄴ", "ㅁ", "ㅇ"}   # JP 撥音 ん has no stable place of its own
+_STOP_CODAS = {"ㄱ", "ㄷ", "ㅂ"}    # unreleased [k̚ t̚ p̚]; JP 促音 っ copies place
 
 
 @dataclass
@@ -88,6 +90,20 @@ def _same_laryngeal_family(a, b):
     return any(a in s and b in s for s in _LARYNGEAL_SETS)
 
 
+def _is_coda(pairs, idx):
+    """True if the target jamo at pairs[idx] is a syllable coda.
+
+    Onset ㅇ is dropped from the jamo sequence, so on the target side a
+    consonant is a coda exactly when it follows a vowel and is not
+    followed by one (V C C… or V C at the end). Insertions carry no
+    target jamo and are skipped when looking at neighbours.
+    """
+    refs = [p.ref for p in pairs]
+    prev = next((r for r in reversed(refs[:idx]) if r), "")
+    nxt = next((r for r in refs[idx + 1:] if r), "")
+    return prev in _VOWELS and nxt not in _VOWELS
+
+
 def classify_errors(pairs):
     """Tag alignment errors with known Japanese-L1 interference patterns.
 
@@ -112,10 +128,18 @@ def classify_errors(pairs):
             tag_dict["tag"] = "laryngeal_confusion"
         elif p.op == "sub" and {p.ref, p.hyp} <= {"ㅓ", "ㅗ"}:
             tag_dict["tag"] = "vowel_ʌ_o_confusion"
+        elif p.op == "sub" and {p.ref, p.hyp} <= {"ㅕ", "ㅛ"}:
+            tag_dict["tag"] = "vowel_jʌ_jo_confusion"
         elif p.op == "sub" and {p.ref, p.hyp} <= {"ㅡ", "ㅜ"}:
             tag_dict["tag"] = "vowel_ɯ_u_confusion"
-        elif p.op == "sub" and {p.ref, p.hyp} == {"ㄴ", "ㅇ"}:
+        elif p.op == "sub" and p.ref == "ㅢ":
+            tag_dict["tag"] = "diphthong_ɰi_monophthongization"
+        elif (p.op == "sub" and {p.ref, p.hyp} <= _NASAL_CODAS
+              and _is_coda(pairs, idx)):
             tag_dict["tag"] = "nasal_coda_confusion"
+        elif (p.op == "sub" and {p.ref, p.hyp} <= _STOP_CODAS
+              and _is_coda(pairs, idx)):
+            tag_dict["tag"] = "stop_coda_confusion"
         elif p.op == "sub":
             tag_dict["tag"] = "substitution"
         elif p.op == "ins":
