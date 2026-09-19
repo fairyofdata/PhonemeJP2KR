@@ -64,6 +64,7 @@ flowchart TD
 | 받침 중화 (7종성) | 제8–11항 | 부엌 → [부억], 있다 → [읻따] |
 | 경음화 | 제23항 | 학교 → [학꾜], 국밥 → [국빱] |
 | 비음화 / 유음화 | 제18–20항 | 합니다 → [함니다], 신라 → [실라], 독립 → [동닙] |
+| 모음 실현 (ㅢ, 져/쪄/쳐) | 제5항 | 희망 → [히망], 회의 → [회이], 가져 → [가저] |
 
 문맥 자유(context-free) 엔진이 볼 수 없는 *형태소 경계* 의존 규칙은 별도 레이어인 [`src/morphology.py`](src/morphology.py)가 담당합니다. Kiwipiepy 품사 분석기(결정성 보장을 위해 버전 고정)로 경계를 판별해 파이프라인 실행 전에 표기를 발음 철자로 재작성합니다. 계사/어미 구분이 핵심입니다 — 경계를 순진하게 판별하면 학생입니다가 \*[학쌩님니다]가 되지만, 이 레이어는 [학쌩임니다]를 유지합니다.
 
@@ -93,7 +94,12 @@ Kiwipiepy가 설치되지 않은 환경에서는 문맥 자유 파이프라인�
 | `laryngeal_confusion` | 평음/격음/경음 붕괴 | 딸 → 달 |
 | `vowel_ʌ_o_confusion` | ㅓ/ㅗ 합류 (일본어에 /ʌ/ 없음) | 서울 → 소울 |
 | `vowel_ɯ_u_confusion` | ㅡ/ㅜ 합류 (일본어에 /ɯ/ 없음) | 그 → 구 |
-| `nasal_coda_confusion` | ㄴ/ㅇ이 일본어 撥音 ん으로 통합 | 산 → 상 |
+| `vowel_jʌ_jo_confusion` | ㅓ/ㅗ 합류가 j-활음 뒤로 전이 | 여기 → 요기 |
+| `diphthong_ɰi_monophthongization` | 어두 ㅢ의 단모음화 (일본어에 ɰ-활음 없음) | 의사 → 이사 |
+| `nasal_coda_confusion` | ㄴ/ㅁ/ㅇ 받침이 일본어 撥音 ん으로 통합 | 산 → 상, 감 → 간 |
+| `stop_coda_confusion` | 불파 받침 ㄱ/ㄷ/ㅂ의 조음 위치 상실 (促音 っ에는 고유 위치가 없음) | 밥 → 박 |
+
+종성 태그는 음절 위치를 판별합니다: 초성 ㄴ/ㅁ, ㄱ/ㄷ/ㅂ 간 대치는 종성 오류로 태깅하지 않습니다. 이 분류 체계는 이유나(2022)가 정리한 일본인 학습자 빈발 오류 11개 범주 중 8개를 탐지하며, 나머지 3개(유·무성, 음운 규칙 적용, 억양)는 텍스트를 출력하는 ASR로는 구조적으로 관측할 수 없습니다 — 커버리지 감사: [`docs/L1_TAXONOMY.md`](docs/L1_TAXONOMY.md). 앱에서는 태그마다 대응 드릴이 있고, 학습 기록 탭이 태그를 누적해 학습자별 취약점 프로파일과 다음 드릴을 추천합니다.
 
 이처럼 LLM은 날것의 문자열이 아닌 구조화된 태그를 전달받으므로, 추측이 아닌 구체적인 증거를 바탕으로 피드백을 제공합니다.
 
@@ -113,6 +119,10 @@ Kiwipiepy가 설치되지 않은 환경에서는 문맥 자유 파이프라인�
   - 🔗 [모음 체계와 자질에 의한 일본인 학습자의 한국어 모음 발음 분석 (KCI)](https://www.kci.go.kr/kciportal/ci/sereArticleSearch/ciSereArtiView.kci?sereArticleSearchBean.artiId=ART002158469)
 - **텍스트 유사도 = 명료도 프록시**: 원문과 ASR 전사 간 형태소 수준 유사도로 L2 한국어 발화를 채점하면 상용 발음평가 API보다 원어민 청취 결과에 더 근접한다는 연구가 있습니다 — ASR 출력에 대한 자모 수준 유사도 채점이라는 본 프로젝트의 선택을 독립적으로 뒷받침합니다.
   - 🔗 [형태소 분석기반 외국인 발화 한국어 발음평가 개선 방법 (DBpia)](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11438586)
+
+- **커리큘럼과 분류 체계 커버리지**: 이유나(2022)는 대조 연구를 종합해 일본인 학습자 빈발 오류 11개 범주를 도출하고 이를 중심으로 ASR 기반 모바일 앱을 설계했으나, 구현과 효과 검증은 과제로 남겼습니다. 본 프로젝트는 그중 탐지 가능한 범주를 구현하고 나머지를 감사합니다. 같은 AI-Hub L2 코퍼스에 대한 코퍼스 연구(Yeo 외, 2023: 일본어 L1 고유의 /ɯ/ 삽입, L1 공통의 이중모음 단모음화·평음 대치)가 `vowel_epenthesis`, `diphthong_ɰi_monophthongization`, `laryngeal_confusion`을 뒷받침합니다.
+  - 🔗 [일본인 학습자를 위한 한국어 발음 학습용 모바일 애플리케이션 설계 연구 (이유나, 경기대학교 석사학위논문, 2022)](https://www.dbpia.co.kr/journal/detail?nodeId=T16143963)
+  - 🔗 [Comparison of L2 Korean pronunciation error patterns from five L1 backgrounds by using automatic phonetic transcription (Yeo 외, ICPhS 2023)](https://arxiv.org/abs/2306.10821)
 
 전체 참고 문헌 및 초록은 [`docs/REFERENCES.md`](docs/REFERENCES.md)에서 확인할 수 있습니다.
 
@@ -169,7 +179,7 @@ streamlit run app.py
 
 ## 테스트
 
-언어학 코어는 완전히 단위 테스트되어 있습니다(90개): 표준발음법 기준 표면형 변환 60개 이상(형태음운 규칙과 경계 오탐 회귀 가드 포함), IPA 매핑, 정렬 연산, CTC 타임스탬프 전파, 통계 유틸리티, 모든 L1 오류 태그 검증.
+언어학 코어는 완전히 단위 테스트되어 있습니다(105개): 표준발음법 기준 표면형 변환 60개 이상(형태음운 규칙과 경계 오탐 회귀 가드 포함), IPA 매핑, 정렬 연산, CTC 타임스탬프 전파, 통계 유틸리티, 모든 L1 오류 태그 검증.
 
 ```bash
 pip install -r requirements-dev.txt
@@ -190,9 +200,13 @@ python -m pytest tests/ -q
 - 고유어 합성어의 사잇소리 경음화 (강가 → [강까], 밤길 → [밤낄]) — 품사 태깅을 넘어선 의미론적 합성어 분석 필요
 - 형태음운 규칙은 Kiwipiepy의 품사 중의성 해소에 의존 — 진성 중의 어절(예: 단독 '신고': 명사 [신고] vs 동사 [신꼬])은 Kiwi의 최우선 해석을 따름
 
+오류 분류 체계의 알려진 한계([`docs/L1_TAXONOMY.md`](docs/L1_TAXONOMY.md)): 유·무성, 음운 규칙 적용(예: 비음화 없이 [합니다]로 발음), 의문문 억양은 탐지할 수 없습니다. 음향 채널이 철자를 출력하고 G2P가 이를 다시 정규화하기 때문입니다.
+
 향후 예정된 기능:
+- **실험 7 — 어떤 오류 범주가 숙련도를 가르는가** ([`experiments/exp7_error_profile.py`](experiments/exp7_error_profile.py)): 실험 6 표본에서 태그별 상/중/하 발생률과 노이즈 기준선; 스크립트 완비, 데이터 머신에서 실행 대기
+- **억양 채널** — ASR과 독립된 문말 F0 곡선 분석 (판정의문문 ↗, 설명의문문 ↘)
 - **K-드라마 섀도잉 모드**: 인기 콘텐츠에서 추출한 목표 문장 프리셋 제공
-- **일본어 억양 L2 한국어 음성으로 Wav2Vec2 파인튜닝**: [AI-Hub 외국인 한국어 발화 음성 데이터](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=505) 일본어 모어 화자 Training 분할(낭독체 13.1만 발화, 화자 255명, 607시간)을 로컬 확보 완료 — 실험 6이 정량화한 ASR 노이즈 플로어(충실 낭독 평균 79.6)가 공략 목표
+- **일본어 억양 L2 한국어 음성으로 Wav2Vec2 파인튜닝**: [AI-Hub 외국인 한국어 발화 음성 데이터](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=505) 일본어 모어 화자 Training 분할(낭독체 13.1만 발화, 화자 255명, 607시간)을 로컬 확보 완료 — 실험 6이 정량화한 ASR 노이즈 플로어(충실 낭독 평균 79.6)가 공략 목표. 단, 코퍼스 라벨이 철자 전사이므로 노이즈는 줄여도 음운 규칙 적용 오류를 드러내지는 못함 — 이는 발음 충실(음소 수준) 라벨이 필요
 
 ## 라이선스
 

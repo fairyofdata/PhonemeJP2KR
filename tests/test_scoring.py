@@ -61,6 +61,49 @@ def test_vowel_confusion_detection():
     assert any(t["tag"] == "vowel_ʌ_o_confusion" for t in report.error_tags)
 
 
+def _tags(target, hyp):
+    return [t["tag"] for t in score_pronunciation(target, hyp).error_tags]
+
+
+def test_glide_vowel_confusion_detection():
+    # 여기 → 요기: the ʌ/o merger carried over to the j-onglide (ㅕ → ㅛ)
+    assert "vowel_jʌ_jo_confusion" in _tags("여기", "요기")
+
+
+def test_ui_monophthongization_detection():
+    # word-initial 의 must stay [ɰi]; JP has no ɰ-glide → 으 / 이
+    assert "diphthong_ɰi_monophthongization" in _tags("의사", "이사")
+    assert "diphthong_ɰi_monophthongization" in _tags("의사", "으사")
+
+
+def test_permitted_ui_variants_not_penalized():
+    # 표준발음법 5항: 희망 → [히망] (required), 회의 → [회이] (permitted)
+    assert score_pronunciation("희망", "히망").score == 100
+    assert score_pronunciation("회의", "회이").score == 100
+    assert score_pronunciation("가져", "가저").score == 100
+
+
+def test_nasal_coda_confusion_includes_m():
+    assert "nasal_coda_confusion" in _tags("산", "상")
+    assert "nasal_coda_confusion" in _tags("감", "간")
+
+
+def test_nasal_onset_substitution_is_not_a_coda_error():
+    # 나무 → 마무: onset ㄴ/ㅁ swap is not the 撥音 coda pattern
+    assert "nasal_coda_confusion" not in _tags("나무", "마무")
+
+
+def test_stop_coda_confusion_detection():
+    # 밥 → 박: unreleased coda place lost (JP 促音 has no place of its own)
+    assert "stop_coda_confusion" in _tags("밥", "박")
+    # coda before a consonant: 입구 → 익구 (surface 입꾸 → 익꾸)
+    assert "stop_coda_confusion" in _tags("입구", "익구")
+
+
+def test_stop_onset_substitution_is_not_a_coda_error():
+    assert "stop_coda_confusion" not in _tags("바다", "가다")
+
+
 # --- CTC char-timestamp threading (forced-alignment path) -------------------
 
 def test_timestamps_thread_through_to_error_tags():
@@ -97,3 +140,16 @@ def test_timestamps_survive_spacing_differences():
                        ("니", 0.3, 0.4), ("다", 0.4, 0.5)]
     report = score_pronunciation("감사합니다", "감사 합니다", char_timestamps)
     assert report.score == 100
+
+
+def test_drills_cover_only_classifier_tags():
+    # every drill must train a tag the classifier can actually emit
+    import inspect
+
+    from src import scoring
+    from src.drills import DRILLS
+
+    source = inspect.getsource(scoring.classify_errors)
+    for drill in DRILLS:
+        assert f'"{drill["tag"]}"' in source, drill["tag"]
+        assert drill["sentences"]

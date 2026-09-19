@@ -1,5 +1,6 @@
 """SQLite persistence for practice history."""
 
+import json
 import os
 import sqlite3
 from contextlib import contextmanager
@@ -31,15 +32,23 @@ def init_db():
                 feedback TEXT
             )
         """)
+        # migration: per-attempt L1 error tags feed the weak-point profile
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(feedback_history)")}
+        if "error_tags" not in cols:
+            conn.execute("ALTER TABLE feedback_history ADD COLUMN error_tags TEXT")
 
 
-def save_record(intended: str, actual: str, score: int, feedback: str):
+def save_record(intended: str, actual: str, score: int, feedback: str,
+                error_tags: list = None):
+    tag_names = [t["tag"] for t in (error_tags or [])]
     with _connect() as conn:
         conn.execute(
-            "INSERT INTO feedback_history (timestamp, intended, actual, score, feedback)"
-            " VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO feedback_history"
+            " (timestamp, intended, actual, score, feedback, error_tags)"
+            " VALUES (?, ?, ?, ?, ?, ?)",
             (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-             intended, actual, score, feedback),
+             intended, actual, score, feedback,
+             json.dumps(tag_names, ensure_ascii=False)),
         )
 
 
@@ -55,3 +64,21 @@ def get_all_records():
 def delete_record(record_id: int):
     with _connect() as conn:
         conn.execute("DELETE FROM feedback_history WHERE id = ?", (record_id,))
+
+
+def get_weak_points(recent: int = 30):
+    """Count L1 error tags over the most recent attempts → [(tag, count)].
+
+    Rows saved before the error_tags migration are skipped.
+    """
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT error_tags FROM feedback_history"
+            " WHERE error_tags IS NOT NULL ORDER BY id DESC LIMIT ?",
+            (recent,),
+        ).fetchall()
+    counts = {}
+    for (raw,) in rows:
+        for tag in json.loads(raw):
+            counts[tag] = counts.get(tag, 0) + 1
+    return sorted(counts.items(), key=lambda kv: -kv[1])

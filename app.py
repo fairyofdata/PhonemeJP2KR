@@ -26,7 +26,10 @@ from src.asr import (
     transcribe_acoustics,
     transcribe_intelligibility,
 )
-from src.database import delete_record, get_all_records, init_db, save_record
+from src.database import (
+    delete_record, get_all_records, get_weak_points, init_db, save_record,
+)
+from src.drills import DRILL_BY_TAG, DRILLS
 from src.g2p import to_ipa, to_surface
 from src.llm import GeminiUnavailableError, generate_feedback, translate_jp_to_kr
 from src.scoring import render_diff_markdown, score_pronunciation
@@ -109,7 +112,8 @@ def run_analysis(target: str, audio_bytes: bytes) -> dict:
     katakana = (result["llm"] or {}).get("katakana", "N/A")
     feedback = (result["llm"] or {}).get("feedback_jp", result["llm_error"] or "")
     save_record(target, wav2vec_text, report.score,
-                f"**[Katakana Mapping]**: {katakana}\n\n{feedback}")
+                f"**[Katakana Mapping]**: {katakana}\n\n{feedback}",
+                report.error_tags)
     return result
 
 
@@ -278,6 +282,19 @@ with tab_analysis:
             else:
                 st.warning("日本語を入力してください。")
 
+    with st.expander("🎯 弱点別ドリル (日本語母語話者によくある誤り)"):
+        st.caption("単母音 → 二重母音 → 初声子音 → 音節構造 → 終声 の順に練習できます。")
+        drill_labels = [f"{d['stage']} ｜ {d['label']}" for d in DRILLS]
+        drill_idx = st.selectbox(
+            "練習項目", range(len(DRILLS)), format_func=lambda i: drill_labels[i]
+        )
+        drill_cols = st.columns(len(DRILLS[drill_idx]["sentences"]))
+        for col, sentence in zip(drill_cols, DRILLS[drill_idx]["sentences"]):
+            col.button(sentence, key=f"drill_{drill_idx}_{sentence}",
+                       on_click=st.session_state.__setitem__,
+                       args=("target_sentence", sentence),
+                       use_container_width=True)
+
     st.markdown("### Step 2. 目標文章の確認と録音")
     target = st.text_input("🎯 練習する韓国語の文章", key="target_sentence")
 
@@ -339,6 +356,15 @@ with tab_analysis:
         render_result(st.session_state.last_result)
 
 with tab_history:
+    weak_points = get_weak_points()
+    if weak_points:
+        st.subheader("📊 あなたの弱点プロファイル (直近30回)")
+        for tag, count in weak_points[:5]:
+            drill = DRILL_BY_TAG.get(tag)
+            hint = f" → おすすめ: 「{drill['label']}」ドリル" if drill else ""
+            st.write(f"- `{tag}` × {count}{hint}")
+        st.markdown("---")
+
     st.subheader("これまでの練習記録")
     records = get_all_records()
     if not records:

@@ -42,6 +42,10 @@ KCI — liquid (ㄹ) acquisition; candidate future error tag
 森香奈 · 한국언어학회 학술대회지 · 2008
 > Cross-target-language view: errors Japanese speakers share when pronouncing English and Korean, isolating L1-driven (rather than target-specific) error sources.
 
+### [Comparison of L2 Korean pronunciation error patterns from five L1 backgrounds by using automatic phonetic transcription](https://arxiv.org/abs/2306.10821)
+Yeo, Ryu, Lee, Kim, Chung · ICPhS 2023 — corpus evidence for `vowel_epenthesis`, `laryngeal_confusion`, `diphthong_ɰi_monophthongization`
+> Confusion matrices from a fine-tuned Wav2Vec2 XLS-R *phone* recognizer on the same AI-Hub L2 corpus as Experiment 6, across Chinese, Vietnamese, Japanese, Thai and English L1s. Common errors: plain-for-aspirated/tense substitution, coda deletion, diphthong monophthongization; /ɯ/ insertion is among the Japanese-specific patterns. Closest methodological neighbour: phone-level output can see rule-application errors this project's orthographic ASR cannot (see `docs/L1_TAXONOMY.md`), but it is a corpus analysis, not a learner-facing feedback system.
+
 ## 2. Pronunciation assessment methodology
 
 ### [형태소 분석기반 외국인 발화 한국어 발음평가 개선 방법](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE11438586)
@@ -53,6 +57,10 @@ DBpia — independent support for text-similarity scoring over ASR output
 > Typology-informed pedagogy for teaching Korean coda pronunciation — informs how feedback should be phrased per L1 type.
 
 ## 3. Korean-language education for Japanese learners (market & pedagogy context)
+
+### [일본인 학습자를 위한 한국어 발음 학습용 모바일 애플리케이션 설계 연구](https://www.dbpia.co.kr/journal/detail?nodeId=T16143963)
+이유나 · 경기대학교 대학원 석사학위논문 · 2022 — curriculum order and the 11-category inventory audited in `docs/L1_TAXONOMY.md`
+> Reviews Japanese learners' Korean pronunciation errors (vowels, onsets, codas, phonological rules, intonation) and four commercial L2 apps (Cake, ELSA Speak, 말해보카, Speak), then designs an ASR-centred mobile app: level test, error-targeted extra practice, review, and motivational elements. The author notes that learner needs were not surveyed and the app was neither implemented nor evaluated for learning effect. The drill order in `src/drills.py` follows its curriculum.
 
 ### [일본인 학습자 대상 한국어교육 관련 연구 최근 동향 분석 (2008–2014)](https://www.kci.go.kr/kciportal/landing/article.kci?arti_id=ART001970757)
 한국어교육 26(1) · 2015
