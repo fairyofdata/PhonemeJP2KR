@@ -66,6 +66,21 @@ def delete_record(record_id: int):
         conn.execute("DELETE FROM feedback_history WHERE id = ?", (record_id,))
 
 
+def get_previous_score(intended: str):
+    """Score of the most recent earlier attempt at the same sentence, or None.
+
+    Scores are only comparable within one sentence (the ASR noise floor
+    varies by sentence), so the match is on the exact target text.
+    """
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT score FROM feedback_history WHERE intended = ?"
+            " ORDER BY id DESC LIMIT 1",
+            (intended,),
+        ).fetchone()
+    return row[0] if row else None
+
+
 def get_weak_points(recent: int = 30):
     """Count L1 error tags over the most recent attempts → [(tag, count)].
 

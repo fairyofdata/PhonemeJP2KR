@@ -235,6 +235,13 @@ spelling, so axis A validates *deviation detection*, not fine phonetic
 scoring. Axis-A ρ is further attenuated by the ceiling in heard scores
 (median 100 at every level).
 
+**Implication for the demo.** Because the absolute score is uncalibrated,
+the app no longer presents it as one: it reports where the score falls in
+this faithful-reading distribution (≥ median 81 / 68–80 / < p10 68) and the
+change since the learner's previous attempt at the same sentence
+([`src/reference.py`](../src/reference.py) reads the cut points from this
+experiment's results file).
+
 **Reproducibility note.** The reported numbers use the scores cached in
 `run_results.jsonl` at run time. The G2P later gained 표준발음법 §5
 (ㅢ/져 realization), which changes scores for scripts containing 의/희/져.
