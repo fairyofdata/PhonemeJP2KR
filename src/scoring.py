@@ -97,6 +97,10 @@ def _is_coda(pairs, idx):
     consonant is a coda exactly when it follows a vowel and is not
     followed by one (V C C… or V C at the end). Insertions carry no
     target jamo and are skipped when looking at neighbours.
+
+    Word boundaries are not in the sequence, so a coda before a
+    vowel-initial next word (산 아래) reads as an onset; that only costs a
+    missed coda tag (it falls back to "substitution"), never a false one.
     """
     refs = [p.ref for p in pairs]
     prev = next((r for r in reversed(refs[:idx]) if r), "")

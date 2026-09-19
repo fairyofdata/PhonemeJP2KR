@@ -235,6 +235,12 @@ spelling, so axis A validates *deviation detection*, not fine phonetic
 scoring. Axis-A ρ is further attenuated by the ceiling in heard scores
 (median 100 at every level).
 
+**Reproducibility note.** The reported numbers use the scores cached in
+`run_results.jsonl` at run time. The G2P later gained 표준발음법 §5
+(ㅢ/져 realization), which changes scores for scripts containing 의/희/져.
+`analyze` reproduces the table above; re-scoring the cached ASR text with
+the current G2P (as Experiment 7 does) will differ slightly.
+
 ---
 
 ## Experiment 6b — GOP baseline: three-way comparison on the same sample
@@ -313,4 +319,10 @@ so their errors are not independent.
    Success criterion is now concrete, thanks to Exp 6: raise the
    faithful-reading noise floor (79.6) toward the high 90s while keeping
    or improving the 상/하 AUC (0.818), then re-run the Exp 6b three-way
-   comparison including phone-level GOP.
+   comparison including phone-level GOP. Caveat from the taxonomy audit
+   ([L1_TAXONOMY.md](L1_TAXONOMY.md)): AI-Hub labels are orthographic, so
+   this lowers noise but cannot expose phonological-rule errors; those
+   need pronunciation-faithful (phone-level) targets.
+4. **Execute Experiment 7** — per-tag proficiency signal on the Exp 6
+   sample ([`exp7_error_profile.py`](../experiments/exp7_error_profile.py));
+   needs only the cached ASR output, no re-run.

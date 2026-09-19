@@ -17,7 +17,7 @@ Pipeline order:
     6. Nasal/liquid assimilation (합니다 → 함니다, 신라 → 실라) 표준발음법 18-20항
     7. Vowel realization     (희망 → 히망, 가져 → 가저, 회의 → 회이) 표준발음법 5항
 
-Steps 1-6 are pure, dependency-free, context-free rules. Step 0 needs
+Steps 1-7 are pure, dependency-free, context-free rules. Step 0 needs
 the Kiwipiepy POS tagger; without it the engine degrades gracefully to
 the context-free pipeline (see src/morphology.py for the rule split).
 
