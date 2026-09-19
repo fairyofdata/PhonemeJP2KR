@@ -1,0 +1,16 @@
+# Design tokens mirrored in src/ui.py
+[theme]
+base = "light"
+primaryColor = "#3b5bdb"
+backgroundColor = "#f6f7fb"
+secondaryBackgroundColor = "#eef0f6"
+textColor = "#1d2433"
+baseRadius = "0.6rem"
+borderColor = "#e3e6ee"
+showWidgetBorder = true
+
+[theme.sidebar]
+backgroundColor = "#ffffff"
+
+[client]
+toolbarMode = "minimal"

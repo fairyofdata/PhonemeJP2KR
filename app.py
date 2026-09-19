@@ -6,6 +6,7 @@ Analysis flow:
     Gemini interprets the structured evidence (katakana + coaching).
 
 The deterministic layer always renders, even if the LLM call fails.
+Markup lives in src/ui.py; this file holds the page flow.
 """
 
 import hashlib
@@ -15,11 +16,11 @@ import tempfile
 
 import imageio_ffmpeg
 import librosa
-import librosa.display
-import matplotlib.pyplot as plt
 import streamlit as st
+import streamlit.components.v1 as components
 from streamlit_mic_recorder import mic_recorder
 
+from src import ui
 from src.asr import (
     load_whisper_model,
     load_wav2vec_model,
@@ -34,28 +35,34 @@ from src.drills import DRILL_BY_TAG, DRILLS
 from src.g2p import to_ipa, to_surface
 from src.llm import GeminiUnavailableError, generate_feedback, translate_jp_to_kr
 from src.reference import load_reference, score_band
-from src.scoring import render_diff_markdown, score_pronunciation
+from src.scoring import score_pronunciation
 from src.tts import VOICES, generate_tts_audio
 
 FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
+SAMPLE_RATE = 16000
 
-st.set_page_config(page_title="Korean Pronunciation Coach", layout="wide")
+st.set_page_config(page_title="韓国語 発音コーチ", page_icon=":material/graphic_eq:",
+                   layout="wide", initial_sidebar_state="auto")
+st.markdown(ui.GLOBAL_CSS, unsafe_allow_html=True)
 
 init_db()
 SCORE_REFERENCE = load_reference()
 
 # how a score reads against faithful readings (see src/reference.py)
 _BAND_TEXT = {
-    "typical_faithful": ("🟢 正確な音読と同じ水準",
-                         "正確に読んだ発話の約半数がこの範囲に入ります"),
-    "indeterminate": ("🟡 判定保留ゾーン",
-                      "正確に読んでもよく出る範囲です — 誤りかASRの揺れかは区別できません。もう一度録音して比べてみましょう"),
-    "rare_for_faithful": ("🟠 正確な音読では稀なスコア",
-                          "正確に読んだ発話でこの範囲に入るのは約10%のみです — 下のエラー箇所を確認しましょう"),
+    "typical_faithful": ("正確な音読と同じ水準",
+                         "正確に読んだ発話の約半数がこの範囲に入ります。"),
+    "indeterminate": ("判定保留ゾーン",
+                      "正確に読んでもよく出る範囲です。誤りかASRの揺れかは区別できないので、"
+                      "もう一度録音して前回と比べてみましょう。"),
+    "rare_for_faithful": ("正確な音読では稀なスコア",
+                          "正確に読んだ発話でこの範囲に入るのは約10%のみです。"
+                          "下の「音素の比較」で誤りの位置を確認しましょう。"),
 }
+_VOICE_LABELS = {"SunHi": "SunHi · 女性", "InJoon": "InJoon · 男性", "Hyunsu": "Hyunsu · 男性（柔らかめ）"}
 
 
-@st.cache_resource(show_spinner="AIモデルを読み込んでいます... (初回のみ時間がかかります)")
+@st.cache_resource(show_spinner="音声認識モデルを読み込んでいます…（初回のみ時間がかかります）")
 def load_models():
     whisper_processor, whisper_model = load_whisper_model()
     wav2vec_processor, wav2vec_model = load_wav2vec_model()
@@ -73,7 +80,7 @@ def convert_to_wav16k(audio_bytes: bytes) -> str:
     out_path = tempfile.NamedTemporaryFile(delete=False, suffix=".wav").name
     try:
         subprocess.run(
-            [FFMPEG_EXE, "-y", "-i", in_path, "-ar", "16000", "-ac", "1", out_path],
+            [FFMPEG_EXE, "-y", "-i", in_path, "-ar", str(SAMPLE_RATE), "-ac", "1", out_path],
             check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
     finally:
@@ -87,7 +94,7 @@ def run_analysis(target: str, audio_bytes: bytes) -> dict:
     try:
         whisper_text = transcribe_intelligibility(wav_path, whisper_proc, whisper_mod)
         wav2vec_text, char_timestamps = transcribe_acoustics(wav_path, wav2vec_proc, wav2vec_mod)
-        waveform, _ = librosa.load(wav_path, sr=16000)
+        waveform, _ = librosa.load(wav_path, sr=SAMPLE_RATE)
     finally:
         os.unlink(wav_path)
 
@@ -102,9 +109,10 @@ def run_analysis(target: str, audio_bytes: bytes) -> dict:
         "actual_ipa": to_ipa(wav2vec_text),
         "score": report.score,
         "previous_score": get_previous_score(target),  # read before saving this one
-        "diff_markdown": render_diff_markdown(report.pairs),
+        "diff_html": ui.diff_html(report.pairs),
         "error_tags": report.error_tags,
-        "waveform": waveform,
+        "peaks": ui.envelope(waveform),
+        "duration": len(waveform) / SAMPLE_RATE,
         "audio_bytes": audio_bytes,
         "llm": None,
         "llm_error": None,
@@ -131,279 +139,201 @@ def run_analysis(target: str, audio_bytes: bytes) -> dict:
     return result
 
 
-def render_result(res: dict):
-    band = score_band(res["score"], SCORE_REFERENCE)
-    label, meaning = _BAND_TEXT[band["band"]]
-    st.markdown(f"### {label}")
-    st.markdown(f"**{band['low']}–{band['high']}** ・ {meaning}")
+# --- callbacks (run before the next script pass, so they may set widget state) --
 
-    delta = ""
-    if res.get("previous_score") is not None:
-        diff = res["score"] - res["previous_score"]
-        delta = f"　｜　この文の前回 {res['previous_score']}点から **{diff:+d}**"
-    st.markdown(f"音素スコア: **{res['score']}** / 100{delta}")
-    st.progress(res["score"] / 100.0)
-    st.caption(
-        "スコアは決定論的（同じ音声なら常に同じ点数）ですが、絶対値は未較正です。"
-        f"日本語母語話者が正確に読んだ発話{SCORE_REFERENCE['n_faithful']}件でも中央値は"
-        f"{SCORE_REFERENCE['median']}点、下位10%の境界は{SCORE_REFERENCE['p10']}点でした"
-        "（AI-Hub コーパス、実験6）。上級者中心の話者によるコーパス音読文での基準のため、特に短い文（1字の誤りで点数が大きく動く）では目安としてご覧ください。"
-        "最も信頼できるのは、同じ文での前回との比較です。"
-    )
+def _set_target(sentence: str):
+    st.session_state.target_sentence = sentence
+    st.session_state.pop("last_result", None)
 
-    st.write("**Audio Waveform**")
-    fig, ax = plt.subplots(figsize=(10, 2))
-    librosa.display.waveshow(res["waveform"], sr=16000, ax=ax, color="#1f77b4")
-    ax.set_axis_off()
-    st.pyplot(fig)
-    plt.close(fig)
 
-    st.markdown("### 🔍 4チャンネル言語学的対照分析")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.info(
-            f"🎯 **目標文章 (Target)**\n\n### {res['target']}\n"
-            f"表面発音: **{res['target_surface']}**\n\n"
-            f"IPA: `/{res['target_ipa']}/`"
+def _translate():
+    jp = st.session_state.get("jp_input", "").strip()
+    if not jp:
+        st.session_state.translate_error = "日本語を入力してください。"
+        return
+    try:
+        _set_target(translate_jp_to_kr(jp))
+        st.session_state.translate_error = None
+    except GeminiUnavailableError as e:
+        st.session_state.translate_error = str(e)
+
+
+# --- page sections -------------------------------------------------------------
+
+def render_sidebar():
+    with st.sidebar:
+        st.markdown("#### 弱点ドリル")
+        st.caption("日本語母語話者に多い誤りを、単母音 → 二重母音 → 初声 → 音節構造 → 終声の順に練習します。")
+        drill_idx = st.selectbox(
+            "練習項目", range(len(DRILLS)), key="drill_idx",
+            format_func=lambda i: f"{DRILLS[i]['stage']}　{DRILLS[i]['label']}",
+            label_visibility="collapsed",
         )
-    with col2:
-        st.warning(
-            f"👂 **ネイティブの聞こえ方 (Intelligibility / Whisper)**\n\n"
-            f"### {res['whisper_text']}\n"
-            f"IPA: `/{res['whisper_ipa']}/`"
-        )
-    col3, col4 = st.columns(2)
-    with col3:
-        st.error(
-            f"🗣️ **物理的な音 (Acoustics / Wav2Vec2)**\n\n"
-            f"### {res['wav2vec_text']}\n"
-            f"IPA: `/{res['actual_ipa']}/`"
-        )
-    with col4:
-        katakana = (res["llm"] or {}).get("katakana", "（LLM未実行）")
-        st.error(
-            f"🇯🇵 **L1干渉の可視化 (Katakana)**\n\n### {katakana}\n"
-            f"*(あなたの発音をカタカナで表記)*"
-        )
+        for sentence in DRILLS[drill_idx]["sentences"]:
+            st.button(sentence, key=f"drill_{drill_idx}_{sentence}", width="stretch",
+                      on_click=_set_target, args=(sentence,))
 
-    st.markdown("### 🧬 音素レベル差分 (Target vs 実際の発音)")
-    st.caption("上段: 目標のjamo列 / 下段: 実際に発音されたjamo列（**太字** = 不一致、· = 欠落/挿入）")
-    st.markdown(res["diff_markdown"])
+        st.divider()
+        st.markdown("#### お手本の声")
+        st.radio("お手本の声", list(VOICES), key="voice", label_visibility="collapsed",
+                 format_func=lambda v: _VOICE_LABELS.get(v, v))
 
-    error_tags = res.get("error_tags", [])
-    timestamped_errors = [t for t in error_tags if "timestamp" in t]
-    
-    if timestamped_errors and "audio_bytes" in res:
-        import base64
-        import streamlit.components.v1 as components
-        
-        b64_audio = base64.b64encode(res["audio_bytes"]).decode()
-        audio_src = f"data:audio/wav;base64,{b64_audio}"
-        
-        html_code = f"""
-        <style>
-            .error-btn {{
-                background-color: #ff4b4b;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                margin: 4px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 14px;
-                transition: background 0.3s;
-                font-family: sans-serif;
-            }}
-            .error-btn:hover {{
-                background-color: #ff3333;
-            }}
-            .player-container {{
-                margin-top: 20px;
-                padding: 15px;
-                background-color: #f0f2f6;
-                border-radius: 8px;
-                color: #31333F;
-            }}
-            .player-container h4 {{
-                margin-top: 0;
-                margin-bottom: 15px;
-                font-family: sans-serif;
-            }}
-        </style>
-        <div class="player-container">
-            <h4>▶️ 発音エラーのタイミングを確認 (クリックで再生)</h4>
-            <audio id="coach-player" controls style="width: 100%; margin-bottom: 10px;">
-                <source src="{audio_src}" type="audio/wav">
-            </audio>
-            <div>
-        """
-        
-        for err in timestamped_errors:
-            t = err["timestamp"]
-            tag = err.get("tag", "error")
-            ref = err.get("ref", "")
-            hyp = err.get("hyp", "")
-            if ref and hyp:
-                label = f"[{t:.2f}s] {tag} ({ref}→{hyp})"
-            elif ref:
-                label = f"[{t:.2f}s] {tag} ({ref} 脱落)"
-            elif hyp:
-                label = f"[{t:.2f}s] {tag} ({hyp} 挿入)"
-            else:
-                label = f"[{t:.2f}s] {tag}"
-            
-            # Start 0.1s before the error for better context
-            seek_time = max(0.0, t - 0.1)
-            html_code += f'<button class="error-btn" onclick="seekAndPlay({seek_time})">{label}</button>\n'
-            
-        html_code += """
-            </div>
-        </div>
-        <script>
-        function seekAndPlay(time) {
-            const player = document.getElementById('coach-player');
-            player.currentTime = time;
-            player.play();
-        }
-        </script>
-        """
-        components.html(html_code, height=220)
-
-    st.write("---")
-    st.subheader("💡 専門家フィードバック (Gemini)")
-    if res["llm"]:
-        if res["llm"].get("error_summary"):
-            st.markdown(f"**要約:** {res['llm']['error_summary']}")
-        st.success(res["llm"].get("feedback_jp", ""))
-    else:
-        st.warning(
-            f"LLMフィードバックは利用できませんでした（決定論的な分析結果のみ表示中）。\n\n{res['llm_error']}"
-        )
+        st.divider()
+        st.markdown("#### よく出る誤り")
+        st.markdown(ui.weak_points_html(get_weak_points()[:4], DRILL_BY_TAG),
+                    unsafe_allow_html=True)
+        st.caption("直近30回の分析から集計しています。")
 
 
-st.title("音素レベル韓国語発音コーチ 🇰🇷 (日本語母語話者向け)")
-st.caption(
-    "デュアルASR (Whisper × Wav2Vec2) + 決定論的G2P音韻規則エンジン + LLM解釈による発音矯正"
-)
-
-tab_analysis, tab_history = st.tabs(["🎙️ 発音分析", "📚 学習記録"])
-
-with tab_analysis:
+def render_practice():
     if "target_sentence" not in st.session_state:
         st.session_state.target_sentence = "감사합니다"
 
-    st.markdown("### Step 1. 言いたいことを入力 (日本語 → 韓国語)")
-    col_jp1, col_jp2 = st.columns([3, 1])
-    with col_jp1:
-        jp_input = st.text_input(
-            "🗣️ 言いたい日本語を入力してください",
-            placeholder="例: こんにちは、お会いできて嬉しいです",
-        )
-    with col_jp2:
-        st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-        if st.button("韓国語に翻訳", use_container_width=True):
-            if jp_input.strip():
-                with st.spinner("翻訳中..."):
-                    try:
-                        st.session_state.target_sentence = translate_jp_to_kr(jp_input)
-                    except GeminiUnavailableError as e:
-                        st.error(str(e))
-            else:
-                st.warning("日本語を入力してください。")
+    left, right = st.columns([1.15, 1], gap="medium")
+    with left, st.container(border=True):
+        target = st.text_input("練習する韓国語の文", key="target_sentence",
+                               placeholder="例: 서울에서 친구를 만났어요")
+        with st.popover("日本語から作る", icon=":material/translate:"):
+            st.text_input("言いたいことを日本語で", key="jp_input",
+                          placeholder="例: お会いできて嬉しいです")
+            st.button("韓国語に翻訳", on_click=_translate, type="primary", width="stretch")
+            if st.session_state.get("translate_error"):
+                st.error(st.session_state.translate_error)
 
-    with st.expander("🎯 弱点別ドリル (日本語母語話者によくある誤り)"):
-        st.caption("単母音 → 二重母音 → 初声子音 → 音節構造 → 終声 の順に練習できます。")
-        drill_labels = [f"{d['stage']} ｜ {d['label']}" for d in DRILLS]
-        drill_idx = st.selectbox(
-            "練習項目", range(len(DRILLS)), format_func=lambda i: drill_labels[i]
-        )
-        drill_cols = st.columns(len(DRILLS[drill_idx]["sentences"]))
-        for col, sentence in zip(drill_cols, DRILLS[drill_idx]["sentences"]):
-            col.button(sentence, key=f"drill_{drill_idx}_{sentence}",
-                       on_click=st.session_state.__setitem__,
-                       args=("target_sentence", sentence),
-                       use_container_width=True)
+        if target.strip():
+            st.markdown(ui.target_html(target, to_surface(target), to_ipa(target)),
+                        unsafe_allow_html=True)
+            if st.button("お手本を聞く", icon=":material/volume_up:"):
+                voice = st.session_state.get("voice", "SunHi")
+                text_hash = hashlib.md5(target.encode()).hexdigest()
+                out_path = os.path.join(tempfile.gettempdir(), f"tts_{text_hash}_{voice}.mp3")
+                with st.spinner("音声を生成しています…"):
+                    ok = os.path.exists(out_path) or generate_tts_audio(target, voice, out_path)
+                if ok:
+                    st.audio(out_path, format="audio/mp3")
+                else:
+                    st.error("音声の生成に失敗しました。ネットワーク接続を確認してください。")
 
-    st.markdown("### Step 2. 目標文章の確認と録音")
-    target = st.text_input("🎯 練習する韓国語の文章", key="target_sentence")
-
-    if target.strip():
-        st.markdown(
-            f"標準表面発音: **{to_surface(target)}**　｜　IPA: `/{to_ipa(target)}/`"
-        )
-        st.markdown("#### 🎧 ネイティブの発音を聞く (TTS)")
-        voice_choice = st.radio(
-            "音声を選択:",
-            ["👩 SunHi (落ち着いた女性)", "👨 InJoon (信頼感のある男性)", "👦 Hyunsu (柔らかい男性)"],
-            horizontal=True,
-        )
-        if st.button("🔊 お手本を再生する"):
-            voice_key = next((v for v in VOICES if v in voice_choice), "SunHi")
-            text_hash = hashlib.md5(target.encode()).hexdigest()
-            out_path = os.path.join(
-                tempfile.gettempdir(), f"tts_{text_hash}_{voice_key}.mp3"
-            )
-            with st.spinner("音声を生成しています..."):
-                ok = os.path.exists(out_path) or generate_tts_audio(
-                    target, voice_key, out_path
-                )
-            if ok:
-                st.audio(out_path, format="audio/mp3")
-            else:
-                st.error("音声の生成に失敗しました。")
-
-    st.markdown("---")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("A. マイクで録音する")
-        mic_data = mic_recorder(
-            start_prompt="🔴 録音開始", stop_prompt="⏹️ 録音停止", key="mic"
-        )
-    with col2:
-        st.subheader("B. ファイルをアップロードする")
-        uploaded_file = st.file_uploader(
-            "音声ファイルを選択してください", type=["wav", "mp3", "flac"]
-        )
-
-    audio_bytes = None
-    if mic_data and mic_data.get("bytes"):
-        audio_bytes = mic_data["bytes"]
-    elif uploaded_file is not None:
-        audio_bytes = uploaded_file.getvalue()
-    if audio_bytes:
-        st.audio(audio_bytes, format="audio/wav")
-
-    if audio_bytes and st.button("発音を分析する", type="primary"):
-        if not target.strip():
-            st.warning("先に目標文章を入力してください。")
+    with right, st.container(border=True):
+        st.markdown('<div class="pc-eyebrow">あなたの発音</div>', unsafe_allow_html=True)
+        source = st.segmented_control("入力方法", ["マイクで録音", "ファイル"], key="source",
+                                      default="マイクで録音", label_visibility="collapsed")
+        audio_bytes = None
+        if source == "ファイル":
+            uploaded = st.file_uploader("音声ファイル（wav / mp3 / flac）",
+                                        type=["wav", "mp3", "flac"])
+            if uploaded is not None:
+                audio_bytes = uploaded.getvalue()
         else:
-            with st.spinner("音声を分析しています..."):
-                st.session_state.last_result = run_analysis(target, audio_bytes)
+            st.caption("ボタンを押して文を読み、終わったらもう一度押してください。")
+            mic_data = mic_recorder(start_prompt="● 録音を開始", stop_prompt="■ 録音を停止",
+                                    key="mic")
+            if mic_data and mic_data.get("bytes"):
+                audio_bytes = mic_data["bytes"]
+
+        if audio_bytes:
+            st.audio(audio_bytes, format=ui.audio_mime(audio_bytes))
+        clicked = st.button("発音を分析する", type="primary", width="stretch",
+                            icon=":material/analytics:", disabled=not audio_bytes)
+        if not audio_bytes:
+            st.caption("録音またはファイルを用意すると分析できます。")
+
+    if clicked:
+        if not target.strip():
+            st.warning("先に練習する文を入力してください。")
+        else:
+            with st.spinner("音声を分析しています…"):
+                try:
+                    st.session_state.last_result = run_analysis(target, audio_bytes)
+                except subprocess.CalledProcessError:
+                    st.error("音声ファイルを読み込めませんでした。別の形式で試してください。")
 
     if st.session_state.get("last_result"):
-        st.markdown("---")
         render_result(st.session_state.last_result)
 
-with tab_history:
-    weak_points = get_weak_points()
-    if weak_points:
-        st.subheader("📊 あなたの弱点プロファイル (直近30回)")
-        for tag, count in weak_points[:5]:
-            drill = DRILL_BY_TAG.get(tag)
-            hint = f" → おすすめ: 「{drill['label']}」ドリル" if drill else ""
-            st.write(f"- `{tag}` × {count}{hint}")
-        st.markdown("---")
 
-    st.subheader("これまでの練習記録")
+def render_result(res: dict):
+    st.markdown("### 分析結果")
+    band = score_band(res["score"], SCORE_REFERENCE)
+    label, text = _BAND_TEXT[band["band"]]
+    st.markdown(ui.score_hero_html(res["score"], band, label, text, SCORE_REFERENCE,
+                                   res.get("previous_score")), unsafe_allow_html=True)
+    with st.expander("この点数の読み方"):
+        st.markdown(
+            f"- 点数は決定論的です（同じ音声なら常に同じ点数）。ただし**絶対値は未較正**で、"
+            f"日本語母語話者が正確に読んだ発話 {SCORE_REFERENCE['n_faithful']} 件でも"
+            f"中央値は {SCORE_REFERENCE['median']} 点、下位10%の境界は {SCORE_REFERENCE['p10']} 点でした"
+            f"（AI-Hub コーパス、実験6）。\n"
+            "- 上のバーの色分けはこの分布に基づく参考範囲です。上級者中心のコーパス音読文から"
+            "得た基準のため、特に短い文（1字の誤りで点数が大きく動く）では目安としてご覧ください。\n"
+            "- 最も信頼できるのは、**同じ文での前回との比較**です。"
+        )
+
+    if res.get("peaks"):
+        markers = [e for e in res["error_tags"] if "timestamp" in e]
+        components.html(
+            ui.waveform_player_html(res["audio_bytes"], res["peaks"], res["duration"],
+                                    res["error_tags"]),
+            height=ui.player_height(len(markers)),
+        )
+
+    tab_diff, tab_channels, tab_coach = st.tabs(["音素の比較", "聞こえ方", "コーチング"])
+    with tab_diff:
+        st.caption("上段が実際の発音、置き換えの場合は下段に本来の音を表示します。")
+        st.markdown(res["diff_html"], unsafe_allow_html=True)
+        st.markdown("##### 検出された誤り")
+        st.markdown(ui.error_list_html(res["error_tags"]), unsafe_allow_html=True)
+        drills = {e["tag"] for e in res["error_tags"]} & set(DRILL_BY_TAG)
+        if drills:
+            st.caption("サイドバーの「弱点ドリル」で、"
+                       + "・".join(f"「{DRILL_BY_TAG[t]['label']}」" for t in sorted(drills))
+                       + " を練習できます。")
+    with tab_channels:
+        st.markdown(ui.channel_cards_html(res), unsafe_allow_html=True)
+    with tab_coach:
+        llm = res.get("llm")
+        if llm:
+            if llm.get("error_summary"):
+                st.markdown(f"**{llm['error_summary']}**")
+            with st.container(border=True):
+                st.markdown(llm.get("feedback_jp", ""))
+            st.caption("コーチングはLLM（Gemini）が上の分析結果を根拠に作成したものです。点数には影響しません。")
+        else:
+            st.info("コーチング文は利用できませんでした。点数と音素の比較は通常どおり表示しています。",
+                    icon=":material/info:")
+            if res.get("llm_error"):
+                st.caption(res["llm_error"])
+
+
+def render_history():
     records = get_all_records()
     if not records:
-        st.write("まだ記録がありません。発音分析を試してみてください！")
-    for r in records:
-        with st.expander(f"[{r['timestamp']}] {r['intended']} (スコア: {r['score']}点)"):
-            st.write(f"**目標文章:** {r['intended']}")
-            st.write(f"**実際に聞こえた音:** {r['actual']}")
-            st.markdown("**フィードバック:**")
-            st.write(r["feedback"])
-            if st.button("🗑️ この記録を削除", key=f"del_{r['id']}", type="secondary"):
-                delete_record(r["id"])
-                st.rerun()
+        st.markdown('<div class="pc-empty">まだ記録がありません。発音を分析すると、ここに履歴が残ります。</div>',
+                    unsafe_allow_html=True)
+        return
+
+    col_chart, col_weak = st.columns([1.2, 1], gap="medium")
+    with col_chart, st.container(border=True):
+        st.markdown('<div class="pc-eyebrow">スコアの推移（直近30回）</div>', unsafe_allow_html=True)
+        recent = list(reversed(records[:30]))
+        st.line_chart({"スコア": [r["score"] for r in recent]}, height=210)
+    with col_weak, st.container(border=True):
+        st.markdown('<div class="pc-eyebrow">よく出る誤り（直近30回）</div>', unsafe_allow_html=True)
+        st.markdown(ui.weak_points_html(get_weak_points(), DRILL_BY_TAG), unsafe_allow_html=True)
+
+    st.markdown("##### これまでの練習")
+    for r in records[:50]:
+        with st.expander(f"{r['timestamp'][:16]}　{r['intended']}　·　{r['score']} 点"):
+            st.markdown(f"**認識された発音:** {r['actual']}")
+            st.markdown(r["feedback"])
+            st.button("この記録を削除", key=f"del_{r['id']}", icon=":material/delete:",
+                      on_click=delete_record, args=(r["id"],))
+
+
+st.markdown(ui.header_html(), unsafe_allow_html=True)
+render_sidebar()
+tab_practice, tab_history = st.tabs(["練習", "学習記録"])
+with tab_practice:
+    render_practice()
+with tab_history:
+    render_history()
