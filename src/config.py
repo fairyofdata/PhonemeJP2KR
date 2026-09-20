@@ -5,6 +5,7 @@ import os
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 DB_PATH = os.path.join(DATA_DIR, "history.db")
+CLIPS_DIR = os.path.join(DATA_DIR, "clips")   # recordings kept for replay
 
 WHISPER_MODEL_ID = "openai/whisper-small"
 WAV2VEC_MODEL_ID = "kresnik/wav2vec2-large-xlsr-korean"

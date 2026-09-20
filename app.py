@@ -17,7 +17,6 @@ import tempfile
 import imageio_ffmpeg
 import librosa
 import streamlit as st
-import streamlit.components.v1 as components
 from streamlit_mic_recorder import mic_recorder
 
 from src import ui
@@ -28,8 +27,8 @@ from src.asr import (
     transcribe_intelligibility,
 )
 from src.database import (
-    delete_record, get_all_records, get_previous_score, get_weak_points,
-    init_db, save_record,
+    KEEP_CLIPS, delete_record, find_clip, get_all_records, get_previous_score,
+    get_record, get_weak_points, init_db, save_clip, save_record,
 )
 from src.drills import DRILL_BY_TAG, DRILLS
 from src.g2p import to_ipa, to_surface
@@ -133,13 +132,43 @@ def run_analysis(target: str, audio_bytes: bytes) -> dict:
 
     katakana = (result["llm"] or {}).get("katakana", "N/A")
     feedback = (result["llm"] or {}).get("feedback_jp", result["llm_error"] or "")
-    save_record(target, wav2vec_text, report.score,
-                f"**[Katakana Mapping]**: {katakana}\n\n{feedback}",
-                report.error_tags)
+    record_id = save_record(target, wav2vec_text, report.score,
+                            f"**[Katakana Mapping]**: {katakana}\n\n{feedback}",
+                            report.error_tags, analysis=_payload(result))
+    save_clip(record_id, audio_bytes, ui.audio_suffix(audio_bytes))
+    result["record_id"] = record_id
     return result
 
 
+def _payload(result: dict) -> dict:
+    """The part of a result worth storing: everything but the audio itself."""
+    return {k: v for k, v in result.items() if k != "audio_bytes"}
+
+
 # --- callbacks (run before the next script pass, so they may set widget state) --
+
+def _open_record(record_id: int):
+    """Reopen a stored analysis in the result view (with audio when kept)."""
+    record = get_record(record_id)
+    if not record or not record.get("analysis"):
+        st.session_state.history_error = "この記録には分析データが保存されていません。"
+        return
+    result = dict(record["analysis"])
+    clip = find_clip(record_id)
+    if clip:
+        with open(clip, "rb") as f:
+            result["audio_bytes"] = f.read()
+    else:
+        result.pop("peaks", None)   # no audio kept -> no waveform player
+    result["restored_from"] = record["timestamp"]
+    st.session_state.last_result = result
+    st.session_state.history_error = None
+    st.session_state.nav = "練習"
+
+
+def _close_restored():
+    st.session_state.pop("last_result", None)
+
 
 def _set_target(sentence: str):
     st.session_state.target_sentence = sentence
@@ -253,6 +282,13 @@ def render_practice():
 
 
 def render_result(res: dict):
+    if res.get("restored_from"):
+        banner, action = st.columns([4, 1], vertical_alignment="center")
+        banner.info(
+            f"{res['restored_from']} の記録を表示しています。"
+            + ("" if res.get("peaks") else "（録音の保存期間を過ぎたため、波形は表示できません）"),
+            icon=":material/history:")
+        action.button("閉じる", on_click=_close_restored, width="stretch")
     st.markdown("### 分析結果")
     band = score_band(res["score"], SCORE_REFERENCE)
     label, text = _BAND_TEXT[band["band"]]
@@ -271,7 +307,7 @@ def render_result(res: dict):
 
     if res.get("peaks"):
         markers = [e for e in res["error_tags"] if "timestamp" in e]
-        components.html(
+        st.iframe(
             ui.waveform_player_html(res["audio_bytes"], res["peaks"], res["duration"],
                                     res["error_tags"]),
             height=ui.player_height(len(markers)),
@@ -322,18 +358,31 @@ def render_history():
         st.markdown(ui.weak_points_html(get_weak_points(), DRILL_BY_TAG), unsafe_allow_html=True)
 
     st.markdown("##### これまでの練習")
+    st.caption("「分析を開く」で、その回のスコア・音素の比較・コーチングを分析画面に呼び戻せます。"
+               f"録音は直近 {KEEP_CLIPS} 件まで保存され、それより古い記録は波形なしで開きます。")
+    if st.session_state.get("history_error"):
+        st.warning(st.session_state.history_error)
     for r in records[:50]:
         with st.expander(f"{r['timestamp'][:16]}　{r['intended']}　·　{r['score']} 点"):
             st.markdown(f"**認識された発音:** {r['actual']}")
             st.markdown(r["feedback"])
-            st.button("この記録を削除", key=f"del_{r['id']}", icon=":material/delete:",
-                      on_click=delete_record, args=(r["id"],))
+            open_col, del_col = st.columns(2)
+            open_col.button("分析を開く", key=f"open_{r['id']}", type="primary",
+                            icon=":material/open_in_new:", width="stretch",
+                            disabled=not r.get("analysis"),
+                            on_click=_open_record, args=(r["id"],))
+            del_col.button("この記録を削除", key=f"del_{r['id']}", icon=":material/delete:",
+                           width="stretch", on_click=delete_record, args=(r["id"],))
 
 
 st.markdown(ui.header_html(), unsafe_allow_html=True)
 render_sidebar()
-tab_practice, tab_history = st.tabs(["練習", "学習記録"])
-with tab_practice:
-    render_practice()
-with tab_history:
+# a segmented control rather than st.tabs: reopening a record switches the
+# view from a callback, which tabs cannot do
+st.session_state.setdefault("nav", "練習")
+nav = st.segmented_control("表示", ["練習", "学習記録"], key="nav",
+                           label_visibility="collapsed")
+if nav == "学習記録":
     render_history()
+else:
+    render_practice()
