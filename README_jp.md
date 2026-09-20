@@ -147,6 +147,10 @@ Kiwipiepyが未インストールの環境では文脈自由パイプライン�
 
 ## インストール
 
+**Windows なら 1 ステップ:** リポジトリを取得して `run_app.bat` をダブルクリックしてください。初回は `.venv` を作成し、必要なパッケージ（torch を含め約 2 GB）をインストールしてからアプリを起動します。2 回目以降は数秒で起動します。`git pull` の後にパッケージを入れ直すには `run_app.bat --update` を実行します。
+
+手動でセットアップする場合、または macOS / Linux の場合:
+
 ```bash
 git clone https://github.com/fairyofdata/PhonemeJP2KR
 cd PhonemeJP2KR
