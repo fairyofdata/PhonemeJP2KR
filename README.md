@@ -59,10 +59,11 @@ flowchart TD
     B --> D["Wav2Vec2-CTC (kresnik/ko)<br/>acoustics channel<br/><i>what was physically said</i>"]
     T[🎯 Target sentence] --> G
     C --> G["Deterministic G2P engine<br/>표준발음법 rules → surface form → IPA"]
-    D --> G
+    D --> N["Edge-noise filter<br/><i>isolated clicks/coughs, by CTC timing</i>"]
+    N --> G
     G --> S["Jamo alignment (Levenshtein + backtrace)<br/>score = 1 − PER · L1 error classifier"]
     S --> L["Gemini 2.5 Flash<br/>interprets structured evidence only"]
-    L --> U["UI: 4-channel contrastive view · jamo diff table<br/>katakana L1 visualization · coaching feedback"]
+    L --> U["UI: score vs Exp 6 reference band · waveform error markers<br/>jamo diff · 4-channel view · katakana · coaching"]
     S --> U
 ```
 
@@ -142,7 +143,7 @@ The rule-based L1 classifier is grounded in contrastive-phonology studies of Jap
   - 🔗 [일본인 학습자를 위한 한국어 발음 학습용 모바일 애플리케이션 설계 연구 (이유나, 경기대학교 석사학위논문, 2022)](https://www.dbpia.co.kr/journal/detail?nodeId=T16143963)
   - 🔗 [Comparison of L2 Korean pronunciation error patterns from five L1 backgrounds by using automatic phonetic transcription (Yeo et al., ICPhS 2023)](https://arxiv.org/abs/2306.10821)
 
-For the full bibliography with abstracts, see [`docs/REFERENCES.md`](docs/REFERENCES.md).
+For the full bibliography with abstracts, see [`docs/REFERENCES.md`](docs/REFERENCES.md); the design choices behind the pipeline, with the evidence for each, are recorded in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 ## Empirical Validation
 
@@ -213,7 +214,7 @@ A Japanese learner reading *화려한 도시를 그리며 찾아왔네 그 곳�
 
 ## Testing
 
-The linguistic core is fully unit-tested (138 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
+The linguistic core is fully unit-tested (138 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag. Around the core: the reference bands read from the Exp 6 results, API-key resolution (env var → `.env` → secrets), history persistence with clip pruning, edge-noise rules (including the cases that must *not* be stripped), and the UI markup — syllable grouping and escaping of learner/ASR/LLM text.
 
 ```bash
 pip install -r requirements-dev.txt

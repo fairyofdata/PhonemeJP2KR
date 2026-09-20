@@ -43,10 +43,11 @@ flowchart TD
     B --> D["Wav2Vec2-CTC (kresnik/ko)<br/>音響チャンネル<br/><i>物理的に発話された音</i>"]
     T[🎯 目標文章] --> G
     C --> G["決定論的G2Pエンジン<br/>標準発音法の規則 → 表面形 → IPA"]
-    D --> G
+    D --> N["前後の雑音フィルタ<br/><i>CTCタイミングで分離した操作音・咳払い</i>"]
+    N --> G
     G --> S["字母アライメント (Levenshtein + backtrace)<br/>スコア = 1 − PER · L1エラー分類器"]
     S --> L["Gemini 2.5 Flash<br/>構造化された根拠のみを解釈"]
-    L --> U["UI: 4チャンネル対照ビュー · 字母diffテーブル<br/>カタカナL1可視化 · コーチングフィードバック"]
+    L --> U["UI: 実験6の参考範囲上のスコア · 波形の誤りマーカー<br/>字母比較 · 4チャンネルビュー · カタカナ · コーチング"]
     S --> U
 ```
 
@@ -126,7 +127,7 @@ Kiwipiepyが未インストールの環境では文脈自由パイプライン�
   - 🔗 [일본인 학습자를 위한 한국어 발음 학습용 모바일 애플리케이션 설계 연구（이유나, 경기대학교 석사학위논문, 2022）](https://www.dbpia.co.kr/journal/detail?nodeId=T16143963)
   - 🔗 [Comparison of L2 Korean pronunciation error patterns from five L1 backgrounds by using automatic phonetic transcription（Yeo et al., ICPhS 2023）](https://arxiv.org/abs/2306.10821)
 
-詳細な参考文献と要約については、[`docs/REFERENCES.md`](docs/REFERENCES.md)をご覧ください。
+詳細な参考文献と要約については、[`docs/REFERENCES.md`](docs/REFERENCES.md)を、パイプラインの設計判断とその根拠については [`docs/DECISIONS.md`](docs/DECISIONS.md) をご覧ください。
 
 ## 実証的検証 (Empirical Validation)
 
@@ -197,7 +198,7 @@ streamlit run app.py
 
 ## テスト
 
-言語学コアは完全にユニットテストされています（138件）: 標準発音法に基づく表面形変換60件以上（形態音韻規則と境界誤検出の回帰ガードを含む）、IPAマッピング、アライメント演算、CTCタイムスタンプ伝播、統計ユーティリティ、すべてのL1エラータグを検証。
+言語学コアは完全にユニットテストされています（138件）: 標準発音法に基づく表面形変換60件以上（形態音韻規則と境界誤検出の回帰ガードを含む）、IPAマッピング、アライメント演算、CTCタイムスタンプ伝播、統計ユーティリティ、すべてのL1エラータグを検証。コア周辺も対象です: 実験6の結果から読み込む参考範囲、APIキーの解決順（環境変数 → `.env` → secrets）、録音の整理を含む学習記録の永続化、前後の雑音ルール（除外して**はいけない**ケースを含む）、そしてUIマークアップの音節グルーピングと学習者・ASR・LLMテキストのエスケープ。
 
 ```bash
 pip install -r requirements-dev.txt

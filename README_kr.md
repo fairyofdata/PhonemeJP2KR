@@ -43,10 +43,11 @@ flowchart TD
     B --> D["Wav2Vec2-CTC (kresnik/ko)<br/>음향 채널<br/><i>물리적으로 발화된 소리</i>"]
     T[🎯 목표 문장] --> G
     C --> G["결정적 G2P 엔진<br/>표준발음법 규칙 → 표면형 → IPA"]
-    D --> G
+    D --> N["앞뒤 잡음 필터<br/><i>CTC 타이밍으로 분리된 클릭·헛기침</i>"]
+    N --> G
     G --> S["자모 정렬 (Levenshtein + backtrace)<br/>점수 = 1 − PER · L1 오류 분류기"]
     S --> L["Gemini 2.5 Flash<br/>구조화된 근거만 해석"]
-    L --> U["UI: 4채널 대조 뷰 · 자모 diff 테이블<br/>가타카나 L1 시각화 · 코칭 피드백"]
+    L --> U["UI: 실험6 참고 구간 위의 점수 · 파형 오류 마커<br/>자모 비교 · 4채널 뷰 · 가타카나 · 코칭"]
     S --> U
 ```
 
@@ -126,7 +127,7 @@ Kiwipiepy가 설치되지 않은 환경에서는 문맥 자유 파이프라인�
   - 🔗 [일본인 학습자를 위한 한국어 발음 학습용 모바일 애플리케이션 설계 연구 (이유나, 경기대학교 석사학위논문, 2022)](https://www.dbpia.co.kr/journal/detail?nodeId=T16143963)
   - 🔗 [Comparison of L2 Korean pronunciation error patterns from five L1 backgrounds by using automatic phonetic transcription (Yeo 외, ICPhS 2023)](https://arxiv.org/abs/2306.10821)
 
-전체 참고 문헌 및 초록은 [`docs/REFERENCES.md`](docs/REFERENCES.md)에서 확인할 수 있습니다.
+전체 참고 문헌 및 초록은 [`docs/REFERENCES.md`](docs/REFERENCES.md)에서 확인할 수 있습니다. 파이프라인 설계 결정과 각 결정의 근거는 [`docs/DECISIONS.md`](docs/DECISIONS.md)에 기록되어 있습니다.
 
 ## 실증 검증 (Empirical Validation)
 
@@ -197,7 +198,7 @@ streamlit run app.py
 
 ## 테스트
 
-언어학 코어는 완전히 단위 테스트되어 있습니다(138개): 표준발음법 기준 표면형 변환 60개 이상(형태음운 규칙과 경계 오탐 회귀 가드 포함), IPA 매핑, 정렬 연산, CTC 타임스탬프 전파, 통계 유틸리티, 모든 L1 오류 태그 검증.
+언어학 코어는 완전히 단위 테스트되어 있습니다(138개): 표준발음법 기준 표면형 변환 60개 이상(형태음운 규칙과 경계 오탐 회귀 가드 포함), IPA 매핑, 정렬 연산, CTC 타임스탬프 전파, 통계 유틸리티, 모든 L1 오류 태그 검증. 코어 주변부도 함께 검증합니다: 실험 6 결과에서 읽어오는 참고 구간, API 키 탐색 순서(환경 변수 → `.env` → secrets), 녹음 정리를 포함한 학습 기록 저장, 앞뒤 잡음 규칙(제거하면 **안 되는** 경우 포함), 그리고 UI 마크업의 음절 묶기와 학습자·ASR·LLM 텍스트 이스케이프.
 
 ```bash
 pip install -r requirements-dev.txt
