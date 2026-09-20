@@ -171,19 +171,3 @@ def score_pronunciation(target_text: str, actual_text: str, char_timestamps=None
         pairs=pairs,
         error_tags=classify_errors(pairs),
     )
-
-
-def render_diff_markdown(pairs) -> str:
-    """Two-row jamo diff for the UI: target row vs produced row."""
-    ref_row, hyp_row = [], []
-    for p in pairs:
-        ref_cell = p.ref or "·"
-        hyp_cell = p.hyp or "·"
-        if p.op != "match":
-            hyp_cell = f"**{hyp_cell}**"
-        ref_row.append(ref_cell)
-        hyp_row.append(hyp_cell)
-    header = "| " + " | ".join(ref_row) + " |"
-    sep = "|" + "---|" * len(ref_row)
-    body = "| " + " | ".join(hyp_row) + " |"
-    return "\n".join([header, sep, body])
