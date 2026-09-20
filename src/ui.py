@@ -16,6 +16,14 @@ INK = "#1d2433"
 MUTED = "#687085"
 LINE = "#e3e6ee"
 ACCENT = "#3b5bdb"
+# System fonts only: a webfont adds an external fetch that breaks the page
+# when it is blocked or partially cached (observed: mangled glyphs in the
+# 700-weight title while 400-weight body text rendered fine).
+FONT = ('"Noto Sans JP", "Yu Gothic UI", "Hiragino Kaku Gothic ProN", "Meiryo", '
+        '"Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif')
+FONT_KR = ('"Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", '
+           '"Yu Gothic UI", system-ui, sans-serif')
+
 BAND_COLORS = {
     "typical_faithful": "#2b8a3e",
     "indeterminate": "#d08c00",
@@ -24,11 +32,13 @@ BAND_COLORS = {
 
 GLOBAL_CSS = f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap');
 /* set on containers only: icon spans declare their own font and must keep it */
-.stApp, .stApp button, .stApp input, .stApp textarea {{
-  font-family: 'Noto Sans JP', 'Noto Sans KR', system-ui, sans-serif;
-}}
+.stApp, .stApp button, .stApp input, .stApp textarea {{ font-family: {FONT}; }}
+/* Streamlit's own stylesheet sets Source Sans (no CJK) on markdown content,
+   and inheritance loses to it — so name the custom elements explicitly */
+.stApp [class^="pc-"], .stApp [class*=" pc-"] {{ font-family: {FONT}; }}
+.stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp p, .stApp li, .stApp td, .stApp th,
+.stApp [data-testid="stCaptionContainer"] {{ font-family: {FONT}; }}
 .block-container {{ max-width: 1120px; padding-top: 2.2rem; padding-bottom: 4rem; }}
 h1, h2, h3 {{ letter-spacing: -0.01em; }}
 .pc-header {{ display: flex; align-items: flex-end; justify-content: space-between;
@@ -40,12 +50,12 @@ h1, h2, h3 {{ letter-spacing: -0.01em; }}
   border-radius: 999px; padding: 0.15rem 0.6rem; background: #fff; }}
 .pc-eyebrow {{ font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em;
   text-transform: uppercase; color: {MUTED}; margin-bottom: 0.35rem; }}
-.pc-target-kr {{ font-family: 'Noto Sans KR', sans-serif; font-size: 1.9rem;
+.pc-target-kr {{ font-family: {FONT_KR}; font-size: 1.9rem;
   font-weight: 700; color: {INK}; line-height: 1.3; word-break: keep-all; }}
 .pc-target-meta {{ display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.8rem;
   margin-top: 0.6rem; font-size: 0.9rem; }}
 .pc-target-meta dt {{ color: {MUTED}; }}
-.pc-target-meta dd {{ margin: 0; color: {INK}; font-family: 'Noto Sans KR', sans-serif; }}
+.pc-target-meta dd {{ margin: 0; color: {INK}; font-family: {FONT_KR}; }}
 .pc-ipa {{ font-family: 'Charis SIL', 'Doulos SIL', 'Noto Sans', serif; }}
 
 .pc-hero {{ border: 1px solid {LINE}; border-radius: 14px; background: #fff;
@@ -75,7 +85,7 @@ h1, h2, h3 {{ letter-spacing: -0.01em; }}
   gap: 0.8rem; }}
 .pc-card {{ border: 1px solid {LINE}; border-radius: 12px; background: #fff;
   padding: 0.9rem 1rem; }}
-.pc-card .kr {{ font-family: 'Noto Sans KR', sans-serif; font-size: 1.25rem;
+.pc-card .kr {{ font-family: {FONT_KR}; font-size: 1.25rem;
   font-weight: 600; color: {INK}; margin: 0.25rem 0; word-break: keep-all; }}
 .pc-card .note {{ color: {MUTED}; font-size: 0.8rem; line-height: 1.5; }}
 
@@ -84,7 +94,7 @@ h1, h2, h3 {{ letter-spacing: -0.01em; }}
   background: #eef0f6; align-items: flex-start; }}
 .pc-syl.bad {{ background: #ffe3e3; }}
 .pc-j {{ min-width: 2.1rem; text-align: center; border-radius: 8px; padding: 0.3rem 0.35rem;
-  font-family: 'Noto Sans KR', sans-serif; font-size: 1.05rem; line-height: 1.15;
+  font-family: {FONT_KR}; font-size: 1.05rem; line-height: 1.15;
   border: 1px solid {LINE}; background: #fff; color: {INK}; }}
 .pc-j small {{ display: block; font-size: 0.68rem; color: {MUTED}; }}
 .pc-j.sub {{ background: #fff0f0; border-color: #ffc9c9; color: #c92a2a; }}
@@ -98,7 +108,7 @@ h1, h2, h3 {{ letter-spacing: -0.01em; }}
 .pc-errors li {{ display: flex; justify-content: space-between; gap: 1rem;
   border-bottom: 1px solid {LINE}; padding: 0.5rem 0; font-size: 0.92rem; }}
 .pc-errors li:last-child {{ border-bottom: 0; }}
-.pc-errors .ev {{ font-family: 'Noto Sans KR', sans-serif; color: {MUTED}; white-space: nowrap; }}
+.pc-errors .ev {{ font-family: {FONT_KR}; color: {MUTED}; white-space: nowrap; }}
 
 .pc-bars {{ display: flex; flex-direction: column; gap: 0.55rem; }}
 .pc-bar-head {{ display: flex; justify-content: space-between; gap: 0.5rem;
@@ -328,7 +338,7 @@ def waveform_player_html(audio_bytes: bytes, peaks: list, duration: float,
                       ensure_ascii=False).replace("</", "<\\/")
     return f"""
 <style>
-  body {{ margin:0; font-family:'Noto Sans JP','Noto Sans KR',system-ui,sans-serif; color:{INK}; }}
+  body {{ margin:0; font-family:{FONT}; color:{INK}; }}
   .wrap {{ border:1px solid {LINE}; border-radius:12px; padding:12px 14px; background:#fff; }}
   .row {{ display:flex; align-items:center; gap:12px; }}
   button.play {{ width:40px; height:40px; border-radius:50%; border:0; background:{ACCENT};
