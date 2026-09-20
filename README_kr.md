@@ -167,7 +167,7 @@ $env:GEMINI_API_KEY = "your-key"
 export GEMINI_API_KEY="your-key"
 ```
 
-또는 `.streamlit/secrets.toml`에 `GEMINI_API_KEY = "your-key"`를 추가해도 됩니다.
+또는 프로젝트 루트의 `.env` 파일에 `GEMINI_API_KEY=your-key`를 적거나(git에 올라가지 않습니다), `.streamlit/secrets.toml`에 `GEMINI_API_KEY = "your-key"`를 추가해도 됩니다. 탐색 순서는 환경 변수 → `.env` → Streamlit secrets입니다. 키가 없어도 점수와 음소 분석은 그대로 동작하며, 코칭 문구와 일→한 번역만 표시되지 않습니다.
 
 ## 사용법
 
@@ -181,11 +181,15 @@ streamlit run app.py
 4. 결과 확인 — 참고 구간과 점수(같은 문장 직전 시도 대비 변화 포함), 오류 위치가 빨간 마커로 표시된 파형 플레이어(Wav2Vec2-CTC 타임스탬프, 클릭 시 해당 위치 재생), 그리고 음절 단위 자모 비교·오류 목록 / Whisper·Wav2Vec2·가타카나 비교 / LLM 코칭 탭
 5. 「学習記録」 탭에서 점수 추이와 반복되는 오류(약점 프로파일) 확인
 
-![분석 결과](docs/assets/demo_result.png)
+![점수·파형 마커·자모 비교](docs/assets/demo_phoneme_diff.png)
+
+*점수는 실험 6의 참고 구간 위에 표시되고, 파형의 마커는 검출된 오류 지점을 재생하며, 자모 비교는 불일치마다 이름을 붙입니다. 아래는 같은 분석을 ASR 채널로 본 화면입니다 — 목표 문장, 언어 모델이 보정해 들은 Whisper의 인식, 그리고 점수 계산에 쓰이는 보정 없는 음향 인식입니다.*
+
+![ASR 채널 대조](docs/assets/demo_channels.png)
 
 ## 테스트
 
-언어학 코어는 완전히 단위 테스트되어 있습니다(117개): 표준발음법 기준 표면형 변환 60개 이상(형태음운 규칙과 경계 오탐 회귀 가드 포함), IPA 매핑, 정렬 연산, CTC 타임스탬프 전파, 통계 유틸리티, 모든 L1 오류 태그 검증.
+언어학 코어는 완전히 단위 테스트되어 있습니다(122개): 표준발음법 기준 표면형 변환 60개 이상(형태음운 규칙과 경계 오탐 회귀 가드 포함), IPA 매핑, 정렬 연산, CTC 타임스탬프 전파, 통계 유틸리티, 모든 L1 오류 태그 검증.
 
 ```bash
 pip install -r requirements-dev.txt

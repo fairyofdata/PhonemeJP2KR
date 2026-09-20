@@ -183,7 +183,7 @@ $env:GEMINI_API_KEY = "your-key"
 export GEMINI_API_KEY="your-key"
 ```
 
-Alternatively put `GEMINI_API_KEY = "your-key"` in `.streamlit/secrets.toml`.
+Alternatively put `GEMINI_API_KEY=your-key` in a `.env` file at the project root (gitignored), or `GEMINI_API_KEY = "your-key"` in `.streamlit/secrets.toml`. Resolution order: environment variable → `.env` → Streamlit secrets. Without a key, scoring and the phoneme analysis still work; only the coaching text and JP→KR translation are unavailable.
 
 ## Usage
 
@@ -197,11 +197,15 @@ streamlit run app.py
 4. Read the result: the reference band and score with the change since your last attempt at the same sentence; a waveform player whose red markers (Wav2Vec2-CTC timestamps) replay each detected error; then tabs for the syllable-grouped jamo diff with named errors, the Whisper / Wav2Vec2 / katakana comparison, and the LLM coaching.
 5. The 学習記録 tab charts your scores and aggregates recurring errors into a weak-point profile.
 
-![Analysis result](docs/assets/demo_result.png)
+![Score, waveform markers and the jamo diff](docs/assets/demo_phoneme_diff.png)
+
+*The score is placed in the Experiment 6 reference band, the waveform markers replay each detected error, and the jamo diff names every mismatch. Below: the same analysis seen as ASR channels — the target, what Whisper heard with its language model, and the raw acoustic reading the score is computed from.*
+
+![ASR channel comparison](docs/assets/demo_channels.png)
 
 ## Testing
 
-The linguistic core is fully unit-tested (117 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
+The linguistic core is fully unit-tested (122 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
 
 ```bash
 pip install -r requirements-dev.txt
