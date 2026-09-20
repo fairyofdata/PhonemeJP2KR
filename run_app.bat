@@ -51,10 +51,11 @@ if defined NEEDS_INSTALL (
 )
 
 REM --- LLM feedback needs a key; the analysis itself works without one ---------
-if not defined GEMINI_API_KEY if not exist ".streamlit\secrets.toml" (
-    echo [i] GEMINI_API_KEY is not set: coaching text and JP-KR translation
+if not defined GEMINI_API_KEY if not exist ".env" if not exist ".streamlit\secrets.toml" (
+    echo [i] No Gemini API key found: coaching text and JP-KR translation
     echo     stay unavailable. Scoring and the phoneme analysis work as usual.
-    echo     To enable them: set GEMINI_API_KEY=your-key
+    echo     To enable them, put GEMINI_API_KEY=your-key in a .env file
+    echo     next to this script, or set GEMINI_API_KEY in the environment.
 )
 
 echo [3/3] Starting the app. Your browser will open shortly.
