@@ -14,6 +14,7 @@ from google import genai
 from google.genai import types
 
 from .config import GEMINI_MODEL_ID, get_gemini_api_key
+from .labels import tag_label
 
 _FEEDBACK_PROMPT = """あなたは日本語母語話者の母語干渉（L1 Interference）を深く理解している韓国語発音矯正の専門家です。
 
@@ -27,7 +28,7 @@ _FEEDBACK_PROMPT = """あなたは日本語母語話者の母語干渉（L1 Inte
 - 物理的に発音された音 (Wav2Vec2認識結果): {wav2vec_text}
 - 実際の発音のIPA (G2Pによる): /{actual_ipa}/
 - 音素レベルスコア: {score}/100
-- 自動検出されたエラータグ (jamoアライメントに基づく): {error_tags}
+- 自動検出された誤り (jamoアライメントに基づく。nameは学習者に見せる日本語名): {error_tags}
 
 [日本語母語話者の典型的エラーパターン (参考)]
 1. 母音挿入 (Epenthesis): モーラ拍リズムの影響でパッチムの後に /ɯ/ や /u/ を挿入する。
@@ -38,7 +39,12 @@ _FEEDBACK_PROMPT = """あなたは日本語母語話者の母語干渉（L1 Inte
 6. 二重母音の問題: /jʌ/(ㅕ) を /jo/(ㅛ) で代替し、語頭の /ɰi/(ㅢ) を /i/ や /ɯ/ に単母音化する。
 
 [タスク]
-上記のエラータグと2つのASR結果の差分を根拠として、以下のJSONのみを出力してください。
+上記の検出結果と2つのASR結果の差分を根拠として、以下のJSONのみを出力してください。
+
+[執筆ルール]
+- 学習者に見せる文章です。`coda_deletion` のような内部タグIDは絶対に書かないでください。誤りを指す場合は上記の name（日本語名）を使ってください。
+- マークダウンの見出し記法(#)は使わず、各誤りは「**日本語名**」で始まる短い段落にしてください。
+- 重要度の高い誤りを最大3件まで取り上げ、それ以外は最後に1文でまとめてください。
 
 {{
   "katakana": "Wav2Vec2が認識した音（実際の発音）を、日本人がカタカナで発音したかのように表記した文字列。L1干渉の可視化用。",
@@ -51,6 +57,11 @@ _TRANSLATE_PROMPT = (
     "訳文の韓国語1文のみを出力し、引用符・説明・マークダウンは一切含めないでください。\n\n"
     "日本語: {jp_text}"
 )
+
+
+def _named(error_tags: list) -> list:
+    """Attach the learner-facing Japanese name to each tag for the prompt."""
+    return [{**t, "name": tag_label(t.get("tag", ""))} for t in (error_tags or [])]
 
 
 class GeminiUnavailableError(RuntimeError):
@@ -79,7 +90,7 @@ def generate_feedback(target: str, target_surface: str, target_ipa: str,
         wav2vec_text=wav2vec_text,
         actual_ipa=actual_ipa,
         score=score,
-        error_tags=json.dumps(error_tags, ensure_ascii=False),
+        error_tags=json.dumps(_named(error_tags), ensure_ascii=False),
     )
     client = _get_client()
     try:
