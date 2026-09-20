@@ -195,7 +195,7 @@ streamlit run app.py
 2. Listen to the native reference (edge-tts neural voices: SunHi / InJoon / Hyunsu, chosen in the sidebar).
 3. Record with the browser mic or upload a file, then run the analysis.
 4. Read the result: the reference band and score with the change since your last attempt at the same sentence; a waveform player whose red markers (Wav2Vec2-CTC timestamps) replay each detected error; then tabs for the syllable-grouped jamo diff with named errors, the Whisper / Wav2Vec2 / katakana comparison, and the LLM coaching.
-5. The 学習記録 tab charts your scores and aggregates recurring errors into a weak-point profile.
+5. The 学習記録 tab charts your scores, aggregates recurring errors into a weak-point profile, and reopens any past attempt in the result view — with its recording, kept for the 50 most recent attempts.
 
 ![Score, waveform markers and the jamo diff](docs/assets/demo_phoneme_diff.png)
 
@@ -205,7 +205,7 @@ streamlit run app.py
 
 ## Testing
 
-The linguistic core is fully unit-tested (122 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
+The linguistic core is fully unit-tested (130 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
 
 ```bash
 pip install -r requirements-dev.txt

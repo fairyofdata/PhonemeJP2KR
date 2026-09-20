@@ -304,6 +304,15 @@ def audio_mime(audio_bytes: bytes) -> str:
     return "audio/wav"
 
 
+AUDIO_SUFFIXES = {"audio/wav": ".wav", "audio/mpeg": ".mp3", "audio/flac": ".flac",
+                  "audio/ogg": ".ogg", "audio/webm": ".webm"}
+
+
+def audio_suffix(audio_bytes: bytes) -> str:
+    """File extension matching the sniffed container, for stored clips."""
+    return AUDIO_SUFFIXES.get(audio_mime(audio_bytes), ".wav")
+
+
 def player_height(n_markers: int) -> int:
     return 150 + (46 if n_markers else 0)
 
