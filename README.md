@@ -163,6 +163,10 @@ The recruited-rater correlation study with pronunciation-specific ratings (Exper
 
 ## Installation
 
+**Windows, in one step:** clone the repository and double-click `run_app.bat`. It creates `.venv`, installs the requirements on the first run (about 2 GB, torch included), and starts the app; later runs start in seconds. `run_app.bat --update` reinstalls the requirements after a `git pull`.
+
+Manual setup, or on macOS / Linux:
+
 ```bash
 git clone https://github.com/fairyofdata/PhonemeJP2KR
 cd PhonemeJP2KR

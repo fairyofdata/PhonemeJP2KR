@@ -147,6 +147,10 @@ Kiwipiepy가 설치되지 않은 환경에서는 문맥 자유 파이프라인�
 
 ## 설치
 
+**Windows에서 가장 간단한 방법:** 저장소를 내려받은 뒤 `run_app.bat`을 더블클릭하세요. 처음 실행할 때 `.venv`를 만들고 필요한 패키지(torch 포함 약 2GB)를 설치한 다음 앱을 띄웁니다. 두 번째부터는 몇 초 만에 시작합니다. `git pull` 이후 패키지를 다시 설치하려면 `run_app.bat --update`를 실행하세요.
+
+직접 설치하거나 macOS / Linux를 쓰는 경우:
+
 ```bash
 git clone https://github.com/fairyofdata/PhonemeJP2KR
 cd PhonemeJP2KR
