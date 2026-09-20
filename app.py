@@ -33,6 +33,7 @@ from src.database import (
 from src.drills import DRILL_BY_TAG, DRILLS
 from src.g2p import to_ipa, to_surface
 from src.llm import GeminiUnavailableError, generate_feedback, translate_jp_to_kr
+from src.preprocess import strip_edge_noise
 from src.reference import load_reference, score_band
 from src.scoring import score_pronunciation
 from src.tts import VOICES, generate_tts_audio
@@ -87,7 +88,7 @@ def convert_to_wav16k(audio_bytes: bytes) -> str:
     return out_path
 
 
-def run_analysis(target: str, audio_bytes: bytes) -> dict:
+def run_analysis(target: str, audio_bytes: bytes, strip_noise: bool = True) -> dict:
     """Full pipeline. Returns a result dict stored in session_state."""
     wav_path = convert_to_wav16k(audio_bytes)
     try:
@@ -97,8 +98,13 @@ def run_analysis(target: str, audio_bytes: bytes) -> dict:
     finally:
         os.unlink(wav_path)
 
+    cleaned = strip_edge_noise(target, wav2vec_text, char_timestamps) if strip_noise else None
+    if cleaned and cleaned.changed:
+        wav2vec_text, char_timestamps = cleaned.text, cleaned.char_timestamps
+
     report = score_pronunciation(target, wav2vec_text, char_timestamps)
     result = {
+        "stripped_noise": cleaned.removed if cleaned and cleaned.changed else None,
         "target": target,
         "target_surface": to_surface(target),
         "target_ipa": to_ipa(target),
@@ -260,6 +266,10 @@ def render_practice():
             if mic_data and mic_data.get("bytes"):
                 audio_bytes = mic_data["bytes"]
 
+        st.checkbox("録音の前後の物音を自動で除外する", key="strip_noise", value=True,
+                    help="ボタン操作音や咳払いなど、文の前後に間を空けて入った音だけを対象にします。"
+                         "発音と地続きの音（パッチム後の母音挿入など）は除外しません。")
+
         if audio_bytes:
             st.audio(audio_bytes, format=ui.audio_mime(audio_bytes))
         clicked = st.button("発音を分析する", type="primary", width="stretch",
@@ -273,7 +283,9 @@ def render_practice():
         else:
             with st.spinner("音声を分析しています…"):
                 try:
-                    st.session_state.last_result = run_analysis(target, audio_bytes)
+                    st.session_state.last_result = run_analysis(
+                        target, audio_bytes,
+                        strip_noise=st.session_state.get("strip_noise", True))
                 except subprocess.CalledProcessError:
                     st.error("音声ファイルを読み込めませんでした。別の形式で試してください。")
 
@@ -304,6 +316,10 @@ def render_result(res: dict):
             "得た基準のため、特に短い文（1字の誤りで点数が大きく動く）では目安としてご覧ください。\n"
             "- 最も信頼できるのは、**同じ文での前回との比較**です。"
         )
+
+    if res.get("stripped_noise"):
+        st.caption(f"録音の前後にあった「{res['stripped_noise']}」は、文と間が空いていたため"
+                   "採点から除外しました。")
 
     if res.get("peaks"):
         markers = [e for e in res["error_tags"] if "timestamp" in e]

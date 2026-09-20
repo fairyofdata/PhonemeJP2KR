@@ -205,7 +205,7 @@ streamlit run app.py
 
 ## Testing
 
-The linguistic core is fully unit-tested (130 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
+The linguistic core is fully unit-tested (138 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag.
 
 ```bash
 pip install -r requirements-dev.txt
@@ -225,6 +225,8 @@ Designed with practical engineering constraints for low latency, fault tolerance
 Known limitations of the rule engine (documented in [`src/g2p.py`](src/g2p.py)):
 - 사잇소리 tensification in native compounds (강가 → [강까], 밤길 → [밤낄]) — requires semantic compound analysis, beyond POS tagging
 - Morphology-conditioned rules depend on Kiwipiepy's POS disambiguation; genuinely ambiguous eojeols (e.g. bare 신고: noun [신고] vs verb [신꼬]) resolve to Kiwi's most probable reading
+
+Recorder noise (a button click, a throat clear) is transcribed by the LM-free acoustics channel and would score as an insertion. [`src/preprocess.py`](src/preprocess.py) drops such a chunk only when it sits at the edge of the take, is separated by a pause (CTC character offsets), and removing it raises the score — so an epenthetic vowel, which is continuous with the speech, is never removed. Noise that overlaps the speech itself is not separable this way.
 
 Known limits of the error taxonomy ([`docs/L1_TAXONOMY.md`](docs/L1_TAXONOMY.md)): voicing, phonological-rule application (e.g. saying [합니다] without nasalization), and question intonation cannot be detected, because the acoustic channel emits spelling, which the G2P re-normalizes.
 
