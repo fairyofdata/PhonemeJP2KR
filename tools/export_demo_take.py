@@ -1,6 +1,6 @@
 """Export one stored analysis as the demo-take JSON the portfolio site draws from.
 
-    python tools/export_demo_take.py --record 6 --out docs/assets/demo_take.json
+    python tools/export_demo_take.py --record 9 --out docs/assets/demo_take.json
 
 No model or API is called. The stored record already holds the ASR
 outputs; everything else (surface form, IPA, word alignment, tags,
@@ -85,9 +85,11 @@ def build(record: dict) -> dict:
         "schema": SCHEMA,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "source": {"record_id": record["id"], "recorded_at": record["timestamp"],
+                   # admin text input: the TTS script and voice the audio came from
+                   "input": a.get("admin_input") or "recording",
                    "screenshots": ["docs/assets/demo_phoneme_diff.png",
-                                   "docs/assets/demo_channels.png",
-                                   "docs/assets/demo_coaching.png"]},
+                                   "docs/assets/demo_channels.png"]
+                                  + (["docs/assets/demo_coaching.png"] if a.get("llm") else [])},
         "versions": {
             "app": _pkg("phoneme-jp2kr") or "0.1.0",
             "git_commit": _git_commit(),

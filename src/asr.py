@@ -81,3 +81,36 @@ def transcribe_acoustics(audio_path: str, processor, model) -> tuple[str, list[t
             char_timestamps.append((char, start_time, end_time))
             
     return text, char_timestamps
+
+
+def align_text(audio_path: str, text: str, processor, model) -> list[tuple[str, float, float]]:
+    """Place a *given* transcript on the audio by CTC forced alignment.
+
+    Returns [(char, start_time, end_time), ...] like transcribe_acoustics,
+    so the rest of the pipeline cannot tell the difference. Used by the
+    admin text input; raises ValueError for characters outside the
+    model's vocabulary.
+    """
+    from .ctc import forced_align
+
+    vocab = processor.tokenizer.get_vocab()
+    chars = [c for c in text if c.strip()]
+    missing = sorted({c for c in chars if c not in vocab})
+    if missing:
+        raise ValueError(f"not in the Wav2Vec2 vocabulary: {' '.join(missing)}")
+    blank = processor.tokenizer.pad_token_id
+    ids = [vocab[c] for c in chars]
+
+    audio = _load_audio(audio_path)
+    inputs = processor(audio, return_tensors="pt", sampling_rate=AUDIO_SAMPLE_RATE)
+    inputs = {k: v.to(DEVICE) for k, v in inputs.items()}
+    with torch.no_grad():
+        log_probs = model(**inputs).logits[0].log_softmax(-1)
+    # only the columns the alignment reads, re-indexed 0..k
+    cols = sorted(set(ids) | {blank})
+    small = log_probs[:, cols].cpu().tolist()
+    local = {tok: i for i, tok in enumerate(cols)}
+    spans = forced_align(small, [local[i] for i in ids], local[blank])
+
+    frame = getattr(model.config, "inputs_to_logits_ratio", 320) / AUDIO_SAMPLE_RATE
+    return [(c, a * frame, b * frame) for c, (a, b) in zip(chars, spans)]

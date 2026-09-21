@@ -9,7 +9,7 @@ CLIPS_DIR = os.path.join(DATA_DIR, "clips")   # recordings kept for replay
 
 WHISPER_MODEL_ID = "openai/whisper-small"
 WAV2VEC_MODEL_ID = "kresnik/wav2vec2-large-xlsr-korean"
-GEMINI_MODEL_ID = "gemini-2.5-flash"
+GEMINI_MODEL_ID = "gemini-3.8-flash"
 
 AUDIO_SAMPLE_RATE = 16000
 

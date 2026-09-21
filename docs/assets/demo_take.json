@@ -1,22 +1,26 @@
 {
   "schema": "phonemejp2kr.demo_take/1",
-  "generated_at": "2026-09-21T10:28:32+00:00",
+  "generated_at": "2026-09-21T17:40:30+00:00",
   "source": {
-    "record_id": 6,
-    "recorded_at": "2026-09-21 01:07:30",
+    "record_id": 9,
+    "recorded_at": "2026-09-22 02:34:57",
+    "input": {
+      "tts_text": "はりょはん どしるる ぐりみょ ちゃずあわんね ぐ ごすん ちゅぶごど ほむはん ごっ",
+      "voice": "ja-JP-NanamiNeural",
+      "acoustic_text": "하료한 도시루루 구리묘 차즈아완네 구 고순 추부고도 호무한 곳"
+    },
     "screenshots": [
       "docs/assets/demo_phoneme_diff.png",
-      "docs/assets/demo_channels.png",
-      "docs/assets/demo_coaching.png"
+      "docs/assets/demo_channels.png"
     ]
   },
   "versions": {
     "app": "0.1.0",
-    "git_commit": "8d715c9",
+    "git_commit": "838c090",
     "g2p_morphology": "kiwipiepy 0.23.2",
     "whisper": "openai/whisper-small",
     "wav2vec2": "kresnik/wav2vec2-large-xlsr-korean",
-    "coaching_llm": "gemini-2.5-flash"
+    "coaching_llm": "gemini-3.8-flash"
   },
   "target": {
     "text": "화려한 도시를 그리며 찾아왔네 그 곳은 춥고도 험한 곳",
@@ -26,27 +30,27 @@
   "channels": {
     "heard": {
       "model": "openai/whisper-small",
-      "text": "하려한 도시르 그리며 자두자 왔네 그곳은 주부고도 홈한 곳",
-      "ipa": "haɾjʌhan toɕiɾɯ kɯɾimjʌ tɕadudʑa wanne kɯɡosɯn tɕubuɡodo homhan kot̚",
+      "text": "하려한 도시르르 그리미오차즈 아완에 구고 순추부고도 홈한고",
+      "ipa": "haɾjʌhan toɕiɾɯɾɯ kɯɾimiotɕʰadʑɯ awane kuɡo suntɕʰubuɡodo homhanɡo",
       "scored": false,
       "role": "What a listener model understood; its language model corrects toward plausible Korean. Display only."
     },
     "acoustic": {
       "model": "kresnik/wav2vec2-large-xlsr-korean",
-      "text": "하류한도시로그리임용들증하는데그고은죽고도홍한고",
-      "ipa": "haɾjuhandoɕiɾoɡɯɾiimjoŋdɯɭdʑɯŋhanɯndeɡɯɡoɯndʑuk̚k͈odohoŋhanɡo",
+      "text": "하료한 도시루루 구리묘 차즈아완네 구 고순 추부고도 호무한 곳",
+      "ipa": "haɾjohan toɕiɾuɾu kuɾimjo tɕʰadʑɯawanne ku kosun tɕʰubuɡodo homuhan kot̚",
       "scored": true,
       "role": "Acoustic recognition without a language model; the score and all scored error tags come from this channel.",
-      "stripped_edge_noise": "습",
+      "stripped_edge_noise": null,
       "katakana": {
-        "text": "ハリュハンドシログリイミョンドゥルジュンハヌンデグゴウンジュクコドホンハンゴ",
+        "text": "ハリョハン トシルル クリミョ チャジュアワンネ ク コスン チュブゴド ホムハン コッ",
         "is_channel": false,
         "method": "rule-based transliteration of the surface jamo (src/kana.py); merges lenis/aspirated/tense, ㅓ/ㅗ, ㅡ/ㅜ, ㄴ/ㅇ codas"
       }
     }
   },
   "score": {
-    "value": 60,
+    "value": 76,
     "definition": "round(100 × (1 − jamo PER)), acoustic vs target",
     "calibrated": false
   },
@@ -56,8 +60,8 @@
       "target": "화려한",
       "surface": "화려한",
       "heard": "하려한",
-      "acoustic": "하류한",
-      "katakana": "ハリュハン",
+      "acoustic": "하료한",
+      "katakana": "ハリョハン",
       "acoustic_errors": [
         {
           "tag": "substitution",
@@ -65,15 +69,15 @@
           "ref": "ㅘ",
           "hyp": "ㅏ",
           "explanation_ja": "ㅘ が ㅏ として認識されました。",
-          "timestamp_s": 1.16
+          "timestamp_s": 0.22
         },
         {
-          "tag": "substitution",
-          "label_ja": "別の音への置き換え",
+          "tag": "vowel_jʌ_jo_confusion",
+          "label_ja": "ㅕ と ㅛ の混同",
           "ref": "ㅕ",
-          "hyp": "ㅠ",
-          "explanation_ja": "ㅕ が ㅠ として認識されました。",
-          "timestamp_s": 1.42
+          "hyp": "ㅛ",
+          "explanation_ja": "ㅕ（唇を丸めない [jʌ]）が ㅛ（唇を丸める [jo]）として認識されました。カタカナでは同じ文字になる組み合わせです。",
+          "timestamp_s": 0.38
         }
       ],
       "heard_errors": [
@@ -90,33 +94,34 @@
       "index": 1,
       "target": "도시를",
       "surface": "도시를",
-      "heard": "도시르",
-      "acoustic": "도시로",
-      "katakana": "ドシロ",
+      "heard": "도시르르",
+      "acoustic": "도시루루",
+      "katakana": "トシルル",
       "acoustic_errors": [
         {
-          "tag": "deletion",
-          "label_ja": "音の脱落",
+          "tag": "vowel_ɯ_u_confusion",
+          "label_ja": "ㅡ と ㅜ の混同",
           "ref": "ㅡ",
-          "hyp": "",
-          "explanation_ja": "ㅡ が認識されませんでした。"
+          "hyp": "ㅜ",
+          "explanation_ja": "ㅡ（唇を横に引く [ɯ]）が ㅜ（唇を丸める [u]）として認識されました。カタカナでは同じ文字になる組み合わせです。",
+          "timestamp_s": 1.04
         },
         {
-          "tag": "substitution",
-          "label_ja": "別の音への置き換え",
-          "ref": "ㄹ",
-          "hyp": "ㅗ",
-          "explanation_ja": "ㄹ が ㅗ として認識されました。",
-          "timestamp_s": 2.58
+          "tag": "vowel_epenthesis",
+          "label_ja": "母音の挿入",
+          "ref": "",
+          "hyp": "ㅜ",
+          "explanation_ja": "本来ない母音 ㅜ が認識されました。パッチムの後に母音を足さず、口の形だけで音を止めます。",
+          "timestamp_s": 1.14
         }
       ],
       "heard_errors": [
         {
-          "tag": "coda_deletion",
-          "label_ja": "パッチムの脱落",
-          "ref": "ㄹ",
-          "hyp": "",
-          "explanation_ja": "パッチム ㄹ が認識されませんでした。"
+          "tag": "vowel_epenthesis",
+          "label_ja": "母音の挿入",
+          "ref": "",
+          "hyp": "ㅡ",
+          "explanation_ja": "本来ない母音 ㅡ が認識されました。パッチムの後に母音を足さず、口の形だけで音を止めます。"
         }
       ]
     },
@@ -124,139 +129,75 @@
       "index": 2,
       "target": "그리며",
       "surface": "그리며",
-      "heard": "그리며",
-      "acoustic": "그리임용",
-      "katakana": "グリイミョン",
+      "heard": "그리미오",
+      "acoustic": "구리묘",
+      "katakana": "クリミョ",
       "acoustic_errors": [
+        {
+          "tag": "vowel_ɯ_u_confusion",
+          "label_ja": "ㅡ と ㅜ の混同",
+          "ref": "ㅡ",
+          "hyp": "ㅜ",
+          "explanation_ja": "ㅡ（唇を横に引く [ɯ]）が ㅜ（唇を丸める [u]）として認識されました。カタカナでは同じ文字になる組み合わせです。",
+          "timestamp_s": 1.28
+        },
+        {
+          "tag": "vowel_jʌ_jo_confusion",
+          "label_ja": "ㅕ と ㅛ の混同",
+          "ref": "ㅕ",
+          "hyp": "ㅛ",
+          "explanation_ja": "ㅕ（唇を丸めない [jʌ]）が ㅛ（唇を丸める [jo]）として認識されました。カタカナでは同じ文字になる組み合わせです。",
+          "timestamp_s": 1.5
+        }
+      ],
+      "heard_errors": [
         {
           "tag": "insertion",
           "label_ja": "余分な音",
           "ref": "",
           "hyp": "ㅣ",
-          "explanation_ja": "本来ない音 ㅣ が認識されました。",
-          "timestamp_s": 3.54
-        },
-        {
-          "tag": "insertion",
-          "label_ja": "余分な音",
-          "ref": "",
-          "hyp": "ㅛ",
-          "explanation_ja": "本来ない音 ㅛ が認識されました。",
-          "timestamp_s": 3.86
-        },
-        {
-          "tag": "insertion",
-          "label_ja": "余分な音",
-          "ref": "",
-          "hyp": "ㅇ",
-          "explanation_ja": "本来ない音 ㅇ が認識されました。",
-          "timestamp_s": 3.86
+          "explanation_ja": "本来ない音 ㅣ が認識されました。"
         },
         {
           "tag": "substitution",
           "label_ja": "別の音への置き換え",
           "ref": "ㅕ",
-          "hyp": "ㄷ",
-          "explanation_ja": "ㅕ が ㄷ として認識されました。",
-          "timestamp_s": 4.66
+          "hyp": "ㅗ",
+          "explanation_ja": "ㅕ が ㅗ として認識されました。"
         }
-      ],
-      "heard_errors": []
+      ]
     },
     {
       "index": 3,
       "target": "찾아왔네",
       "surface": "차자완네",
-      "heard": "자두자 왔네",
-      "acoustic": "들증하는데",
-      "katakana": "ドゥルジュンハヌンデ",
+      "heard": "차즈 아완에",
+      "acoustic": "차즈아완네",
+      "katakana": "チャジュアワンネ",
       "acoustic_errors": [
-        {
-          "tag": "substitution",
-          "label_ja": "別の音への置き換え",
-          "ref": "ㅊ",
-          "hyp": "ㅡ",
-          "explanation_ja": "ㅊ が ㅡ として認識されました。",
-          "timestamp_s": 4.66
-        },
-        {
-          "tag": "substitution",
-          "label_ja": "別の音への置き換え",
-          "ref": "ㅏ",
-          "hyp": "ㄹ",
-          "explanation_ja": "ㅏ が ㄹ として認識されました。",
-          "timestamp_s": 4.66
-        },
         {
           "tag": "vowel_epenthesis",
           "label_ja": "母音の挿入",
           "ref": "",
           "hyp": "ㅡ",
           "explanation_ja": "本来ない母音 ㅡ が認識されました。パッチムの後に母音を足さず、口の形だけで音を止めます。",
-          "timestamp_s": 4.88
-        },
-        {
-          "tag": "insertion",
-          "label_ja": "余分な音",
-          "ref": "",
-          "hyp": "ㅇ",
-          "explanation_ja": "本来ない音 ㅇ が認識されました。",
-          "timestamp_s": 4.88
-        },
-        {
-          "tag": "insertion",
-          "label_ja": "余分な音",
-          "ref": "",
-          "hyp": "ㅎ",
-          "explanation_ja": "本来ない音 ㅎ が認識されました。",
-          "timestamp_s": 5.22
-        },
-        {
-          "tag": "insertion",
-          "label_ja": "余分な音",
-          "ref": "",
-          "hyp": "ㄴ",
-          "explanation_ja": "本来ない音 ㄴ が認識されました。",
-          "timestamp_s": 5.38
-        },
-        {
-          "tag": "substitution",
-          "label_ja": "別の音への置き換え",
-          "ref": "ㅘ",
-          "hyp": "ㅡ",
-          "explanation_ja": "ㅘ が ㅡ として認識されました。",
-          "timestamp_s": 5.38
-        },
-        {
-          "tag": "substitution",
-          "label_ja": "別の音への置き換え",
-          "ref": "ㄴ",
-          "hyp": "ㄷ",
-          "explanation_ja": "ㄴ が ㄷ として認識されました。",
-          "timestamp_s": 5.54
+          "timestamp_s": 1.82
         }
       ],
       "heard_errors": [
         {
-          "tag": "laryngeal_confusion",
-          "label_ja": "平音・激音・濃音の混同",
-          "ref": "ㅊ",
-          "hyp": "ㅈ",
-          "explanation_ja": "ㅊ（激音：息を強く出す音）が ㅈ（平音）として認識されました。日本語の清音・濁音の区別では捉えられない違いです。"
-        },
-        {
-          "tag": "insertion",
-          "label_ja": "余分な音",
-          "ref": "",
-          "hyp": "ㄷ",
-          "explanation_ja": "本来ない音 ㄷ が認識されました。"
-        },
-        {
           "tag": "vowel_epenthesis",
           "label_ja": "母音の挿入",
           "ref": "",
-          "hyp": "ㅜ",
-          "explanation_ja": "本来ない母音 ㅜ が認識されました。パッチムの後に母音を足さず、口の形だけで音を止めます。"
+          "hyp": "ㅡ",
+          "explanation_ja": "本来ない母音 ㅡ が認識されました。パッチムの後に母音を足さず、口の形だけで音を止めます。"
+        },
+        {
+          "tag": "coda_deletion",
+          "label_ja": "パッチムの脱落",
+          "ref": "ㄴ",
+          "hyp": "",
+          "explanation_ja": "パッチム ㄴ が認識されませんでした。"
         }
       ]
     },
@@ -264,63 +205,82 @@
       "index": 4,
       "target": "그",
       "surface": "그",
-      "heard": "그",
-      "acoustic": "그",
-      "katakana": "グ",
-      "acoustic_errors": [],
-      "heard_errors": []
+      "heard": "구",
+      "acoustic": "구",
+      "katakana": "ク",
+      "acoustic_errors": [
+        {
+          "tag": "vowel_ɯ_u_confusion",
+          "label_ja": "ㅡ と ㅜ の混同",
+          "ref": "ㅡ",
+          "hyp": "ㅜ",
+          "explanation_ja": "ㅡ（唇を横に引く [ɯ]）が ㅜ（唇を丸める [u]）として認識されました。カタカナでは同じ文字になる組み合わせです。",
+          "timestamp_s": 2.62
+        }
+      ],
+      "heard_errors": [
+        {
+          "tag": "vowel_ɯ_u_confusion",
+          "label_ja": "ㅡ と ㅜ の混同",
+          "ref": "ㅡ",
+          "hyp": "ㅜ",
+          "explanation_ja": "ㅡ（唇を横に引く [ɯ]）が ㅜ（唇を丸める [u]）として認識されました。カタカナでは同じ文字になる組み合わせです。"
+        }
+      ]
     },
     {
       "index": 5,
       "target": "곳은",
       "surface": "고슨",
-      "heard": "곳은",
-      "acoustic": "고은",
-      "katakana": "ゴウン",
+      "heard": "고 순",
+      "acoustic": "고순",
+      "katakana": "コスン",
       "acoustic_errors": [
         {
-          "tag": "deletion",
-          "label_ja": "音の脱落",
-          "ref": "ㅅ",
-          "hyp": "",
-          "explanation_ja": "ㅅ が認識されませんでした。"
+          "tag": "vowel_ɯ_u_confusion",
+          "label_ja": "ㅡ と ㅜ の混同",
+          "ref": "ㅡ",
+          "hyp": "ㅜ",
+          "explanation_ja": "ㅡ（唇を横に引く [ɯ]）が ㅜ（唇を丸める [u]）として認識されました。カタカナでは同じ文字になる組み合わせです。",
+          "timestamp_s": 2.92
         }
       ],
-      "heard_errors": []
+      "heard_errors": [
+        {
+          "tag": "vowel_ɯ_u_confusion",
+          "label_ja": "ㅡ と ㅜ の混同",
+          "ref": "ㅡ",
+          "hyp": "ㅜ",
+          "explanation_ja": "ㅡ（唇を横に引く [ɯ]）が ㅜ（唇を丸める [u]）として認識されました。カタカナでは同じ文字になる組み合わせです。"
+        }
+      ]
     },
     {
       "index": 6,
       "target": "춥고도",
       "surface": "춥꼬도",
-      "heard": "주부고도",
-      "acoustic": "죽고도",
-      "katakana": "ジュクコド",
+      "heard": "추부고도",
+      "acoustic": "추부고도",
+      "katakana": "チュブゴド",
       "acoustic_errors": [
+        {
+          "tag": "vowel_epenthesis",
+          "label_ja": "母音の挿入",
+          "ref": "",
+          "hyp": "ㅜ",
+          "explanation_ja": "本来ない母音 ㅜ が認識されました。パッチムの後に母音を足さず、口の形だけで音を止めます。",
+          "timestamp_s": 3.14
+        },
         {
           "tag": "laryngeal_confusion",
           "label_ja": "平音・激音・濃音の混同",
-          "ref": "ㅊ",
-          "hyp": "ㅈ",
-          "explanation_ja": "ㅊ（激音：息を強く出す音）が ㅈ（平音）として認識されました。日本語の清音・濁音の区別では捉えられない違いです。",
-          "timestamp_s": 8.8
-        },
-        {
-          "tag": "stop_coda_confusion",
-          "label_ja": "閉鎖音パッチム ㄱ・ㄷ・ㅂ の混同",
-          "ref": "ㅂ",
+          "ref": "ㄲ",
           "hyp": "ㄱ",
-          "explanation_ja": "パッチム ㅂ（両唇で閉じる）が ㄱ（舌の奥で閉じる）として認識されました。促音「っ」のように次の音に合わせず、閉じる位置を保ちます。",
-          "timestamp_s": 8.8
+          "explanation_ja": "ㄲ（濃音：喉を締めて息を出さない音）が ㄱ（平音）として認識されました。日本語の清音・濁音の区別では捉えられない違いです。",
+          "timestamp_s": 3.38
         }
       ],
       "heard_errors": [
-        {
-          "tag": "laryngeal_confusion",
-          "label_ja": "平音・激音・濃音の混同",
-          "ref": "ㅊ",
-          "hyp": "ㅈ",
-          "explanation_ja": "ㅊ（激音：息を強く出す音）が ㅈ（平音）として認識されました。日本語の清音・濁音の区別では捉えられない違いです。"
-        },
         {
           "tag": "vowel_epenthesis",
           "label_ja": "母音の挿入",
@@ -342,8 +302,8 @@
       "target": "험한",
       "surface": "험한",
       "heard": "홈한",
-      "acoustic": "홍한",
-      "katakana": "ホンハン",
+      "acoustic": "호무한",
+      "katakana": "ホムハン",
       "acoustic_errors": [
         {
           "tag": "vowel_ʌ_o_confusion",
@@ -351,15 +311,15 @@
           "ref": "ㅓ",
           "hyp": "ㅗ",
           "explanation_ja": "ㅓ（唇を丸めずに口を縦に開ける [ʌ]）が ㅗ（唇を丸める [o]）として認識されました。カタカナでは同じ文字になる組み合わせです。",
-          "timestamp_s": 10.0
+          "timestamp_s": 3.58
         },
         {
-          "tag": "nasal_coda_confusion",
-          "label_ja": "鼻音パッチム ㄴ・ㅁ・ㅇ の混同",
-          "ref": "ㅁ",
-          "hyp": "ㅇ",
-          "explanation_ja": "パッチム ㅁ（両唇で閉じる）が ㅇ（舌の奥で閉じる）として認識されました。日本語の「ん」ではどちらも同じ音になります。",
-          "timestamp_s": 10.0
+          "tag": "vowel_epenthesis",
+          "label_ja": "母音の挿入",
+          "ref": "",
+          "hyp": "ㅜ",
+          "explanation_ja": "本来ない母音 ㅜ が認識されました。パッチムの後に母音を足さず、口の形だけで音を止めます。",
+          "timestamp_s": 3.6
         }
       ],
       "heard_errors": [
@@ -376,10 +336,11 @@
       "index": 8,
       "target": "곳",
       "surface": "곧",
-      "heard": "곳",
-      "acoustic": "고",
-      "katakana": "ゴ",
-      "acoustic_errors": [
+      "heard": "고",
+      "acoustic": "곳",
+      "katakana": "コッ",
+      "acoustic_errors": [],
+      "heard_errors": [
         {
           "tag": "coda_deletion",
           "label_ja": "パッチムの脱落",
@@ -387,8 +348,7 @@
           "hyp": "",
           "explanation_ja": "パッチム ㄷ が認識されませんでした。"
         }
-      ],
-      "heard_errors": []
+      ]
     }
   ],
   "limitations": [
