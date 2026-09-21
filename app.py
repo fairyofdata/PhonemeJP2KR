@@ -3,7 +3,8 @@
 Analysis flow:
     audio → ffmpeg 16kHz mono → [Whisper, Wav2Vec2] →
     deterministic G2P/IPA + jamo alignment score →
-    Gemini interprets the structured evidence (katakana + coaching).
+    word alignment + rule-based katakana (display) →
+    Gemini interprets the structured evidence (coaching text only).
 
 The deterministic layer always renders, even if the LLM call fails.
 Markup lives in src/ui.py; this file holds the page flow.
@@ -32,11 +33,13 @@ from src.database import (
 )
 from src.drills import DRILL_BY_TAG, DRILLS
 from src.g2p import to_ipa, to_surface
+from src.kana import to_kana
 from src.llm import GeminiUnavailableError, generate_feedback, translate_jp_to_kr
 from src.preprocess import strip_edge_noise
 from src.reference import load_reference, score_band
 from src.scoring import score_pronunciation
 from src.tts import VOICES, generate_tts_audio
+from src.words import word_view
 
 FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
 SAMPLE_RATE = 16000
@@ -136,10 +139,9 @@ def run_analysis(target: str, audio_bytes: bytes, strip_noise: bool = True) -> d
     except GeminiUnavailableError as e:
         result["llm_error"] = str(e)
 
-    katakana = (result["llm"] or {}).get("katakana", "N/A")
     feedback = (result["llm"] or {}).get("feedback_jp", result["llm_error"] or "")
     record_id = save_record(target, wav2vec_text, report.score,
-                            f"**[Katakana Mapping]**: {katakana}\n\n{feedback}",
+                            f"**カタカナ表記**: {to_kana(wav2vec_text)}\n\n{feedback}",
                             report.error_tags, analysis=_payload(result))
     save_clip(record_id, audio_bytes, ui.audio_suffix(audio_bytes))
     result["record_id"] = record_id
@@ -341,7 +343,7 @@ def render_result(res: dict):
                        + "・".join(f"「{DRILL_BY_TAG[t]['label']}」" for t in sorted(drills))
                        + " を練習できます。")
     with tab_channels:
-        st.markdown(ui.channel_cards_html(res), unsafe_allow_html=True)
+        render_channels(res)
     with tab_coach:
         llm = res.get("llm")
         if llm:
@@ -355,6 +357,31 @@ def render_result(res: dict):
                     icon=":material/info:")
             if res.get("llm_error"):
                 st.caption(res["llm_error"])
+
+
+@st.cache_data(show_spinner=False)
+def _word_view(target: str, whisper_text: str, wav2vec_text: str) -> list:
+    return word_view(target, whisper_text, wav2vec_text)
+
+
+def render_channels(res: dict):
+    """Three channels as sentences, then aligned word by word."""
+    words = _word_view(res["target"], res["whisper_text"], res["wav2vec_text"])
+    st.markdown(ui.channel_rows_html(res, words), unsafe_allow_html=True)
+    st.markdown("##### 語ごとの比較")
+    st.caption("3つの結果を目標文の語ごとにそろえました。赤枠は採点に影響した語、"
+               "黄枠は聞こえ方だけが目標と異なる語です。")
+    st.markdown(ui.word_grid_html(words), unsafe_allow_html=True)
+    flagged = [w for w in words if w["acoustic_errors"] or w["heard_errors"]]
+    if not flagged:
+        return
+    names = {w["index"]: w["target"] for w in flagged}
+    # keyed by the take, so reopening another record starts from its first flagged word
+    take = hashlib.md5((res["target"] + res["wav2vec_text"]).encode()).hexdigest()[:8]
+    pick = st.pills("詳しく見る語", list(names), format_func=names.get,
+                    default=flagged[0]["index"], key=f"word_pick_{take}")
+    if pick is not None:
+        st.markdown(ui.word_detail_html(words[pick]), unsafe_allow_html=True)
 
 
 def render_history():
