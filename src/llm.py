@@ -9,12 +9,11 @@ not the LLM's: src/kana.py derives it from the alignment by rule.)
 """
 
 import json
-import time
 
 from google import genai
 from google.genai import types
 
-from .config import GEMINI_MODEL_ID, get_gemini_api_key
+from .config import GEMINI_MODELS, get_gemini_api_key
 from .labels import tag_label
 
 _FEEDBACK_PROMPT = """あなたは日本語母語話者の母語干渉（L1 Interference）を深く理解している韓国語発音矯正の専門家です。
@@ -78,19 +77,26 @@ def _get_client() -> genai.Client:
     return genai.Client(api_key=api_key)
 
 
-_RETRY_DELAYS = (2, 5)   # seconds; only for "try again later" responses
+# "try another model": overloaded (503), quota or free-tier limit (429),
+# not available to this key (403/404)
+_FALLBACK_CODES = (403, 404, 429, 503)
 
 
 def _generate(client, contents, config):
-    """generate_content with a short retry on 429/503 (transient overload)."""
-    for delay in (*_RETRY_DELAYS, None):
+    """generate_content on the first model in GEMINI_MODELS that answers.
+
+    Returns (response, model_id). Any other error is raised at once.
+    """
+    last = None
+    for model in GEMINI_MODELS:
         try:
-            return client.models.generate_content(model=GEMINI_MODEL_ID, contents=contents,
-                                                  config=config)
+            return client.models.generate_content(model=model, contents=contents,
+                                                  config=config), model
         except Exception as e:
-            if delay is None or getattr(e, "code", None) not in (429, 503):
+            if getattr(e, "code", None) not in _FALLBACK_CODES:
                 raise
-            time.sleep(delay)
+            last = e
+    raise last
 
 
 def generate_feedback(target: str, target_surface: str, target_ipa: str,
@@ -109,11 +115,11 @@ def generate_feedback(target: str, target_surface: str, target_ipa: str,
     )
     client = _get_client()
     try:
-        response = _generate(client, prompt, types.GenerateContentConfig(
+        response, model = _generate(client, prompt, types.GenerateContentConfig(
             temperature=0.2,
             response_mime_type="application/json",
         ))
-        return json.loads(response.text)
+        return {**json.loads(response.text), "model": model}
     except Exception as e:
         raise GeminiUnavailableError(f"Gemini API呼び出しに失敗しました: {e}") from e
 
@@ -121,8 +127,8 @@ def generate_feedback(target: str, target_surface: str, target_ipa: str,
 def translate_jp_to_kr(jp_text: str) -> str:
     client = _get_client()
     try:
-        response = _generate(client, _TRANSLATE_PROMPT.format(jp_text=jp_text),
-                             types.GenerateContentConfig(temperature=0.2))
+        response, _ = _generate(client, _TRANSLATE_PROMPT.format(jp_text=jp_text),
+                                types.GenerateContentConfig(temperature=0.2))
         return response.text.strip()
     except Exception as e:
         raise GeminiUnavailableError(f"翻訳に失敗しました: {e}") from e

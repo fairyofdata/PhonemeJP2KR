@@ -404,7 +404,8 @@ def render_result(res: dict):
                 st.markdown(f"**{llm['error_summary']}**")
             with st.container(border=True):
                 st.markdown(llm.get("feedback_jp", ""))
-            st.caption("コーチングはLLM（Gemini）が上の分析結果を根拠に作成したものです。点数には影響しません。")
+            st.caption(f"コーチングはLLM（{llm.get('model') or 'Gemini'}）が上の分析結果を根拠に"
+                       "作成したものです。点数には影響しません。")
         else:
             st.info("コーチング文は利用できませんでした。点数と音素の比較は通常どおり表示しています。",
                     icon=":material/info:")

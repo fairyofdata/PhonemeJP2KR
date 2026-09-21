@@ -259,7 +259,13 @@ out of the dependencies and runs in CI.
 **Consequence.** The README demo (record 9) is a scripted take; its
 script and voice are in `demo_take.json` (`source.input`). A transcript
 character outside the Wav2Vec2 vocabulary is refused with a message
-(왓 is missing; 왔 has the same surface form). The coaching model moved
-from gemini-2.5-flash, which is being retired, to gemini-3.8-flash; the
-Gemini calls retry twice on 429/503.
+(왓 is missing; 왔 has the same surface form).
+
+The coaching model is no longer pinned. gemini-2.5-flash is being
+retired, and its successor (gemini-3.8-flash) answered 503 on every try
+the day it was chosen. `config.GEMINI_MODELS` lists free-tier-accessible
+Flash models newest first; each call takes the first that answers,
+moving on after 403/404/429/503, and the answering model is stored with
+the coaching (`llm.model`) and shown under it. The demo coaching came
+from gemini-3.5-flash.
 

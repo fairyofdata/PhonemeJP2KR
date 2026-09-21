@@ -1,6 +1,6 @@
 {
   "schema": "phonemejp2kr.demo_take/1",
-  "generated_at": "2026-09-21T17:40:30+00:00",
+  "generated_at": "2026-09-21T18:06:45+00:00",
   "source": {
     "record_id": 9,
     "recorded_at": "2026-09-22 02:34:57",
@@ -11,16 +11,17 @@
     },
     "screenshots": [
       "docs/assets/demo_phoneme_diff.png",
-      "docs/assets/demo_channels.png"
+      "docs/assets/demo_channels.png",
+      "docs/assets/demo_coaching.png"
     ]
   },
   "versions": {
     "app": "0.1.0",
-    "git_commit": "838c090",
+    "git_commit": "6f90ad4",
     "g2p_morphology": "kiwipiepy 0.23.2",
     "whisper": "openai/whisper-small",
     "wav2vec2": "kresnik/wav2vec2-large-xlsr-korean",
-    "coaching_llm": "gemini-3.8-flash"
+    "coaching_llm": "gemini-3.5-flash"
   },
   "target": {
     "text": "화려한 도시를 그리며 찾아왔네 그 곳은 춥고도 험한 곳",
