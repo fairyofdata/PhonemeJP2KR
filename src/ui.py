@@ -102,7 +102,16 @@ h1, h2, h3 {{ letter-spacing: -0.01em; }}
 .pc-wcol {{ display: flex; flex-direction: column; border: 1px solid {LINE}; border-radius: 10px;
   background: #fff; padding: 0.35rem 0.55rem; font-family: {FONT_KR}; font-size: 0.95rem;
   white-space: nowrap; }}
-.pc-wcol > span {{ height: 1.55rem; line-height: 1.55rem; }}
+.pc-wcol > span.two {{ height: 2.75rem; display: flex; flex-direction: column;
+  justify-content: center; line-height: 1.3; }}
+.pc-wcol > span.one {{ height: 1.5rem; line-height: 1.5rem; }}
+.pc-wcol i.pc-ipa {{ font-style: normal; font-size: 0.72rem; color: {MUTED}; }}
+.pc-wcol s, .pc-wdetail s {{ color: #adb5bd; }}
+.pc-wcol span.one.pc-ipa {{ font-size: 0.8rem; color: {INK}; }}
+/* IPA differences: red phones, not the Hangul cell's background */
+.pc-wcol .pc-ipa u, .pc-wcol.bad .pc-ipa u, .pc-wcol.heard .pc-ipa u,
+.pc-wdetail .pc-ipa u {{ background: none; text-decoration: none;
+  color: #c92a2a; font-weight: 700; }}
 .pc-wcol .t {{ font-weight: 700; color: {INK}; }}
 .pc-wcol .k {{ font-family: {FONT}; font-size: 0.75rem; color: {MUTED}; }}
 .pc-wcol u {{ text-decoration: none; background: #fff3bf; border-radius: 3px; }}
@@ -120,6 +129,7 @@ h1, h2, h3 {{ letter-spacing: -0.01em; }}
 .pc-explain {{ list-style: none; padding: 0; margin: 0.2rem 0 0.8rem; }}
 .pc-explain li {{ border-left: 3px solid #ff8787; padding: 0.2rem 0 0.2rem 0.7rem; margin-bottom: 0.5rem; }}
 .pc-explain.heard li {{ border-left-color: #ffd43b; }}
+.pc-explain.phone li {{ border-left-color: #9775fa; }}
 .pc-explain .ev {{ font-family: {FONT_KR}; color: {MUTED}; margin-left: 0.6rem; font-size: 0.85rem; }}
 .pc-explain p {{ margin: 0.15rem 0 0; font-size: 0.88rem; color: {INK}; line-height: 1.6; }}
 
@@ -285,27 +295,38 @@ KANA_NOTE = ("カタカナは実際の音の結果を規則で日本語の音に
              "平音・激音・濃音や ㅓ/ㅗ などの区別は表せません。")
 
 
-def channel_rows_html(res: dict, words: list) -> str:
-    """The three measurement channels, with katakana as a notation of the third."""
+PHONE_NOTE = ("音素認識（IPA）は綴りを経由せずに目標の発音と比べるので、濃音化・鼻音化などの"
+              "発音規則が起きたかどうかまで見えます（実験的なチャネルです）。")
+
+
+def channel_rows_html(res: dict, words: list, phone_score: int = None) -> str:
+    """The measurement channels; katakana is a notation of the acoustic one."""
     kana = " ".join(w["katakana"] for w in words if w["katakana"])
     rows = [
         ("お手本", "標準発音法の規則から導いた発音", res["target"],
-         f'[{res["target_surface"]}]', ""),
+         f'[{res["target_surface"]}]　/{res["target_ipa"]}/', ""),
         ("聞こえ方 · Whisper", "言語モデルが文脈で補正した認識 — 採点には使いません",
          res["whisper_text"], f'/{res["whisper_ipa"]}/', ""),
         ("実際の音 · Wav2Vec2", "補正なしの音響認識 — スコアはこの結果から算出",
          res["wav2vec_text"], f'/{res["actual_ipa"]}/',
          f'<div class="pc-kana"><span>カタカナ表記</span>{escape(kana or "—")}</div>'),
     ]
+    if any(w.get("phones") for w in words):
+        phones = " ".join(w["phones"] for w in words if w.get("phones"))
+        score = f" — 一致率 {phone_score}" if phone_score is not None else ""
+        rows.append(("音素 · IPA", f"綴りを経由しない比較（実験的）{score}",
+                     f"/{phones}/", "", ""))
     html = []
     for title, note, main, sub, extra in rows:
+        main_cls = "kr pc-ipa" if title.startswith("音素") else "kr"
+        sub_html = f'<div class="note pc-ipa">{escape(sub)}</div>' if sub else ""
         html.append(
             f'<div class="pc-chan"><div class="pc-chan-head"><span class="pc-eyebrow">{escape(title)}</span>'
             f'<span class="note">{escape(note)}</span></div>'
-            f'<div class="kr">{escape(main or "—")}</div>'
-            f'<div class="note pc-ipa">{escape(sub)}</div>{extra}</div>')
+            f'<div class="{main_cls}">{escape(main or "—")}</div>{sub_html}{extra}</div>')
+    notes = KANA_NOTE + (PHONE_NOTE if len(rows) > 3 else "")
     return (f'<div class="pc-chans">{"".join(html)}</div>'
-            f'<div class="pc-kana-note">{escape(KANA_NOTE)}</div>')
+            f'<div class="pc-kana-note">{escape(notes)}</div>')
 
 
 def _mark_diff(text: str, target: str) -> str:
@@ -316,19 +337,47 @@ def _mark_diff(text: str, target: str) -> str:
     return escape(text) if same else f"<u>{escape(text)}</u>"
 
 
+def ipa_diff_html(diff) -> str:
+    """[ref, hyp, op] segments → IPA with substituted/inserted segments marked."""
+    if not diff:
+        return '<span class="gap">—</span>'
+    out = []
+    for ref, hyp, op in diff:
+        if op == "match":
+            out.append(escape(hyp))
+        elif op == "del":
+            out.append(f'<s>{escape(ref)}</s>')
+        else:
+            out.append(f"<u>{escape(hyp)}</u>")
+    return "".join(out)
+
+
+def _cell(kr: str, ipa: str) -> str:
+    return f'<span class="two">{kr}<i class="pc-ipa">{ipa}</i></span>'
+
+
 def word_grid_html(words: list) -> str:
-    """One column per target word: target / heard / acoustic / katakana."""
-    labels = ('<div class="pc-wcol pc-wlabels"><span>お手本</span><span>聞こえ方</span>'
-              '<span>実際の音</span><span>カタカナ</span></div>')
-    cols = []
+    """One column per target word: every channel in Hangul + IPA, then katakana."""
+    with_phones = any(w.get("phones") for w in words)
+    labels = ['<span class="two">お手本</span>', '<span class="two">聞こえ方</span>',
+              '<span class="two">実際の音</span>']
+    if with_phones:
+        labels.append('<span class="one">音素 IPA</span>')
+    labels.append('<span class="one">カタカナ</span>')
+    cols = [f'<div class="pc-wcol pc-wlabels">{"".join(labels)}</div>']
     for w in words:
-        cls = " bad" if w["acoustic_errors"] else " heard" if w["heard_errors"] else ""
-        cols.append(
-            f'<div class="pc-wcol{cls}"><span class="t">{escape(w["target"])}</span>'
-            f'<span>{_mark_diff(w["heard"], w["target"])}</span>'
-            f'<span>{_mark_diff(w["acoustic"], w["target"])}</span>'
-            f'<span class="k">{escape(w["katakana"] or "—")}</span></div>')
-    return f'<div class="pc-words">{labels}{"".join(cols)}</div>'
+        bad = w["acoustic_errors"] or w.get("phone_errors")
+        cls = " bad" if bad else " heard" if w["heard_errors"] else ""
+        cells = [
+            _cell(f'<b>{escape(w["target"])}</b>', f'/{escape(w["target_ipa"])}/'),
+            _cell(_mark_diff(w["heard"], w["target"]), escape(w["heard_ipa"])),
+            _cell(_mark_diff(w["acoustic"], w["target"]), ipa_diff_html(w["acoustic_ipa_diff"])),
+        ]
+        if with_phones:
+            cells.append(f'<span class="one pc-ipa">{ipa_diff_html(w.get("phones_diff"))}</span>')
+        cells.append(f'<span class="one k">{escape(w["katakana"] or "—")}</span>')
+        cols.append(f'<div class="pc-wcol{cls}">{"".join(cells)}</div>')
+    return f'<div class="pc-words">{"".join(cols)}</div>'
 
 
 def _error_items(errors: list) -> str:
@@ -339,17 +388,25 @@ def _error_items(errors: list) -> str:
 
 
 def word_detail_html(w: dict) -> str:
-    """One word: the three lines side by side, then its tags explained."""
+    """One word: every reading side by side, then its tags explained."""
     lines = (
-        f'<dt>お手本</dt><dd>{escape(w["target"])} <small>[{escape(w["surface"])}]</small></dd>'
-        f'<dt>聞こえ方</dt><dd>{escape(w["heard"] or "—")}</dd>'
+        f'<dt>お手本</dt><dd>{escape(w["target"])} <small>[{escape(w["surface"])}]</small>'
+        f' <small class="pc-ipa">/{escape(w["target_ipa"])}/</small></dd>'
+        f'<dt>聞こえ方</dt><dd>{escape(w["heard"] or "—")}'
+        f' <small class="pc-ipa">/{escape(w["heard_ipa"])}/</small></dd>'
         f'<dt>実際の音</dt><dd>{escape(w["acoustic"] or "—")}'
+        f' <small class="pc-ipa">/{ipa_diff_html(w["acoustic_ipa_diff"])}/</small>'
         f' <small class="pc-kana-inline">{escape(w["katakana"])}</small></dd>'
     )
+    if w.get("phones") is not None:
+        lines += (f'<dt>音素 IPA</dt><dd class="pc-ipa">/{ipa_diff_html(w["phones_diff"])}/</dd>')
     parts = [f'<dl class="pc-wdetail">{lines}</dl>']
     if w["acoustic_errors"]:
         parts.append('<div class="pc-eyebrow">採点の根拠（実際の音）</div>'
                      f'<ul class="pc-explain">{_error_items(w["acoustic_errors"])}</ul>')
+    if w.get("phone_errors"):
+        parts.append('<div class="pc-eyebrow">音素の比較（IPA・綴りを経由しない）</div>'
+                     f'<ul class="pc-explain phone">{_error_items(w["phone_errors"])}</ul>')
     if w["heard_errors"]:
         parts.append('<div class="pc-eyebrow">聞こえ方の差（参考・採点外）</div>'
                      f'<ul class="pc-explain heard">{_error_items(w["heard_errors"])}</ul>')

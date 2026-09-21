@@ -9,6 +9,8 @@ CLIPS_DIR = os.path.join(DATA_DIR, "clips")   # recordings kept for replay
 
 WHISPER_MODEL_ID = "openai/whisper-small"
 WAV2VEC_MODEL_ID = "kresnik/wav2vec2-large-xlsr-korean"
+# multilingual phoneme recognizer (IPA output) for the experimental IPA channel
+PHONE_MODEL_ID = "facebook/wav2vec2-xlsr-53-espeak-cv-ft"
 # Coaching LLM: tried in order, the first that answers is used. Flash-class
 # models (free-tier accessible), newest first — no single model is pinned,
 # because previews get overloaded and old versions get retired. Override

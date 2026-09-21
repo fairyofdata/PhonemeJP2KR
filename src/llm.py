@@ -29,6 +29,7 @@ _FEEDBACK_PROMPT = """あなたは日本語母語話者の母語干渉（L1 Inte
 - 実際の発音のIPA (G2Pによる): /{actual_ipa}/
 - 音素レベルスコア: {score}/100
 - 自動検出された誤り (jamoアライメントに基づく。nameは学習者に見せる日本語名): {error_tags}
+- 音素認識 (IPA) による比較 (綴りを経由しないため、濃音化・鼻音化などの発音規則が起きたかも分かる。実験的): {phone_tags}
 
 [日本語母語話者の典型的エラーパターン (参考)]
 1. 母音挿入 (Epenthesis): モーラ拍リズムの影響でパッチムの後に /ɯ/ や /u/ を挿入する。
@@ -101,7 +102,7 @@ def _generate(client, contents, config):
 
 def generate_feedback(target: str, target_surface: str, target_ipa: str,
                       whisper_text: str, wav2vec_text: str, actual_ipa: str,
-                      score: int, error_tags: list) -> dict:
+                      score: int, error_tags: list, phone_tags: list = None) -> dict:
     """Interpret the deterministic analysis and return the coaching text."""
     prompt = _FEEDBACK_PROMPT.format(
         target=target,
@@ -112,6 +113,7 @@ def generate_feedback(target: str, target_surface: str, target_ipa: str,
         actual_ipa=actual_ipa,
         score=score,
         error_tags=json.dumps(_named(error_tags), ensure_ascii=False),
+        phone_tags=json.dumps(_named(phone_tags), ensure_ascii=False) if phone_tags else "なし",
     )
     client = _get_client()
     try:

@@ -13,7 +13,7 @@ into jamo, and aligned with Levenshtein dynamic programming. The score is
 
 from dataclasses import dataclass, field
 
-from .g2p import char_times, jamo_positions
+from .g2p import char_times, ipa_segments, jamo_positions
 
 # lenis / aspirated / tense triads share place & manner of articulation
 _LARYNGEAL_SETS = [
@@ -36,6 +36,8 @@ class AlignedPair:
     end_time: float = None
     ref_pos: int = None  # index of the source character in the target text
     hyp_pos: int = None  # index of the source character in the hypothesis
+    ref_ipa: str = ""    # IPA of the target jamo in context ([ʌ], [k͈], …)
+    hyp_ipa: str = ""
 
 
 @dataclass
@@ -128,6 +130,8 @@ def classify_pair(pairs, idx):
     if p.op == "match":
         return None
     tag_dict = {"ref": p.ref, "hyp": p.hyp}
+    if p.ref_ipa or p.hyp_ipa:
+        tag_dict["ref_ipa"], tag_dict["hyp_ipa"] = p.ref_ipa, p.hyp_ipa
     if p.start_time is not None:
         tag_dict["timestamp"] = round(p.start_time, 2)
 
@@ -166,6 +170,16 @@ def classify_errors(pairs):
     return [t for t in (classify_pair(pairs, i) for i in range(len(pairs))) if t]
 
 
+def _attach_ipa(pairs, ref_ipa, hyp_ipa):
+    """Give each pair the in-context IPA of its two jamo (display/evidence)."""
+    r = h = 0
+    for p in pairs:
+        if p.op != "ins":
+            p.ref_ipa, r = ref_ipa[r], r + 1
+        if p.op != "del":
+            p.hyp_ipa, h = hyp_ipa[h], h + 1
+
+
 def score_pronunciation(target_text: str, actual_text: str, char_timestamps=None) -> ScoreReport:
     """Compare target vs ASR hypothesis at the jamo level after G2P."""
     ref_seq = jamo_positions(target_text)
@@ -179,6 +193,7 @@ def score_pronunciation(target_text: str, actual_text: str, char_timestamps=None
         times = char_times(actual_text, char_timestamps)
         hyp = [(j, *times.get(i, (None, None))) for j, i in hyp_seq]
     pairs, distance = align_jamo(ref, hyp, [i for _, i in ref_seq], [i for _, i in hyp_seq])
+    _attach_ipa(pairs, ipa_segments(ref_seq), ipa_segments(hyp_seq))
     per = distance / max(len(ref), len(hyp))
     score = max(0, round(100 * (1 - per)))
     return ScoreReport(

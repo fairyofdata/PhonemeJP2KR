@@ -16,8 +16,6 @@ Vowel / coda / glide choices follow common Japanese-textbook practice;
 they are a fixed table, so the same input always yields the same kana.
 """
 
-_VOWELS = set("ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ")
-
 # Korean vowel → (glide, base vowel)
 _VOWEL_KEY = {
     "ㅏ": ("", "a"), "ㅐ": ("", "e"), "ㅓ": ("", "o"), "ㅔ": ("", "e"),
@@ -92,27 +90,6 @@ def syllable_kana(onset: str, vowel: str, coda: str, after_sonorant: bool) -> st
     return _core(voiced if after_sonorant else voiceless, vowel) + _CODA_KANA.get(coda, "")
 
 
-def syllables(jamo_pos) -> list:
-    """[(jamo, source index)] → [(source index, onset, vowel, coda)].
-
-    Jamo from one source character form one syllable; onset ㅇ is absent
-    from the scoring unit, so a syllable whose first jamo is a vowel has
-    an empty onset.
-    """
-    out = []
-    for jamo, pos in jamo_pos:
-        if not out or out[-1][0] != pos:
-            out.append([pos, "", "", ""])
-        syl = out[-1]
-        if jamo in _VOWELS:
-            syl[2] = jamo
-        elif syl[2]:
-            syl[3] = jamo
-        else:
-            syl[1] = jamo
-    return [tuple(s) for s in out]
-
-
 def kana_by_position(jamo_pos) -> dict:
     """{source index: katakana} for a jamo_positions() sequence.
 
@@ -121,7 +98,9 @@ def kana_by_position(jamo_pos) -> dict:
     result by word gives the same kana as the full line.
     """
     kana, after_sonorant, prev = {}, False, None
-    for pos, onset, vowel, coda in syllables(jamo_pos):
+    from .g2p import group_syllables
+
+    for pos, onset, vowel, coda in group_syllables(jamo_pos):
         if not vowel:        # malformed (no vowel) — nothing sensible to write
             continue
         if prev is not None and pos != prev + 1:

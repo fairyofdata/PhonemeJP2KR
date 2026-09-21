@@ -18,6 +18,13 @@ TAG_LABELS = {
     "substitution": "別の音への置き換え",
     "insertion": "余分な音",
     "deletion": "音の脱落",
+    # IPA channel only: the letter-by-letter phone where a rule should apply
+    "rule_tensification_missed": "濃音化の不適用",
+    "rule_nasalization_missed": "鼻音化の不適用",
+    "rule_lateralization_missed": "流音化の不適用",
+    "rule_aspiration_missed": "激音化の不適用",
+    "rule_palatalization_missed": "口蓋音化の不適用",
+    "rule_liaison_missed": "連音の不適用",
 }
 
 
@@ -25,9 +32,30 @@ def tag_label(tag: str) -> str:
     return TAG_LABELS.get(tag, tag)
 
 
+def ipa_display(sym: str) -> str:
+    """The comparison's liquid class L is shown as [ɾ]."""
+    return sym.replace("L", "ɾ")
+
+
+def ipa_evidence(err: dict) -> str:
+    """'[ʌ]→[o]' for a tag that carries IPA ('' when it does not)."""
+    if err.get("unit") == "ipa":
+        r, h = err.get("ref", ""), err.get("hyp", "")
+    elif "ref_ipa" in err or "hyp_ipa" in err:
+        r, h = err.get("ref_ipa", ""), err.get("hyp_ipa", "")
+    else:
+        return ""
+    r = f"[{ipa_display(r)}]" if r else "∅"
+    h = f"[{ipa_display(h)}]" if h else "∅"
+    return f"{r}→{h}"
+
+
 def describe_error(err: dict) -> str:
-    """'ㅓ と ㅗ の混同 · ㅓ→ㅗ' — label plus the concrete jamo evidence."""
+    """'ㅓ と ㅗ の混同 · ㅓ→ㅗ [ʌ]→[o]' — label plus the concrete evidence."""
+    if err.get("unit") == "ipa":
+        return f"{tag_label(err.get('tag', ''))} · {ipa_evidence(err)}"
     ref, hyp = err.get("ref", ""), err.get("hyp", "")
+    ipa = ipa_evidence(err)
     if ref and hyp:
         evidence = f"{ref}→{hyp}"
     elif ref:
@@ -37,6 +65,7 @@ def describe_error(err: dict) -> str:
     else:
         evidence = ""
     label = tag_label(err.get("tag", ""))
+    evidence = f"{evidence} {ipa}".strip()
     return f"{label} · {evidence}" if evidence else label
 
 
@@ -65,6 +94,8 @@ def explain_error(err: dict) -> str:
     States what the recognizer produced, never why the learner did it —
     the evidence is an ASR transcript, not an articulatory measurement.
     """
+    if err.get("unit") == "ipa":
+        return _explain_ipa(err)
     tag, ref, hyp = err.get("tag", ""), err.get("ref", ""), err.get("hyp", "")
     if tag == "laryngeal_confusion":
         a, b = _LARYNGEAL_KIND.get(ref, ""), _LARYNGEAL_KIND.get(hyp, "")
@@ -93,3 +124,50 @@ def explain_error(err: dict) -> str:
     if tag == "substitution":
         return f"{ref} が {hyp} として認識されました。"
     return describe_error(err)
+
+
+_RULE_JA = {
+    "tensification": "濃音化（パッチム ㄱ・ㄷ・ㅂ の後で平音が濃音になる規則）",
+    "nasalization": "鼻音化（パッチム ㄱ・ㄷ・ㅂ が ㄴ・ㅁ の前で鼻音になる規則）",
+    "lateralization": "流音化（ㄴ と ㄹ が続くと両方 ㄹ になる規則）",
+    "aspiration": "激音化（ㅎ と平音が合わさって激音になる規則）",
+    "palatalization": "口蓋音化（ㄷ・ㅌ が 이 の前で ㅈ・ㅊ になる規則）",
+    "liaison": "連音（パッチムが次の母音に移って発音される規則）",
+}
+_IPA_VOWEL_HOW = {
+    "ʌ": "唇を丸めずに口を縦に開ける", "o": "唇を丸める",
+    "jʌ": "唇を丸めない", "jo": "唇を丸める",
+    "ɯ": "唇を横に引く", "u": "唇を丸める",
+}
+_IPA_PLACE = {"p": "両唇", "m": "両唇", "t": "舌先", "n": "舌先", "k": "舌の奥", "ŋ": "舌の奥"}
+
+
+def _explain_ipa(err: dict) -> str:
+    """Templates for the IPA channel (ref/hyp are phones, not jamo)."""
+    tag = err.get("tag", "")
+    r, h = f"[{ipa_display(err.get('ref', ''))}]", f"[{ipa_display(err.get('hyp', ''))}]"
+    if tag.startswith("rule_") and tag.endswith("_missed"):
+        rule = tag[len("rule_"):-len("_missed")]
+        return (f"標準発音では {r} ですが、綴りどおりの {h} で発音されています。"
+                f"{_RULE_JA.get(rule, rule)}が起きていません。"
+                "ハングルの比較では綴りから同じ規則を当てはめ直すため、この誤りは見えません。")
+    if tag in ("vowel_ʌ_o_confusion", "vowel_jʌ_jo_confusion", "vowel_ɯ_u_confusion"):
+        ref, hyp = err.get("ref", ""), err.get("hyp", "")
+        return (f"{r}（{_IPA_VOWEL_HOW.get(ref, '')}）が {h}（{_IPA_VOWEL_HOW.get(hyp, '')}）"
+                "になっています。")
+    if tag in ("nasal_coda_confusion", "stop_coda_confusion"):
+        base = lambda p: p.replace("ʰ", "").replace("͈", "")
+        return (f"パッチムの {r}（{_IPA_PLACE.get(base(err.get('ref', '')), '')}で閉じる）が "
+                f"{h}（{_IPA_PLACE.get(base(err.get('hyp', '')), '')}で閉じる）になっています。")
+    if tag == "laryngeal_confusion":
+        return f"{r} が {h} になっています。息の強さと喉の緊張（平音・激音・濃音）の違いです。"
+    if tag == "vowel_epenthesis":
+        return f"本来ない母音 {h} が入っています。パッチムの後に母音を足さずに止めます。"
+    if tag == "coda_deletion":
+        return f"パッチムの {r} が発音されていません。"
+    if tag == "deletion":
+        return f"{r} が発音されていません。"
+    if tag == "insertion":
+        return f"本来ない音 {h} が入っています。"
+    return f"{r} が {h} になっています。"
+

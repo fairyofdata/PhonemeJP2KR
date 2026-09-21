@@ -334,6 +334,54 @@ def to_jamo_sequence(text: str, char_timestamps=None):
     return [(j, *times.get(i, (None, None))) for j, i in seq]
 
 
+def group_syllables(jamo_pos) -> list:
+    """[(jamo, source index)] → [(source index, onset, vowel, coda)].
+
+    Jamo from one source character form one syllable; onset ㅇ is absent
+    from the scoring unit, so a syllable whose first jamo is a vowel has
+    an empty onset.
+    """
+    out = []
+    for jamo, pos in jamo_pos:
+        if not out or out[-1][0] != pos:
+            out.append([pos, "", "", ""])
+        syl = out[-1]
+        if jamo in JUNGSEONG:
+            syl[2] = jamo
+        elif syl[2]:
+            syl[3] = jamo
+        else:
+            syl[1] = jamo
+    return [tuple(s) for s in out]
+
+
+def ipa_segments(jamo_pos) -> list:
+    """IPA of every jamo in a jamo_positions() sequence, in context.
+
+    Same allophony as to_ipa (lenis voicing after a vowel or sonorant
+    coda, ㅅ/ㅆ → ɕ before front glides); context resets where source
+    characters are not adjacent, as at a space. Returns one string per
+    input jamo, so an alignment pair can show [ʌ]→[o] next to ㅓ→ㅗ.
+    """
+    out, prev_voiced, prev = [], False, None
+    for pos, cho, jung, jong in group_syllables(jamo_pos):
+        if prev is not None and pos != prev + 1:
+            prev_voiced = False
+        onset = _IPA_ONSET.get(cho, "") if cho else ""
+        if cho and prev_voiced and cho in _IPA_VOICED:
+            onset = _IPA_VOICED[cho]
+        if cho in ("ㅅ", "ㅆ") and jung in _FRONT_GLIDE_VOWELS:
+            onset = "ɕ" if cho == "ㅅ" else "ɕ͈"
+        if cho:
+            out.append(onset)
+        if jung:
+            out.append(_IPA_VOWEL[jung])
+        if jong:
+            out.append(_IPA_CODA.get(jong, ""))
+        prev_voiced, prev = jong in _SONORANT_CODAS, pos
+    return out
+
+
 def to_ipa(text: str) -> str:
     """Orthographic text → broad IPA with basic allophony.
 
