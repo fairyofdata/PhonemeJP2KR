@@ -228,3 +228,38 @@ their LLM katakana in the stored text, while the view recomputes the
 rule-based line. The demo take is exported as data
 ([DEMO_TAKE.md](DEMO_TAKE.md)) from the stored record, with no model or
 API call, and the export refuses to write if recomputation drifts.
+
+---
+
+## 12. Admin text input: scripted audio, a given transcript, forced alignment
+
+**Context.** The README and the portfolio site need a demo take that
+shows the Japanese-L1 patterns cleanly. A single real recording carries
+whatever errors that reading happened to have, and a transcript typed in
+without audio has no waveform, no error markers and no Whisper channel.
+
+**Decision.** A third input method, 「テキスト」, labelled
+機能点検のための管理者機能です. It synthesises audio from a script
+(Japanese voices read kana, so the audio has a Japanese speaker's mora
+timing and voicing), runs Whisper on that audio as usual, and optionally
+takes the acoustic transcript as given: Wav2Vec2 still runs, and a CTC
+Viterbi pass (`src/ctc.py`) places the given characters on its frames,
+so the markers sit on the sounds. Everything downstream — scoring, tags,
+word view, katakana, coaching, history — is the ordinary path, and the
+take is stored with its script and voice (`admin_input`).
+
+**Why.** Real ASR on synthetic audio does not reproduce a designed
+reading (tried: Japanese voices reading kana, a Korean voice reading the
+Hangul spelling — the acoustic output drifted and the tags turned
+generic), while Whisper on a Japanese voice gave exactly the channel the
+dual-ASR argument needs: context restores 화려한 and 찾아왔네, but
+도시르르, 추부고도 and 홈한 survive. Pure-Python alignment keeps torchaudio
+out of the dependencies and runs in CI.
+
+**Consequence.** The README demo (record 9) is a scripted take; its
+script and voice are in `demo_take.json` (`source.input`). A transcript
+character outside the Wav2Vec2 vocabulary is refused with a message
+(왓 is missing; 왔 has the same surface form). The coaching model moved
+from gemini-2.5-flash, which is being retired, to gemini-3.8-flash; the
+Gemini calls retry twice on 429/503.
+

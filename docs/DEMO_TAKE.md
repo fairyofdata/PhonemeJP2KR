@@ -5,7 +5,7 @@ that a page can draw it without hand transcription. The screenshots listed
 in `source.screenshots` show the same stored record.
 
 ```bash
-python tools/export_demo_take.py --record 6 --out docs/assets/demo_take.json
+python tools/export_demo_take.py --record 9 --out docs/assets/demo_take.json
 ```
 
 The exporter calls no model and no API. It reads the stored ASR outputs,
@@ -19,6 +19,7 @@ the score, surface form, IPA or error tags differ from what was stored.
 | `generated_at` | UTC time of export |
 | `source.record_id`, `source.recorded_at` | the history record the take comes from |
 | `source.screenshots` | captures of the same record |
+| `source.input` | `"recording"`, or for the admin text input `{tts_text, voice, acoustic_text}` — the script, the Edge TTS voice, and the transcript placed on the audio by forced alignment |
 | `versions` | app version, git commit (`-dirty` if `src/` had changes), kiwipiepy, ASR model ids, coaching LLM id |
 | `target.text` / `.surface` / `.ipa` | sentence, standard pronunciation (G2P), IPA |
 | `channels.heard` | Whisper: `text`, `ipa`, `scored: false` |
