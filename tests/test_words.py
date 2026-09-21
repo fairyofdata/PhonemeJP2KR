@@ -92,3 +92,32 @@ def test_every_tag_has_a_japanese_explanation():
 def test_empty_hypotheses_do_not_crash():
     words = word_view("안녕하세요", "", "")
     assert words[0]["acoustic"] == "" and words[0]["katakana"] == ""
+
+
+# --- CTC forced alignment (admin text input) ---------------------------------
+
+from src.ctc import forced_align  # noqa: E402
+
+NEG = -30.0
+
+
+def _frames(seq, blank=0, n_tokens=4):
+    """One-hot-ish log-probs: frame t strongly predicts seq[t]."""
+    return [[0.0 if k == tok else NEG for k in range(n_tokens)] for tok in seq]
+
+
+def test_forced_align_finds_each_token_span():
+    # frames: blank a a blank b blank blank c
+    lp = _frames([0, 1, 1, 0, 2, 0, 0, 3])
+    assert forced_align(lp, [1, 2, 3], blank=0) == [(1, 3), (4, 5), (7, 8)]
+
+
+def test_forced_align_separates_repeated_tokens_with_a_blank():
+    lp = _frames([1, 0, 1])
+    assert forced_align(lp, [1, 1], blank=0) == [(0, 1), (2, 3)]
+
+
+def test_forced_align_rejects_text_longer_than_audio():
+    import pytest
+    with pytest.raises(ValueError):
+        forced_align(_frames([1, 2]), [1, 2, 3], blank=0)

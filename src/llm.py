@@ -9,6 +9,7 @@ not the LLM's: src/kana.py derives it from the alignment by rule.)
 """
 
 import json
+import time
 
 from google import genai
 from google.genai import types
@@ -77,6 +78,21 @@ def _get_client() -> genai.Client:
     return genai.Client(api_key=api_key)
 
 
+_RETRY_DELAYS = (2, 5)   # seconds; only for "try again later" responses
+
+
+def _generate(client, contents, config):
+    """generate_content with a short retry on 429/503 (transient overload)."""
+    for delay in (*_RETRY_DELAYS, None):
+        try:
+            return client.models.generate_content(model=GEMINI_MODEL_ID, contents=contents,
+                                                  config=config)
+        except Exception as e:
+            if delay is None or getattr(e, "code", None) not in (429, 503):
+                raise
+            time.sleep(delay)
+
+
 def generate_feedback(target: str, target_surface: str, target_ipa: str,
                       whisper_text: str, wav2vec_text: str, actual_ipa: str,
                       score: int, error_tags: list) -> dict:
@@ -93,14 +109,10 @@ def generate_feedback(target: str, target_surface: str, target_ipa: str,
     )
     client = _get_client()
     try:
-        response = client.models.generate_content(
-            model=GEMINI_MODEL_ID,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.2,
-                response_mime_type="application/json",
-            ),
-        )
+        response = _generate(client, prompt, types.GenerateContentConfig(
+            temperature=0.2,
+            response_mime_type="application/json",
+        ))
         return json.loads(response.text)
     except Exception as e:
         raise GeminiUnavailableError(f"Gemini API呼び出しに失敗しました: {e}") from e
@@ -109,11 +121,8 @@ def generate_feedback(target: str, target_surface: str, target_ipa: str,
 def translate_jp_to_kr(jp_text: str) -> str:
     client = _get_client()
     try:
-        response = client.models.generate_content(
-            model=GEMINI_MODEL_ID,
-            contents=_TRANSLATE_PROMPT.format(jp_text=jp_text),
-            config=types.GenerateContentConfig(temperature=0.2),
-        )
+        response = _generate(client, _TRANSLATE_PROMPT.format(jp_text=jp_text),
+                             types.GenerateContentConfig(temperature=0.2))
         return response.text.strip()
     except Exception as e:
         raise GeminiUnavailableError(f"翻訳に失敗しました: {e}") from e

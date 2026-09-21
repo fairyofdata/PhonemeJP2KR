@@ -22,6 +22,7 @@ from streamlit_mic_recorder import mic_recorder
 
 from src import ui
 from src.asr import (
+    align_text,
     load_whisper_model,
     load_wav2vec_model,
     transcribe_acoustics,
@@ -38,7 +39,7 @@ from src.llm import GeminiUnavailableError, generate_feedback, translate_jp_to_k
 from src.preprocess import strip_edge_noise
 from src.reference import load_reference, score_band
 from src.scoring import score_pronunciation
-from src.tts import VOICES, generate_tts_audio
+from src.tts import ADMIN_VOICES, VOICES, generate_tts_audio, synthesize
 from src.words import word_view
 
 FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
@@ -91,17 +92,31 @@ def convert_to_wav16k(audio_bytes: bytes) -> str:
     return out_path
 
 
-def run_analysis(target: str, audio_bytes: bytes, strip_noise: bool = True) -> dict:
-    """Full pipeline. Returns a result dict stored in session_state."""
+def run_analysis(target: str, audio_bytes: bytes, strip_noise: bool = True,
+                 admin: dict = None) -> dict:
+    """Full pipeline. Returns a result dict stored in session_state.
+
+    ``admin`` comes from the admin text input. Its ``acoustic_text``
+    replaces Wav2Vec2 decoding and is placed on the audio by forced
+    alignment (Whisper still runs on the audio); ``coaching: False``
+    skips the LLM call.
+    """
+    admin = admin or {}
+    acoustic_text = (admin.get("acoustic_text") or "").strip()
     wav_path = convert_to_wav16k(audio_bytes)
     try:
         whisper_text = transcribe_intelligibility(wav_path, whisper_proc, whisper_mod)
-        wav2vec_text, char_timestamps = transcribe_acoustics(wav_path, wav2vec_proc, wav2vec_mod)
+        if acoustic_text:
+            wav2vec_text = acoustic_text
+            char_timestamps = align_text(wav_path, acoustic_text, wav2vec_proc, wav2vec_mod)
+        else:
+            wav2vec_text, char_timestamps = transcribe_acoustics(wav_path, wav2vec_proc, wav2vec_mod)
         waveform, _ = librosa.load(wav_path, sr=SAMPLE_RATE)
     finally:
         os.unlink(wav_path)
 
-    cleaned = strip_edge_noise(target, wav2vec_text, char_timestamps) if strip_noise else None
+    cleaned = (strip_edge_noise(target, wav2vec_text, char_timestamps)
+               if strip_noise and not acoustic_text else None)
     if cleaned and cleaned.changed:
         wav2vec_text, char_timestamps = cleaned.text, cleaned.char_timestamps
 
@@ -125,19 +140,24 @@ def run_analysis(target: str, audio_bytes: bytes, strip_noise: bool = True) -> d
         "llm": None,
         "llm_error": None,
     }
-    try:
-        result["llm"] = generate_feedback(
-            target=target,
-            target_surface=result["target_surface"],
-            target_ipa=result["target_ipa"],
-            whisper_text=whisper_text,
-            wav2vec_text=wav2vec_text,
-            actual_ipa=result["actual_ipa"],
-            score=report.score,
-            error_tags=report.error_tags,
-        )
-    except GeminiUnavailableError as e:
-        result["llm_error"] = str(e)
+    if admin:
+        result["admin_input"] = {k: admin.get(k) for k in ("tts_text", "voice", "acoustic_text")}
+    if admin.get("coaching") is False:
+        result["llm_error"] = "コーチングの生成を省略しました（管理者機能）。"
+    else:
+        try:
+            result["llm"] = generate_feedback(
+                target=target,
+                target_surface=result["target_surface"],
+                target_ipa=result["target_ipa"],
+                whisper_text=whisper_text,
+                wav2vec_text=wav2vec_text,
+                actual_ipa=result["actual_ipa"],
+                score=report.score,
+                error_tags=report.error_tags,
+            )
+        except GeminiUnavailableError as e:
+            result["llm_error"] = str(e)
 
     feedback = (result["llm"] or {}).get("feedback_jp", result["llm_error"] or "")
     record_id = save_record(target, wav2vec_text, report.score,
@@ -253,10 +273,13 @@ def render_practice():
 
     with right, st.container(border=True):
         st.markdown('<div class="pc-eyebrow">あなたの発音</div>', unsafe_allow_html=True)
-        source = st.segmented_control("入力方法", ["マイクで録音", "ファイル"], key="source",
-                                      default="マイクで録音", label_visibility="collapsed")
-        audio_bytes = None
-        if source == "ファイル":
+        source = st.segmented_control("入力方法", ["マイクで録音", "ファイル", "テキスト"],
+                                      key="source", default="マイクで録音",
+                                      label_visibility="collapsed")
+        audio_bytes, admin = None, None
+        if source == "テキスト":
+            audio_bytes, admin = render_admin_input()
+        elif source == "ファイル":
             uploaded = st.file_uploader("音声ファイル（wav / mp3 / flac）",
                                         type=["wav", "mp3", "flac"])
             if uploaded is not None:
@@ -287,12 +310,42 @@ def render_practice():
                 try:
                     st.session_state.last_result = run_analysis(
                         target, audio_bytes,
-                        strip_noise=st.session_state.get("strip_noise", True))
+                        strip_noise=st.session_state.get("strip_noise", True), admin=admin)
                 except subprocess.CalledProcessError:
                     st.error("音声ファイルを読み込めませんでした。別の形式で試してください。")
+                except ValueError as e:     # forced alignment: text the model cannot place
+                    st.error(f"音響認識の文を音声に合わせられませんでした: {e}")
 
     if st.session_state.get("last_result"):
         render_result(st.session_state.last_result)
+
+
+def render_admin_input():
+    """Admin text input: TTS audio from a script, optionally with a fixed
+    acoustic transcript. Returns (audio_bytes or None, admin options)."""
+    st.info("機能点検のための管理者機能です。", icon=":material/admin_panel_settings:")
+    script = st.text_area("音声にする文（TTS）", key="admin_tts_text",
+                          placeholder="例: はりょはん どしるる ぐりみょ …",
+                          help="日本語の声ならかなで書くと、日本語話者のリズムで読み上げます。")
+    voice = st.selectbox("声", list(ADMIN_VOICES), key="admin_voice")
+    acoustic = st.text_input("音響認識の結果として使う文（空欄なら Wav2Vec2 で認識）",
+                             key="admin_acoustic_text",
+                             help="入力した文を強制アライメントで音声に合わせます。Whisper は音声から認識します。")
+    coaching = st.checkbox("コーチングも生成する（Gemini API を1回呼び出します）",
+                           key="admin_coaching", value=False)
+    audio_bytes = None
+    if script.strip():
+        key = hashlib.md5(f"{ADMIN_VOICES[voice]}|{script}".encode()).hexdigest()
+        out_path = os.path.join(tempfile.gettempdir(), f"admin_tts_{key}.mp3")
+        if not os.path.exists(out_path):
+            with st.spinner("音声を生成しています…"):
+                if not synthesize(script, ADMIN_VOICES[voice], out_path):
+                    st.error("音声の生成に失敗しました。声と文の言語が合っているか確認してください。")
+                    return None, None
+        with open(out_path, "rb") as f:
+            audio_bytes = f.read()
+    return audio_bytes, {"tts_text": script, "voice": ADMIN_VOICES[voice],
+                         "acoustic_text": acoustic, "coaching": coaching}
 
 
 def render_result(res: dict):
