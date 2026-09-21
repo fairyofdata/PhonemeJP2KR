@@ -46,7 +46,7 @@ This system enforces a strict separation:
 |---|---|---|
 | **Measurement** | Rule-based G2P (표준발음법) + jamo alignment | Deterministic, unit-tested, reproducible |
 | **Perception probe** | Whisper (strong internal LM) vs Wav2Vec2-CTC (no LM) | The *gap* between the two separates intelligibility from acoustics |
-| **Interpretation** | Gemini 3.8 Flash, fed structured evidence (error tags, IPA, score) | Used only for pedagogy: coaching text |
+| **Interpretation** | Gemini Flash (newest model that answers, from a fallback list), fed structured evidence (error tags, IPA, score) | Used only for pedagogy: coaching text |
 
 The same audio always yields the same score. If the LLM is unavailable, the full quantitative analysis still renders.
 
@@ -63,7 +63,7 @@ flowchart TD
     N --> G
     G --> S["Jamo alignment (Levenshtein + backtrace)<br/>score = 1 − PER · L1 error classifier"]
     S --> W["Word alignment (display)<br/>target · Whisper · Wav2Vec2 per word<br/>+ rule-based katakana of the acoustic channel"]
-    S --> L["Gemini 3.8 Flash<br/>interprets structured evidence only"]
+    S --> L["Gemini Flash<br/>interprets structured evidence only"]
     L --> U["UI: score vs Exp 6 reference band · waveform error markers<br/>jamo diff · three channels word by word · coaching"]
     S --> U
     W --> U
@@ -220,7 +220,7 @@ This take is also exported as data — [`docs/assets/demo_take.json`](docs/asset
 
 ## Testing
 
-The linguistic core is fully unit-tested (151 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag. Around the core: the reference bands read from the Exp 6 results, API-key resolution (env var → `.env` → secrets), history persistence with clip pruning, edge-noise rules (including the cases that must *not* be stripped), CTC forced alignment for the admin input, the word-level alignment of the unspaced acoustic output and the katakana table (including the contrasts it must merge), and the UI markup — syllable grouping and escaping of learner/ASR/LLM text.
+The linguistic core is fully unit-tested (154 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag. Around the core: the reference bands read from the Exp 6 results, API-key resolution (env var → `.env` → secrets), history persistence with clip pruning, edge-noise rules (including the cases that must *not* be stripped), CTC forced alignment for the admin input, the word-level alignment of the unspaced acoustic output and the katakana table (including the contrasts it must merge), and the UI markup — syllable grouping and escaping of learner/ASR/LLM text.
 
 ```bash
 pip install -r requirements-dev.txt
@@ -233,7 +233,7 @@ Designed with practical engineering constraints for low latency, fault tolerance
 
 - **Graceful Degradation & Fault Tolerance**: The measurement layer (deterministic G2P, CTC alignment, scoring) is strictly decoupled from the LLM. If the external Gemini API encounters rate limits or network outages, the core quantitative analysis and phoneme error diff remain 100% functional.
 - **Inference Latency & Memory Management**: ASR models (Whisper & Wav2Vec2) are cached as in-memory singletons (`@st.cache_resource`) to eliminate redundant cold-starts. Audio preprocessing utilizes an optimized `ffmpeg` pipeline with immediate ephemeral file unlinking, preventing disk I/O bloat and memory leaks.
-- **Token Cost Optimization**: Raw audio waveforms are processed locally by acoustic models rather than streamed to costly multimodal LLM APIs. Only concise, structured diagnostic evidence (`error_tags`, IPA, score) is passed to Gemini 3.8 Flash (`temperature=0.2`), keeping payload under ~350 tokens.
+- **Token Cost Optimization**: Raw audio waveforms are processed locally by acoustic models rather than streamed to costly multimodal LLM APIs. Only concise, structured diagnostic evidence (`error_tags`, IPA, score) is passed to Gemini Flash (`temperature=0.2`), keeping payload under ~350 tokens.
 
 ## Limitations & Roadmap
 
