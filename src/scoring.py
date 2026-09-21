@@ -13,7 +13,7 @@ into jamo, and aligned with Levenshtein dynamic programming. The score is
 
 from dataclasses import dataclass, field
 
-from .g2p import to_jamo_sequence
+from .g2p import char_times, jamo_positions
 
 # lenis / aspirated / tense triads share place & manner of articulation
 _LARYNGEAL_SETS = [
@@ -34,6 +34,8 @@ class AlignedPair:
     hyp: str         # produced jamo ("" for deletions)
     start_time: float = None
     end_time: float = None
+    ref_pos: int = None  # index of the source character in the target text
+    hyp_pos: int = None  # index of the source character in the hypothesis
 
 
 @dataclass
@@ -45,8 +47,13 @@ class ScoreReport:
     error_tags: list = field(default_factory=list)
 
 
-def align_jamo(ref, hyp):
-    """Levenshtein alignment with backtrace → list[AlignedPair]."""
+def align_jamo(ref, hyp, ref_pos=None, hyp_pos=None):
+    """Levenshtein alignment with backtrace → list[AlignedPair].
+
+    ``ref_pos``/``hyp_pos`` optionally give each jamo's source-character
+    index; they ride along on the pairs and never affect the alignment.
+    """
+    ref_pos = ref_pos or [None] * len(ref)
     if hyp and isinstance(hyp[0], tuple):
         hyp_chars = [h[0] for h in hyp]
         hyp_times = [(h[1], h[2]) for h in hyp]
@@ -54,6 +61,7 @@ def align_jamo(ref, hyp):
         hyp_chars = hyp
         hyp_times = [(None, None) for _ in hyp]
 
+    hyp_pos = hyp_pos or [None] * len(hyp_chars)
     n, m = len(ref), len(hyp_chars)
     dp = [[0] * (m + 1) for _ in range(n + 1)]
     for i in range(n + 1):
@@ -73,14 +81,16 @@ def align_jamo(ref, hyp):
         if i > 0 and j > 0 and dp[i][j] == dp[i - 1][j - 1] + (0 if ref[i - 1] == hyp_chars[j - 1] else 1):
             op = "match" if ref[i - 1] == hyp_chars[j - 1] else "sub"
             start_time, end_time = hyp_times[j - 1]
-            pairs.append(AlignedPair(op, ref[i - 1], hyp_chars[j - 1], start_time, end_time))
+            pairs.append(AlignedPair(op, ref[i - 1], hyp_chars[j - 1], start_time, end_time,
+                                     ref_pos[i - 1], hyp_pos[j - 1]))
             i, j = i - 1, j - 1
         elif i > 0 and dp[i][j] == dp[i - 1][j] + 1:
-            pairs.append(AlignedPair("del", ref[i - 1], "", None, None))
+            pairs.append(AlignedPair("del", ref[i - 1], "", None, None, ref_pos[i - 1]))
             i -= 1
         else:
             start_time, end_time = hyp_times[j - 1]
-            pairs.append(AlignedPair("ins", "", hyp_chars[j - 1], start_time, end_time))
+            pairs.append(AlignedPair("ins", "", hyp_chars[j - 1], start_time, end_time,
+                                     None, hyp_pos[j - 1]))
             j -= 1
     pairs.reverse()
     return pairs, dp[n][m]
@@ -108,60 +118,67 @@ def _is_coda(pairs, idx):
     return prev in _VOWELS and nxt not in _VOWELS
 
 
-def classify_errors(pairs):
-    """Tag alignment errors with known Japanese-L1 interference patterns.
+def classify_pair(pairs, idx):
+    """Tag one non-matching pair; None for a match.
 
-    Returns a list of dicts: {"tag": ..., "ref": ..., "hyp": ...} suitable
-    for direct serialization into the LLM prompt.
+    Returns {"tag", "ref", "hyp"[, "timestamp"]}, suitable for direct
+    serialization into the LLM prompt.
     """
-    tags = []
-    for idx, p in enumerate(pairs):
-        if p.op == "match":
-            continue
-            
-        tag_dict = {"ref": p.ref, "hyp": p.hyp}
-        if p.start_time is not None:
-            tag_dict["timestamp"] = round(p.start_time, 2)
-            
-        if p.op == "ins" and p.hyp in _EPENTHETIC_VOWELS:
-            tag_dict["tag"] = "vowel_epenthesis"
-        elif p.op == "del" and p.ref in _CODA_LIKE and p.ref not in _VOWELS:
-            prev_is_vowel = idx > 0 and pairs[idx - 1].ref in _VOWELS
-            tag_dict["tag"] = "coda_deletion" if prev_is_vowel else "consonant_deletion"
-        elif p.op == "sub" and _same_laryngeal_family(p.ref, p.hyp):
-            tag_dict["tag"] = "laryngeal_confusion"
-        elif p.op == "sub" and {p.ref, p.hyp} <= {"ㅓ", "ㅗ"}:
-            tag_dict["tag"] = "vowel_ʌ_o_confusion"
-        elif p.op == "sub" and {p.ref, p.hyp} <= {"ㅕ", "ㅛ"}:
-            tag_dict["tag"] = "vowel_jʌ_jo_confusion"
-        elif p.op == "sub" and {p.ref, p.hyp} <= {"ㅡ", "ㅜ"}:
-            tag_dict["tag"] = "vowel_ɯ_u_confusion"
-        elif p.op == "sub" and p.ref == "ㅢ":
-            tag_dict["tag"] = "diphthong_ɰi_monophthongization"
-        elif (p.op == "sub" and {p.ref, p.hyp} <= _NASAL_CODAS
-              and _is_coda(pairs, idx)):
-            tag_dict["tag"] = "nasal_coda_confusion"
-        elif (p.op == "sub" and {p.ref, p.hyp} <= _STOP_CODAS
-              and _is_coda(pairs, idx)):
-            tag_dict["tag"] = "stop_coda_confusion"
-        elif p.op == "sub":
-            tag_dict["tag"] = "substitution"
-        elif p.op == "ins":
-            tag_dict["tag"] = "insertion"
-        else:
-            tag_dict["tag"] = "deletion"
-            
-        tags.append(tag_dict)
-    return tags
+    p = pairs[idx]
+    if p.op == "match":
+        return None
+    tag_dict = {"ref": p.ref, "hyp": p.hyp}
+    if p.start_time is not None:
+        tag_dict["timestamp"] = round(p.start_time, 2)
+
+    if p.op == "ins" and p.hyp in _EPENTHETIC_VOWELS:
+        tag_dict["tag"] = "vowel_epenthesis"
+    elif p.op == "del" and p.ref in _CODA_LIKE and p.ref not in _VOWELS:
+        prev_is_vowel = idx > 0 and pairs[idx - 1].ref in _VOWELS
+        tag_dict["tag"] = "coda_deletion" if prev_is_vowel else "consonant_deletion"
+    elif p.op == "sub" and _same_laryngeal_family(p.ref, p.hyp):
+        tag_dict["tag"] = "laryngeal_confusion"
+    elif p.op == "sub" and {p.ref, p.hyp} <= {"ㅓ", "ㅗ"}:
+        tag_dict["tag"] = "vowel_ʌ_o_confusion"
+    elif p.op == "sub" and {p.ref, p.hyp} <= {"ㅕ", "ㅛ"}:
+        tag_dict["tag"] = "vowel_jʌ_jo_confusion"
+    elif p.op == "sub" and {p.ref, p.hyp} <= {"ㅡ", "ㅜ"}:
+        tag_dict["tag"] = "vowel_ɯ_u_confusion"
+    elif p.op == "sub" and p.ref == "ㅢ":
+        tag_dict["tag"] = "diphthong_ɰi_monophthongization"
+    elif (p.op == "sub" and {p.ref, p.hyp} <= _NASAL_CODAS
+          and _is_coda(pairs, idx)):
+        tag_dict["tag"] = "nasal_coda_confusion"
+    elif (p.op == "sub" and {p.ref, p.hyp} <= _STOP_CODAS
+          and _is_coda(pairs, idx)):
+        tag_dict["tag"] = "stop_coda_confusion"
+    elif p.op == "sub":
+        tag_dict["tag"] = "substitution"
+    elif p.op == "ins":
+        tag_dict["tag"] = "insertion"
+    else:
+        tag_dict["tag"] = "deletion"
+    return tag_dict
+
+
+def classify_errors(pairs):
+    """Tag alignment errors with known Japanese-L1 interference patterns."""
+    return [t for t in (classify_pair(pairs, i) for i in range(len(pairs))) if t]
 
 
 def score_pronunciation(target_text: str, actual_text: str, char_timestamps=None) -> ScoreReport:
     """Compare target vs ASR hypothesis at the jamo level after G2P."""
-    ref = to_jamo_sequence(target_text)
-    hyp = to_jamo_sequence(actual_text, char_timestamps)
-    if not ref:
+    ref_seq = jamo_positions(target_text)
+    hyp_seq = jamo_positions(actual_text)
+    if not ref_seq:
         return ScoreReport(score=0, distance=0, ref_len=0)
-    pairs, distance = align_jamo(ref, hyp)
+    ref = [j for j, _ in ref_seq]
+    if char_timestamps is None:
+        hyp = [j for j, _ in hyp_seq]
+    else:
+        times = char_times(actual_text, char_timestamps)
+        hyp = [(j, *times.get(i, (None, None))) for j, i in hyp_seq]
+    pairs, distance = align_jamo(ref, hyp, [i for _, i in ref_seq], [i for _, i in hyp_seq])
     per = distance / max(len(ref), len(hyp))
     score = max(0, round(100 * (1 - per)))
     return ScoreReport(

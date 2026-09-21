@@ -271,55 +271,67 @@ def to_surface(text: str) -> str:
     return " ".join("".join(compose(*s) for s in w) for w in words)
 
 
+def jamo_positions(text: str):
+    """Orthographic text → [(surface jamo, index of its source character)].
+
+    The index points into ``text`` itself (the pronunciation-spelling
+    rewrite preserves length), so a jamo can be traced back to the
+    character — and hence the word — it came from. This is what lets the
+    unspaced Wav2Vec2 output be cut into words after alignment.
+    """
+    text = _pronunciation_spelling(text)
+    seq, word, indices = [], [], []
+
+    def flush():
+        for (cho, jung, jong), i in zip(_word_to_surface(word), indices):
+            # onset ㅇ is silent and left out of the scoring unit
+            seq.extend((j, i) for j in ([cho] if cho != "ㅇ" else []) + [jung] + ([jong] if jong else []))
+        word.clear()
+        indices.clear()
+
+    for i, ch in enumerate(text):
+        if is_hangul_syllable(ch):
+            word.append(decompose(ch))
+            indices.append(i)
+        elif word:
+            flush()
+    if word:
+        flush()
+    return seq
+
+
+def char_times(text: str, char_timestamps) -> dict:
+    """Map each non-space character index of ``text`` to its (start, end).
+
+    ``char_timestamps`` is the CTC output [(char, start, end), ...], which
+    skips spaces; characters are matched in order.
+    """
+    times, t = {}, 0
+    for i, ch in enumerate(text):
+        if not ch.strip():
+            continue
+        while t < len(char_timestamps) and char_timestamps[t][0] != ch:
+            t += 1
+        if t < len(char_timestamps):
+            times[i] = (char_timestamps[t][1], char_timestamps[t][2])
+            t += 1
+    return times
+
+
 def to_jamo_sequence(text: str, char_timestamps=None):
     """Orthographic text → flat list of surface-form jamo (scoring unit).
 
     If char_timestamps (list of (char, start_time, end_time)) is provided,
-    returns a list of (jamo, start_time, end_time).
+    returns a list of (jamo, start_time, end_time); every jamo of a
+    syllable inherits that syllable's time span.
     Spaces and punctuation are excluded so the score is insensitive to
     tokenization differences between ASR outputs.
     """
-    char_to_time = {}
-    if char_timestamps:
-        time_idx = 0
-        for i, ch in enumerate(text):
-            if not ch.strip():
-                continue
-            while time_idx < len(char_timestamps) and char_timestamps[time_idx][0] != ch:
-                time_idx += 1
-            if time_idx < len(char_timestamps):
-                char_to_time[i] = (char_timestamps[time_idx][1], char_timestamps[time_idx][2])
-                time_idx += 1
-
-    text = _pronunciation_spelling(text)
-    
-    words = []
-    current_word = []
-    current_indices = []
-    for i, ch in enumerate(text):
-        if is_hangul_syllable(ch):
-            current_word.append(decompose(ch))
-            current_indices.append(i)
-        else:
-            if current_word:
-                words.append((current_word, current_indices))
-                current_word = []
-                current_indices = []
-    if current_word:
-        words.append((current_word, current_indices))
-
-    seq = []
-    for word, indices in words:
-        surface_word = _word_to_surface(word)
-        for (cho, jung, jong), orig_i in zip(surface_word, indices):
-            # every jamo of a syllable inherits that syllable's time span
-            jamos = ([cho] if cho != "ㅇ" else []) + [jung] + ([jong] if jong else [])
-            if char_timestamps is None:
-                seq.extend(jamos)
-            else:
-                start, end = char_to_time.get(orig_i, (None, None))
-                seq.extend((j, start, end) for j in jamos)
-    return seq
+    seq = jamo_positions(text)
+    if char_timestamps is None:
+        return [j for j, _ in seq]
+    times = char_times(text, char_timestamps)
+    return [(j, *times.get(i, (None, None))) for j, i in seq]
 
 
 def to_ipa(text: str) -> str:

@@ -15,7 +15,8 @@ strings.
 
 **Decision.** Measurement (G2P, alignment, scoring, error tagging) is
 deterministic Python. The LLM receives the finished evidence and only
-interprets it: katakana rendering plus coaching text.
+interprets it: coaching text. (It also rendered the katakana line until
+decision 11 moved that to a rule table.)
 
 **Why.** Experiment 1: on identical input, the v1 scorer moved over a
 5-point range (sd 1.45) and produced 4 different IPA transcriptions of
@@ -180,3 +181,50 @@ directly (`REM --- create the virtual…` ran as `reate the virtual…`).
 
 **Consequence.** The launcher is less friendly to read, and correct
 everywhere.
+
+---
+
+## 11. Three channels plus one notation; word view from the scorer's alignment
+
+**Context.** The result view showed four equal cards: target, Whisper,
+Wav2Vec2 and an LLM-written katakana line. A portfolio review found two
+problems: to a Japanese reader the three Korean sentences are unreadable
+as wholes, and the katakana card looked like a fourth measurement.
+
+**Decision.**
+- There are three channels: the target (standard pronunciation, G2P),
+  what was heard (Whisper, not scored), and what was produced
+  (Wav2Vec2-CTC, the score's basis). Katakana is a *notation* of the
+  third, shown as a sub-line of it and never on the target or Whisper.
+- Katakana comes from a fixed Hangul→kana table over the surface jamo
+  the scorer compared (`src/kana.py`); the LLM no longer produces it.
+- A word view aligns all three channels to the target's words. Wav2Vec2
+  output has no spaces, so it is cut through the scorer's own jamo
+  alignment: every jamo already knows its source character; a pair
+  belongs to the word of its target jamo (insertions to the preceding
+  word), and a produced character to the word holding its vowel
+  (`src/words.py`). Whisper is aligned the same way.
+- Per-word explanations are fixed Japanese templates keyed by tag
+  (`labels.explain_error`). Whisper gets the same classifier for display,
+  labelled 参考・採点外.
+
+**Why.** Katakana cannot carry what this system measures — lenis /
+aspirated / tense, ㅓ/ㅗ, ㅡ/ㅜ and ㄴ/ㅇ codas each collapse to one kana
+(unit-tested) — so presenting it as a channel would contradict the
+measurement. An LLM transliteration is also not aligned to anything,
+so it could not be cut per word, and it varied between runs. Reusing the
+scoring alignment, rather than a second aligner, guarantees the word
+view never disagrees with the score: the per-word tags concatenate to
+exactly the scored tags (test), and the demo take reproduces its stored
+22 tags and score 60.
+
+**Consequence.** The word view inherits the scorer's blind spot: the
+hypothesis passes the same G2P as the target (decision 3), so a missing
+phonological rule is invisible — 죽고도 is read as [죽꼬도], and "no
+tensification in 춥고도" cannot be claimed. Whisper tags now exist but
+mean something different (what a listener model heard); they never
+enter the score or the weak-point profile. Older history records keep
+their LLM katakana in the stored text, while the view recomputes the
+rule-based line. The demo take is exported as data
+([DEMO_TAKE.md](DEMO_TAKE.md)) from the stored record, with no model or
+API call, and the export refuses to write if recomputation drifts.

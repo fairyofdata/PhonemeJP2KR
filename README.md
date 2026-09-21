@@ -46,7 +46,7 @@ This system enforces a strict separation:
 |---|---|---|
 | **Measurement** | Rule-based G2P (표준발음법) + jamo alignment | Deterministic, unit-tested, reproducible |
 | **Perception probe** | Whisper (strong internal LM) vs Wav2Vec2-CTC (no LM) | The *gap* between the two separates intelligibility from acoustics |
-| **Interpretation** | Gemini 2.5 Flash, fed structured evidence (error tags, IPA, score) | Used only for pedagogy: katakana rendering + coaching text |
+| **Interpretation** | Gemini 2.5 Flash, fed structured evidence (error tags, IPA, score) | Used only for pedagogy: coaching text |
 
 The same audio always yields the same score. If the LLM is unavailable, the full quantitative analysis still renders.
 
@@ -62,12 +62,16 @@ flowchart TD
     D --> N["Edge-noise filter<br/><i>isolated clicks/coughs, by CTC timing</i>"]
     N --> G
     G --> S["Jamo alignment (Levenshtein + backtrace)<br/>score = 1 − PER · L1 error classifier"]
+    S --> W["Word alignment (display)<br/>target · Whisper · Wav2Vec2 per word<br/>+ rule-based katakana of the acoustic channel"]
     S --> L["Gemini 2.5 Flash<br/>interprets structured evidence only"]
-    L --> U["UI: score vs Exp 6 reference band · waveform error markers<br/>jamo diff · 4-channel view · katakana · coaching"]
+    L --> U["UI: score vs Exp 6 reference band · waveform error markers<br/>jamo diff · three channels word by word · coaching"]
     S --> U
+    W --> U
 ```
 
 **Why dual ASR?** Whisper carries a strong language model, so it auto-corrects mispronunciations the way a native listener's brain does — its output approximates *intelligibility*. Wav2Vec2 with greedy CTC decoding has no language model, so its output stays close to the raw phone sequence — *acoustics*. The divergence between the two channels is precisely the "I can't hear my own mistake" gap that L2 learners suffer from, made measurable.
+
+**Three channels, one notation.** The result view shows three channels — the target (standard pronunciation), what Whisper heard, and what Wav2Vec2 recognised (the score's basis). Katakana is not a fourth channel: it is the acoustic channel written in Japanese sounds by a fixed rule table ([`src/kana.py`](src/kana.py)), shown to make visible what it *loses* — lenis/aspirated/tense onsets, ㅓ/ㅗ, ㅡ/ㅜ and ㄴ/ㅇ codas all collapse, which is exactly why the learner cannot hear them. The target and Whisper lines get no katakana. Because Wav2Vec2 output has no spaces, the word view cuts it into the target's words through the scorer's own jamo alignment ([`src/words.py`](src/words.py)); each word's tags are the scored tags, and its Japanese explanation is a fixed template per tag, not LLM text. See decision 11 in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 ## The Deterministic G2P Engine
 
@@ -195,7 +199,7 @@ streamlit run app.py
 1. Pick a sentence: type Korean, generate it from Japanese (「日本語から作る」), or choose a weak-point drill in the sidebar. Its standard surface pronunciation and IPA are shown immediately.
 2. Listen to the native reference (edge-tts neural voices: SunHi / InJoon / Hyunsu, chosen in the sidebar).
 3. Record with the browser mic or upload a file, then run the analysis.
-4. Read the result: the reference band and score with the change since your last attempt at the same sentence; a waveform player whose red markers (Wav2Vec2-CTC timestamps) replay each detected error; then tabs for the syllable-grouped jamo diff with named errors, the Whisper / Wav2Vec2 / katakana comparison, and the LLM coaching.
+4. Read the result: the reference band and score with the change since your last attempt at the same sentence; a waveform player whose red markers (Wav2Vec2-CTC timestamps) replay each detected error; then tabs for the syllable-grouped jamo diff with named errors, the three channels aligned word by word (pick a flagged word to see its three readings, its katakana and a Japanese explanation of each tag), and the LLM coaching.
 5. The 学習記録 tab charts your scores, aggregates recurring errors into a weak-point profile, and reopens any past attempt in the result view — with its recording, kept for the 50 most recent attempts.
 
 A Japanese learner reading *화려한 도시를 그리며 찾아왔네 그 곳은 춥고도 험한 곳* — 22 syllables carrying liaison and nasalisation (찾아왔네 → [차자완네]), tensification (춥고도 → [춥꼬도]) and coda neutralisation (곳 → [곧]).
@@ -206,7 +210,9 @@ A Japanese learner reading *화려한 도시를 그리며 찾아왔네 그 곳�
 
 ![ASR channel comparison](docs/assets/demo_channels.png)
 
-*The same take as channels: the target, what Whisper heard with its language model, the raw acoustic reading the score is computed from, and the learner's output written back as katakana.*
+*The same take as three channels — the target, what Whisper heard with its language model, and the raw acoustic reading the score is computed from, with its katakana notation beneath — then aligned word by word. 험한 → 홍한 carries two classic Japanese-L1 tags (ㅓ→ㅗ, ㅁ→ㅇ); the katakana ホンハン cannot show the first.*
+
+This take is also exported as data — [`docs/assets/demo_take.json`](docs/assets/demo_take.json), schema in [`docs/DEMO_TAKE.md`](docs/DEMO_TAKE.md) — generated from the stored record by `tools/export_demo_take.py` with no model or API call, and checked against it.
 
 ![Coaching](docs/assets/demo_coaching.png)
 
@@ -214,7 +220,7 @@ A Japanese learner reading *화려한 도시를 그리며 찾아왔네 그 곳�
 
 ## Testing
 
-The linguistic core is fully unit-tested (138 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag. Around the core: the reference bands read from the Exp 6 results, API-key resolution (env var → `.env` → secrets), history persistence with clip pruning, edge-noise rules (including the cases that must *not* be stripped), and the UI markup — syllable grouping and escaping of learner/ASR/LLM text.
+The linguistic core is fully unit-tested (148 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag. Around the core: the reference bands read from the Exp 6 results, API-key resolution (env var → `.env` → secrets), history persistence with clip pruning, edge-noise rules (including the cases that must *not* be stripped), the word-level alignment of the unspaced acoustic output and the katakana table (including the contrasts it must merge), and the UI markup — syllable grouping and escaping of learner/ASR/LLM text.
 
 ```bash
 pip install -r requirements-dev.txt

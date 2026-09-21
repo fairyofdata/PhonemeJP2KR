@@ -9,7 +9,7 @@ import base64
 import json
 from html import escape
 
-from .labels import describe_error, tag_label
+from .labels import describe_error, explain_error, tag_label
 
 # design tokens, mirrored in .streamlit/config.toml
 INK = "#1d2433"
@@ -81,13 +81,47 @@ h1, h2, h3 {{ letter-spacing: -0.01em; }}
   color: {MUTED}; margin-top: 0.3rem; position: relative; height: 1rem; }}
 .pc-meter-scale span {{ position: absolute; transform: translateX(-50%); }}
 
-.pc-cards {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 0.8rem; }}
 .pc-card {{ border: 1px solid {LINE}; border-radius: 12px; background: #fff;
   padding: 0.9rem 1rem; }}
 .pc-card .kr {{ font-family: {FONT_KR}; font-size: 1.25rem;
   font-weight: 600; color: {INK}; margin: 0.25rem 0; word-break: keep-all; }}
 .pc-card .note {{ color: {MUTED}; font-size: 0.8rem; line-height: 1.5; }}
+
+.pc-chans {{ display: flex; flex-direction: column; gap: 0.6rem; }}
+.pc-chan {{ border: 1px solid {LINE}; border-radius: 12px; background: #fff; padding: 0.75rem 1rem; }}
+.pc-chan-head {{ display: flex; gap: 0.6rem; align-items: baseline; flex-wrap: wrap; }}
+.pc-chan-head .pc-eyebrow {{ margin: 0; }}
+.pc-chan .kr {{ font-family: {FONT_KR}; font-size: 1.15rem; font-weight: 600; color: {INK};
+  margin: 0.2rem 0 0.1rem; word-break: keep-all; }}
+.pc-chan .note, .pc-kana-note {{ color: {MUTED}; font-size: 0.8rem; line-height: 1.5; }}
+.pc-kana {{ margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed {LINE};
+  font-size: 0.85rem; color: {INK}; }}
+.pc-kana span {{ color: {MUTED}; font-size: 0.72rem; margin-right: 0.5rem; }}
+.pc-kana-note {{ margin-top: 0.4rem; }}
+.pc-words {{ display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.2rem 0 0.8rem; }}
+.pc-wcol {{ display: flex; flex-direction: column; border: 1px solid {LINE}; border-radius: 10px;
+  background: #fff; padding: 0.35rem 0.55rem; font-family: {FONT_KR}; font-size: 0.95rem;
+  white-space: nowrap; }}
+.pc-wcol > span {{ height: 1.55rem; line-height: 1.55rem; }}
+.pc-wcol .t {{ font-weight: 700; color: {INK}; }}
+.pc-wcol .k {{ font-family: {FONT}; font-size: 0.75rem; color: {MUTED}; }}
+.pc-wcol u {{ text-decoration: none; background: #fff3bf; border-radius: 3px; }}
+.pc-wcol .gap {{ color: #adb5bd; }}
+.pc-wcol.bad {{ border-color: #ffa8a8; background: #fff5f5; }}
+.pc-wcol.bad u {{ background: #ffe3e3; }}
+.pc-wcol.heard {{ border-color: #ffd43b; }}
+.pc-wlabels {{ border-color: transparent; background: transparent; color: {MUTED};
+  font-family: {FONT}; font-size: 0.72rem; padding-left: 0; }}
+.pc-wdetail {{ display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.9rem; margin: 0 0 0.8rem;
+  font-size: 1.05rem; }}
+.pc-wdetail dt {{ color: {MUTED}; font-size: 0.8rem; align-self: center; }}
+.pc-wdetail dd {{ margin: 0; font-family: {FONT_KR}; color: {INK}; }}
+.pc-wdetail small {{ color: {MUTED}; font-size: 0.8rem; }}
+.pc-explain {{ list-style: none; padding: 0; margin: 0.2rem 0 0.8rem; }}
+.pc-explain li {{ border-left: 3px solid #ff8787; padding: 0.2rem 0 0.2rem 0.7rem; margin-bottom: 0.5rem; }}
+.pc-explain.heard li {{ border-left-color: #ffd43b; }}
+.pc-explain .ev {{ font-family: {FONT_KR}; color: {MUTED}; margin-left: 0.6rem; font-size: 0.85rem; }}
+.pc-explain p {{ margin: 0.15rem 0 0; font-size: 0.88rem; color: {INK}; line-height: 1.6; }}
 
 .pc-diff {{ display: flex; flex-wrap: wrap; gap: 0.45rem; padding: 0.4rem 0; }}
 .pc-syl {{ display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px;
@@ -247,26 +281,81 @@ def error_list_html(error_tags) -> str:
     return f'<ul class="pc-errors">{"".join(items)}</ul>'
 
 
-def channel_cards_html(res: dict) -> str:
-    katakana = (res.get("llm") or {}).get("katakana")
-    cards = [
-        ("お手本", res["target"], f'[{res["target_surface"]}]',
-         "標準発音法の規則から決定論的に導いた発音"),
-        ("聞き取り · Whisper", res["whisper_text"], f'/{res["whisper_ipa"]}/',
-         "言語モデルが文脈で補正した認識 — 聞き手が意味を取れたかの参考"),
-        ("音響 · Wav2Vec2", res["wav2vec_text"], f'/{res["actual_ipa"]}/',
-         "補正なしの音響認識 — スコアはこの結果から算出"),
+KANA_NOTE = ("カタカナは実際の音の結果を規則で日本語の音に置き換えた表記です。"
+             "平音・激音・濃音や ㅓ/ㅗ などの区別は表せません。")
+
+
+def channel_rows_html(res: dict, words: list) -> str:
+    """The three measurement channels, with katakana as a notation of the third."""
+    kana = " ".join(w["katakana"] for w in words if w["katakana"])
+    rows = [
+        ("お手本", "標準発音法の規則から導いた発音", res["target"],
+         f'[{res["target_surface"]}]', ""),
+        ("聞こえ方 · Whisper", "言語モデルが文脈で補正した認識 — 採点には使いません",
+         res["whisper_text"], f'/{res["whisper_ipa"]}/', ""),
+        ("実際の音 · Wav2Vec2", "補正なしの音響認識 — スコアはこの結果から算出",
+         res["wav2vec_text"], f'/{res["actual_ipa"]}/',
+         f'<div class="pc-kana"><span>カタカナ表記</span>{escape(kana or "—")}</div>'),
     ]
-    if katakana:
-        cards.append(("カタカナで見ると", katakana, "",
-                      "実際の発音を日本語の音で表記（LLM による可視化）"))
     html = []
-    for title, main, sub, note in cards:
-        sub_html = f'<div class="note pc-ipa">{escape(sub)}</div>' if sub else ""
-        html.append(f'<div class="pc-card"><div class="pc-eyebrow">{escape(title)}</div>'
-                    f'<div class="kr">{escape(main or "—")}</div>{sub_html}'
-                    f'<div class="note" style="margin-top:.45rem">{escape(note)}</div></div>')
-    return f'<div class="pc-cards">{"".join(html)}</div>'
+    for title, note, main, sub, extra in rows:
+        html.append(
+            f'<div class="pc-chan"><div class="pc-chan-head"><span class="pc-eyebrow">{escape(title)}</span>'
+            f'<span class="note">{escape(note)}</span></div>'
+            f'<div class="kr">{escape(main or "—")}</div>'
+            f'<div class="note pc-ipa">{escape(sub)}</div>{extra}</div>')
+    return (f'<div class="pc-chans">{"".join(html)}</div>'
+            f'<div class="pc-kana-note">{escape(KANA_NOTE)}</div>')
+
+
+def _mark_diff(text: str, target: str) -> str:
+    """Escape ``text``; underline it when it differs from the target word."""
+    if not text:
+        return '<span class="gap">—</span>'
+    same = text.replace(" ", "") == target.replace(" ", "")
+    return escape(text) if same else f"<u>{escape(text)}</u>"
+
+
+def word_grid_html(words: list) -> str:
+    """One column per target word: target / heard / acoustic / katakana."""
+    labels = ('<div class="pc-wcol pc-wlabels"><span>お手本</span><span>聞こえ方</span>'
+              '<span>実際の音</span><span>カタカナ</span></div>')
+    cols = []
+    for w in words:
+        cls = " bad" if w["acoustic_errors"] else " heard" if w["heard_errors"] else ""
+        cols.append(
+            f'<div class="pc-wcol{cls}"><span class="t">{escape(w["target"])}</span>'
+            f'<span>{_mark_diff(w["heard"], w["target"])}</span>'
+            f'<span>{_mark_diff(w["acoustic"], w["target"])}</span>'
+            f'<span class="k">{escape(w["katakana"] or "—")}</span></div>')
+    return f'<div class="pc-words">{labels}{"".join(cols)}</div>'
+
+
+def _error_items(errors: list) -> str:
+    return "".join(
+        f'<li><b>{escape(tag_label(e["tag"]))}</b>'
+        f'<span class="ev">{escape(describe_error(e).partition(" · ")[2])}</span>'
+        f'<p>{escape(explain_error(e))}</p></li>' for e in errors)
+
+
+def word_detail_html(w: dict) -> str:
+    """One word: the three lines side by side, then its tags explained."""
+    lines = (
+        f'<dt>お手本</dt><dd>{escape(w["target"])} <small>[{escape(w["surface"])}]</small></dd>'
+        f'<dt>聞こえ方</dt><dd>{escape(w["heard"] or "—")}</dd>'
+        f'<dt>実際の音</dt><dd>{escape(w["acoustic"] or "—")}'
+        f' <small class="pc-kana-inline">{escape(w["katakana"])}</small></dd>'
+    )
+    parts = [f'<dl class="pc-wdetail">{lines}</dl>']
+    if w["acoustic_errors"]:
+        parts.append('<div class="pc-eyebrow">採点の根拠（実際の音）</div>'
+                     f'<ul class="pc-explain">{_error_items(w["acoustic_errors"])}</ul>')
+    if w["heard_errors"]:
+        parts.append('<div class="pc-eyebrow">聞こえ方の差（参考・採点外）</div>'
+                     f'<ul class="pc-explain heard">{_error_items(w["heard_errors"])}</ul>')
+    parts.append('<div class="pc-kana-note">説明は検出された誤りの種類から定型文で作成しています'
+                 '（LLM は使っていません）。</div>')
+    return f'<div class="pc-card">{"".join(parts)}</div>'
 
 
 def weak_points_html(weak_points, drill_by_tag, limit: int = 6) -> str:

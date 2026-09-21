@@ -149,7 +149,7 @@ def test_drills_cover_only_classifier_tags():
     from src import scoring
     from src.drills import DRILLS
 
-    source = inspect.getsource(scoring.classify_errors)
+    source = inspect.getsource(scoring.classify_pair)
     for drill in DRILLS:
         assert f'"{drill["tag"]}"' in source, drill["tag"]
         assert drill["sentences"]
@@ -163,5 +163,5 @@ def test_every_classifier_tag_has_a_ui_label():
     from src.labels import TAG_LABELS
 
     emitted = set(re.findall(r'tag_dict\["tag"\] = "([^"]+)"',
-                             inspect.getsource(scoring.classify_errors)))
+                             inspect.getsource(scoring.classify_pair)))
     assert emitted and emitted <= set(TAG_LABELS)

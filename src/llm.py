@@ -3,9 +3,9 @@
 Design principle: the LLM never computes measurements. IPA transcriptions,
 the phoneme score, and the error alignment all come from the deterministic
 G2P/scoring pipeline and are passed *into* the prompt as evidence. The LLM
-is used only for what it is good at — interpreting structured evidence,
-rendering the learner's output as katakana to visualize L1 interference,
-and writing natural pedagogical feedback in Japanese.
+is used only for what it is good at — interpreting structured evidence and
+writing natural pedagogical feedback in Japanese. (The katakana line is
+not the LLM's: src/kana.py derives it from the alignment by rule.)
 """
 
 import json
@@ -47,7 +47,6 @@ _FEEDBACK_PROMPT = """あなたは日本語母語話者の母語干渉（L1 Inte
 - 重要度の高い誤りを最大3件まで取り上げ、それ以外は最後に1文でまとめてください。
 
 {{
-  "katakana": "Wav2Vec2が認識した音（実際の発音）を、日本人がカタカナで発音したかのように表記した文字列。L1干渉の可視化用。",
   "error_summary": "検出された誤りの要点を1〜2文の日本語で。誤りがなければその旨を書く。",
   "feedback_jp": "エラータグごとに、口・舌・喉の使い方まで踏み込んだ具体的な矯正アドバイス（日本語、マークダウン使用可、3〜6文程度）。エビデンス（どの音がどう変わったか）を必ず引用すること。"
 }}"""
@@ -81,7 +80,7 @@ def _get_client() -> genai.Client:
 def generate_feedback(target: str, target_surface: str, target_ipa: str,
                       whisper_text: str, wav2vec_text: str, actual_ipa: str,
                       score: int, error_tags: list) -> dict:
-    """Interpret the deterministic analysis and return katakana + coaching text."""
+    """Interpret the deterministic analysis and return the coaching text."""
     prompt = _FEEDBACK_PROMPT.format(
         target=target,
         target_surface=target_surface,

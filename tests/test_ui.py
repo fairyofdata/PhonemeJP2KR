@@ -2,8 +2,8 @@
 
 from src.scoring import score_pronunciation
 from src.ui import (
-    audio_mime, channel_cards_html, diff_html, error_list_html, score_hero_html,
-    syllable_groups, target_html,
+    audio_mime, channel_rows_html, diff_html, error_list_html, score_hero_html,
+    syllable_groups, target_html, word_detail_html, word_grid_html,
 )
 
 
@@ -35,8 +35,13 @@ def test_user_and_model_text_is_escaped():
     evil = "<script>alert(1)</script>"
     assert "<script>" not in target_html(evil, evil, evil)
     res = {"target": evil, "target_surface": evil, "whisper_text": evil, "whisper_ipa": "",
-           "wav2vec_text": evil, "actual_ipa": "", "llm": {"katakana": evil}}
-    assert "<script>" not in channel_cards_html(res)
+           "wav2vec_text": evil, "actual_ipa": ""}
+    word = {"index": 0, "target": evil, "surface": evil, "heard": evil, "acoustic": evil,
+            "katakana": evil, "acoustic_errors": [{"tag": evil, "ref": evil, "hyp": evil}],
+            "heard_errors": []}
+    assert "<script>" not in channel_rows_html(res, [word])
+    assert "<script>" not in word_grid_html([word])
+    assert "<script>" not in word_detail_html(word)
     assert "<script>" not in error_list_html([{"tag": evil, "ref": evil, "hyp": ""}])
 
 
