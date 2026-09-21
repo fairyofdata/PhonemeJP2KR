@@ -19,7 +19,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.config import GEMINI_MODEL_ID, WAV2VEC_MODEL_ID, WHISPER_MODEL_ID  # noqa: E402
+from src.config import WAV2VEC_MODEL_ID, WHISPER_MODEL_ID  # noqa: E402
 from src.database import get_record  # noqa: E402
 from src.g2p import to_ipa, to_surface  # noqa: E402
 from src.kana import to_kana  # noqa: E402
@@ -96,7 +96,7 @@ def build(record: dict) -> dict:
             "g2p_morphology": f"kiwipiepy {_pkg('kiwipiepy')}",
             "whisper": WHISPER_MODEL_ID,
             "wav2vec2": WAV2VEC_MODEL_ID,
-            "coaching_llm": GEMINI_MODEL_ID,
+            "coaching_llm": (a.get("llm") or {}).get("model"),  # the model that answered
         },
         "target": {"text": target, "surface": a["target_surface"], "ipa": a["target_ipa"]},
         "channels": {

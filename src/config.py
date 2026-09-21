@@ -9,7 +9,20 @@ CLIPS_DIR = os.path.join(DATA_DIR, "clips")   # recordings kept for replay
 
 WHISPER_MODEL_ID = "openai/whisper-small"
 WAV2VEC_MODEL_ID = "kresnik/wav2vec2-large-xlsr-korean"
-GEMINI_MODEL_ID = "gemini-3.8-flash"
+# Coaching LLM: tried in order, the first that answers is used. Flash-class
+# models (free-tier accessible), newest first — no single model is pinned,
+# because previews get overloaded and old versions get retired. Override
+# with GEMINI_MODELS="model-a,model-b".
+GEMINI_MODELS = tuple(m.strip() for m in os.environ.get("GEMINI_MODELS", "").split(",") if m.strip()) or (
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-flash-latest",
+    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash",
+)
+GEMINI_MODEL_ID = GEMINI_MODELS[0]  # single-model callers (experiments/exp1)
 
 AUDIO_SAMPLE_RATE = 16000
 
