@@ -34,11 +34,14 @@ def test_diff_marks_only_syllables_with_errors():
 def test_user_and_model_text_is_escaped():
     evil = "<script>alert(1)</script>"
     assert "<script>" not in target_html(evil, evil, evil)
-    res = {"target": evil, "target_surface": evil, "whisper_text": evil, "whisper_ipa": "",
+    res = {"target": evil, "target_surface": evil, "target_ipa": evil, "whisper_text": evil, "whisper_ipa": "",
            "wav2vec_text": evil, "actual_ipa": ""}
     word = {"index": 0, "target": evil, "surface": evil, "heard": evil, "acoustic": evil,
             "katakana": evil, "acoustic_errors": [{"tag": evil, "ref": evil, "hyp": evil}],
-            "heard_errors": []}
+            "heard_errors": [], "target_ipa": evil, "heard_ipa": evil, "acoustic_ipa": evil,
+            "acoustic_ipa_diff": [[evil, evil, "sub"]], "phones": evil,
+            "phones_diff": [[evil, evil, "ins"]],
+            "phone_errors": [{"tag": evil, "unit": "ipa", "ref": evil, "hyp": evil}]}
     assert "<script>" not in channel_rows_html(res, [word])
     assert "<script>" not in word_grid_html([word])
     assert "<script>" not in word_detail_html(word)

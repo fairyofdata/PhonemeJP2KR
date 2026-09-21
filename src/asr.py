@@ -21,7 +21,7 @@ from transformers import (
     Wav2Vec2ForCTC,
 )
 
-from .config import WHISPER_MODEL_ID, WAV2VEC_MODEL_ID, AUDIO_SAMPLE_RATE
+from .config import AUDIO_SAMPLE_RATE, PHONE_MODEL_ID, WAV2VEC_MODEL_ID, WHISPER_MODEL_ID
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -114,3 +114,42 @@ def align_text(audio_path: str, text: str, processor, model) -> list[tuple[str, 
 
     frame = getattr(model.config, "inputs_to_logits_ratio", 320) / AUDIO_SAMPLE_RATE
     return [(c, a * frame, b * frame) for c, (a, b) in zip(chars, spans)]
+
+
+# --- phoneme recognizer (experimental IPA channel) ----------------------------
+
+def load_phone_model():
+    """Feature extractor, model and id→token map of the IPA recognizer.
+
+    Its tokenizer class needs the phonemizer package only to *encode* text;
+    decoding is a plain vocabulary lookup, done here instead.
+    """
+    import json
+
+    from huggingface_hub import hf_hub_download
+    from transformers import Wav2Vec2FeatureExtractor
+
+    extractor = Wav2Vec2FeatureExtractor.from_pretrained(PHONE_MODEL_ID)
+    model = Wav2Vec2ForCTC.from_pretrained(PHONE_MODEL_ID).to(DEVICE)
+    model.eval()
+    with open(hf_hub_download(PHONE_MODEL_ID, "vocab.json"), encoding="utf-8") as f:
+        id_to_token = {i: tok for tok, i in json.load(f).items()}
+    return extractor, model, id_to_token
+
+
+def transcribe_phones(audio_path: str, extractor, model, id_to_token) -> str:
+    """Greedy CTC over IPA tokens → an IPA string in src/ipa.py notation."""
+    from .ipa import from_model_tokens
+
+    audio = _load_audio(audio_path)
+    inputs = extractor(audio, sampling_rate=AUDIO_SAMPLE_RATE, return_tensors="pt")
+    with torch.no_grad():
+        ids = model(inputs.input_values.to(DEVICE)).logits.argmax(-1)[0].tolist()
+    tokens, prev = [], None
+    for i in ids:
+        tok = id_to_token.get(i, "")
+        if i != prev and tok not in ("<pad>", "<s>", "</s>", "<unk>", ""):
+            tokens.append(tok)
+        prev = i
+    return from_model_tokens(tokens)
+

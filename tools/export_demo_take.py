@@ -1,6 +1,6 @@
 """Export one stored analysis as the demo-take JSON the portfolio site draws from.
 
-    python tools/export_demo_take.py --record 9 --out docs/assets/demo_take.json
+    python tools/export_demo_take.py --record 10 --out docs/assets/demo_take.json
 
 No model or API is called. The stored record already holds the ASR
 outputs; everything else (surface form, IPA, word alignment, tags,
@@ -19,11 +19,12 @@ from importlib.metadata import PackageNotFoundError, version
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.config import WAV2VEC_MODEL_ID, WHISPER_MODEL_ID  # noqa: E402
+from src.config import PHONE_MODEL_ID, WAV2VEC_MODEL_ID, WHISPER_MODEL_ID  # noqa: E402
 from src.database import get_record  # noqa: E402
 from src.g2p import to_ipa, to_surface  # noqa: E402
+from src.ipa import compare as ipa_compare  # noqa: E402
 from src.kana import to_kana  # noqa: E402
-from src.labels import explain_error, tag_label  # noqa: E402
+from src.labels import explain_error, ipa_evidence, tag_label  # noqa: E402
 from src.scoring import score_pronunciation  # noqa: E402
 from src.words import word_view  # noqa: E402
 
@@ -50,7 +51,7 @@ def _git_commit() -> str | None:
 
 def _error(e: dict) -> dict:
     out = {"tag": e["tag"], "label_ja": tag_label(e["tag"]), "ref": e["ref"], "hyp": e["hyp"],
-           "explanation_ja": explain_error(e)}
+           "ipa": ipa_evidence(e), "explanation_ja": explain_error(e)}
     if "timestamp" in e:
         out["timestamp_s"] = e["timestamp"]
     return out
@@ -75,11 +76,24 @@ def build(record: dict) -> dict:
     if drift:
         sys.exit(f"record {record['id']}: recomputation differs from the stored take: {drift}")
 
-    words = word_view(target, whisper, wav2vec)
+    phone_ipa = a.get("phone_ipa")
+    words = word_view(target, whisper, wav2vec, phone_ipa)
     stored_tags = iter(a["error_tags"])       # same order, verified above; carries timestamps
     for w in words:
-        w["acoustic_errors"] = [_error(next(stored_tags)) for _ in w["acoustic_errors"]]
+        # recomputed tags carry the IPA evidence; stored ones carry the timestamps
+        w["acoustic_errors"] = [_error({**e, **next(stored_tags)}) for e in w["acoustic_errors"]]
         w["heard_errors"] = [_error(e) for e in w["heard_errors"]]
+        w["phone_errors"] = [_error(e) for e in w["phone_errors"]]
+    phones = None
+    if phone_ipa:
+        phones = {
+            "source": a.get("phone_source"),   # "model" or "admin" (given IPA)
+            "model": PHONE_MODEL_ID, "text": " ".join(w["phones"] for w in words if w["phones"]),
+            "score": ipa_compare(target, phone_ipa).score, "scored": False,
+            "role": "Phones compared with the target's surface IPA without passing the "
+                    "G2P, so a skipped phonological rule is visible (rule_*_missed). "
+                    "Experimental.",
+        }
 
     return {
         "schema": SCHEMA,
@@ -106,6 +120,7 @@ def build(record: dict) -> dict:
                 "role": "What a listener model understood; its language model corrects "
                         "toward plausible Korean. Display only.",
             },
+            "phones": phones,
             "acoustic": {
                 "model": WAV2VEC_MODEL_ID, "text": wav2vec, "ipa": a["actual_ipa"],
                 "scored": True,
@@ -124,8 +139,9 @@ def build(record: dict) -> dict:
                   "calibrated": False},
         "words": words,
         "limitations": [
-            "Phonological-rule errors are not observable: the acoustic output passes the same "
-            "G2P as the target, so e.g. missing tensification in 춥고도 cannot be detected.",
+            "In the Hangul channels, phonological-rule errors are not observable: the "
+            "hypothesis passes the same G2P as the target. The IPA channel (phones) is "
+            "compared without it and names them (rule_*_missed).",
             "heard_errors run the same classifier on Whisper for display; they are not scored.",
             "Explanations are fixed templates keyed by tag (src/labels.py); no LLM is involved.",
         ],

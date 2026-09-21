@@ -256,7 +256,7 @@ dual-ASR argument needs: context restores 화려한 and 찾아왔네, but
 도시르르, 추부고도 and 홈한 survive. Pure-Python alignment keeps torchaudio
 out of the dependencies and runs in CI.
 
-**Consequence.** The README demo (record 9) is a scripted take; its
+**Consequence.** The README demo (record 9, later 10) is a scripted take; its
 script and voice are in `demo_take.json` (`source.input`). A transcript
 character outside the Wav2Vec2 vocabulary is refused with a message
 (왓 is missing; 왔 has the same surface form).
@@ -268,4 +268,46 @@ Flash models newest first; each call takes the first that answers,
 moving on after 403/404/429/503, and the answering model is stored with
 the coaching (`llm.model`) and shown under it. The demo coaching came
 from gemini-3.5-flash.
+
+---
+
+## 13. IPA beside every reading, and a phone channel compared without the G2P
+
+**Context.** Learners reading Japanese-language output see Hangul on
+every line, and the one error class decision 3 accepted as invisible —
+a skipped phonological rule — is the class the portfolio most needs to
+show: the hypothesis passes the same G2P as the target, so 차즈아왔네 is
+re-derived into [차즈아완네] and the missing nasalization disappears.
+
+**Decision.**
+- Every alignment pair carries the in-context IPA of both jamo
+  (`g2p.ipa_segments`, same allophony as `to_ipa`); tags, the word view,
+  the error list and the export show [ʌ]→[o] next to ㅓ→ㅗ.
+- A fourth channel compares *phones* (`src/ipa.py`). Its input is an IPA
+  string — from a multilingual phoneme recognizer
+  (facebook/wav2vec2-xlsr-53-espeak-cv-ft, decoded from its vocabulary
+  without phonemizer) or given through the admin input. It is tokenized
+  into units (tɕʰ, k͈, jʌ), normalized for allophony and notation, and
+  aligned with the target's surface phones with articulatory costs.
+- Each target phone knows which phones a reader who skipped a rule
+  would produce there: the target is aligned with a letter-by-letter
+  reading with liaison (for tensification, nasalization, lateralization,
+  aspiration, palatalization) and one without (for liaison). Producing
+  that phone is tagged `rule_<rule>_missed`.
+- Display re-applies the allophony per word, so the channel reads like
+  the others. The score stays the Hangul channel's.
+
+**Why.** It is the only way to see rule errors without a stronger
+acoustic model, and it reuses the target side of the pipeline unchanged.
+Two baselines are needed: with liaison only, 찾아 was misread as a
+palatalization error; without the second, 곳은 read [곧은] would go
+unnamed.
+
+**Consequence.** The recognizer is weak on Korean: its inventory has no
+tense stops (the closest is gemination), and on native Korean TTS
+reading the sentence correctly it scored 63–67 and reported
+tensification skipped in 춥고도 — so model output is labelled
+experimental. The demo take (record 10) gives the channel its IPA
+through the admin input, like its acoustic transcript; the engine itself
+is unit-tested on all six rules.
 

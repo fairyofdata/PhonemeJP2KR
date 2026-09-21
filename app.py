@@ -23,10 +23,12 @@ from streamlit_mic_recorder import mic_recorder
 from src import ui
 from src.asr import (
     align_text,
+    load_phone_model,
     load_whisper_model,
     load_wav2vec_model,
     transcribe_acoustics,
     transcribe_intelligibility,
+    transcribe_phones,
 )
 from src.database import (
     KEEP_CLIPS, delete_record, find_clip, get_all_records, get_previous_score,
@@ -34,6 +36,7 @@ from src.database import (
 )
 from src.drills import DRILL_BY_TAG, DRILLS
 from src.g2p import to_ipa, to_surface
+from src.ipa import compare as ipa_compare
 from src.kana import to_kana
 from src.llm import GeminiUnavailableError, generate_feedback, translate_jp_to_kr
 from src.preprocess import strip_edge_noise
@@ -76,6 +79,19 @@ def load_models():
 whisper_proc, whisper_mod, wav2vec_proc, wav2vec_mod = load_models()
 
 
+@st.cache_resource(show_spinner="音素認識モデルを読み込んでいます…")
+def load_phone_models():
+    """The experimental IPA channel; the app runs without it if it cannot load."""
+    try:
+        return load_phone_model()
+    except Exception as e:  # missing download, offline, …
+        print(f"phone model unavailable: {e}")
+        return None
+
+
+phone_bundle = load_phone_models()
+
+
 def convert_to_wav16k(audio_bytes: bytes) -> str:
     """Normalize arbitrary input audio to 16kHz mono WAV. Returns the path."""
     with tempfile.NamedTemporaryFile(delete=False, suffix=".tmp") as tmp_in:
@@ -111,6 +127,10 @@ def run_analysis(target: str, audio_bytes: bytes, strip_noise: bool = True,
             char_timestamps = align_text(wav_path, acoustic_text, wav2vec_proc, wav2vec_mod)
         else:
             wav2vec_text, char_timestamps = transcribe_acoustics(wav_path, wav2vec_proc, wav2vec_mod)
+        phone_ipa = (admin.get("phone_ipa") or "").strip() or None
+        phone_source = "admin" if phone_ipa else None
+        if not phone_ipa and phone_bundle:
+            phone_ipa, phone_source = transcribe_phones(wav_path, *phone_bundle), "model"
         waveform, _ = librosa.load(wav_path, sr=SAMPLE_RATE)
     finally:
         os.unlink(wav_path)
@@ -137,11 +157,14 @@ def run_analysis(target: str, audio_bytes: bytes, strip_noise: bool = True,
         "peaks": ui.envelope(waveform),
         "duration": len(waveform) / SAMPLE_RATE,
         "audio_bytes": audio_bytes,
+        "phone_ipa": phone_ipa,
+        "phone_source": phone_source,
         "llm": None,
         "llm_error": None,
     }
     if admin:
-        result["admin_input"] = {k: admin.get(k) for k in ("tts_text", "voice", "acoustic_text")}
+        result["admin_input"] = {k: admin.get(k)
+                                 for k in ("tts_text", "voice", "acoustic_text", "phone_ipa")}
     if admin.get("coaching") is False:
         result["llm_error"] = "コーチングの生成を省略しました（管理者機能）。"
     else:
@@ -155,6 +178,7 @@ def run_analysis(target: str, audio_bytes: bytes, strip_noise: bool = True,
                 actual_ipa=result["actual_ipa"],
                 score=report.score,
                 error_tags=report.error_tags,
+                phone_tags=ipa_compare(target, phone_ipa).error_tags if phone_ipa else None,
             )
         except GeminiUnavailableError as e:
             result["llm_error"] = str(e)
@@ -331,6 +355,9 @@ def render_admin_input():
     acoustic = st.text_input("音響認識の結果として使う文（空欄なら Wav2Vec2 で認識）",
                              key="admin_acoustic_text",
                              help="入力した文を強制アライメントで音声に合わせます。Whisper は音声から認識します。")
+    phone_ipa = st.text_input("音素認識の結果として使う IPA（空欄なら音素認識モデル）",
+                              key="admin_phone_ipa",
+                              help="綴りを経由せずに目標の発音と比べます。例: tɕʰupkodo（濃音化なし）")
     coaching = st.checkbox("コーチングも生成する（Gemini API を1回呼び出します）",
                            key="admin_coaching", value=False)
     audio_bytes = None
@@ -345,7 +372,7 @@ def render_admin_input():
         with open(out_path, "rb") as f:
             audio_bytes = f.read()
     return audio_bytes, {"tts_text": script, "voice": ADMIN_VOICES[voice],
-                         "acoustic_text": acoustic, "coaching": coaching}
+                         "acoustic_text": acoustic, "phone_ipa": phone_ipa, "coaching": coaching}
 
 
 def render_result(res: dict):
@@ -414,19 +441,23 @@ def render_result(res: dict):
 
 
 @st.cache_data(show_spinner=False)
-def _word_view(target: str, whisper_text: str, wav2vec_text: str) -> list:
-    return word_view(target, whisper_text, wav2vec_text)
+def _word_view(target: str, whisper_text: str, wav2vec_text: str, phone_ipa: str) -> list:
+    return word_view(target, whisper_text, wav2vec_text, phone_ipa)
 
 
 def render_channels(res: dict):
-    """Three channels as sentences, then aligned word by word."""
-    words = _word_view(res["target"], res["whisper_text"], res["wav2vec_text"])
-    st.markdown(ui.channel_rows_html(res, words), unsafe_allow_html=True)
+    """The channels as sentences, then aligned word by word."""
+    phone_ipa = res.get("phone_ipa")
+    words = _word_view(res["target"], res["whisper_text"], res["wav2vec_text"], phone_ipa)
+    phone_score = ipa_compare(res["target"], phone_ipa).score if phone_ipa else None
+    st.markdown(ui.channel_rows_html(res, words, phone_score), unsafe_allow_html=True)
     st.markdown("##### 語ごとの比較")
-    st.caption("3つの結果を目標文の語ごとにそろえました。赤枠は採点に影響した語、"
-               "黄枠は聞こえ方だけが目標と異なる語です。")
+    st.caption("各チャネルを目標文の語ごとにそろえ、ハングルの下に IPA を添えました。"
+               "赤枠は実際の音または音素 IPA に誤りがある語、黄枠は聞こえ方だけが目標と"
+               "異なる語、赤字の音素は目標と違う音です。")
     st.markdown(ui.word_grid_html(words), unsafe_allow_html=True)
-    flagged = [w for w in words if w["acoustic_errors"] or w["heard_errors"]]
+    flagged = [w for w in words
+               if w["acoustic_errors"] or w["heard_errors"] or w["phone_errors"]]
     if not flagged:
         return
     names = {w["index"]: w["target"] for w in flagged}
