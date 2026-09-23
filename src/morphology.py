@@ -28,7 +28,7 @@ outputs).
 
 from kiwipiepy import Kiwi
 
-from .g2p import CODA_NEUTRAL, TENSE, compose, decompose, is_hangul_syllable
+from .g2p import CODA_NEUTRAL, TENSE, compose, decompose, is_hangul_syllable, word_gaps
 
 # --- declarative lexicons ---------------------------------------------------
 
@@ -108,9 +108,15 @@ def _get_kiwi() -> Kiwi:
     return _kiwi
 
 
-def _apply_boundary_rules(chars, t1, t2):
-    """Rewrite the two syllables flanking one morpheme boundary in place."""
-    i1, i2 = t2.start - 1, t2.start
+def _apply_boundary_rules(chars, t1, t2, across_words=False):
+    """Rewrite the two syllables flanking one morpheme boundary in place.
+
+    ``across_words`` is a word boundary the speaker read as one phrase
+    (표준발음법 §15 / §29 붙임2): the stem rules below are word-internal and
+    are skipped, while ㄴ-insertion accepts any lexical morpheme, so
+    옷 입다 → 옷닙다 → [온닙따] as the standard prescribes.
+    """
+    i1, i2 = t1.start + t1.len - 1, t2.start
     c1, c2 = chars[i1], chars[i2]
     if not (is_hangul_syllable(c1) and is_hangul_syllable(c2)):
         return
@@ -120,7 +126,7 @@ def _apply_boundary_rules(chars, t1, t2):
     if (t1.form, t2.form) in _LIAISON_EXCEPTIONS:
         return
 
-    t1_is_stem = t1.tag[0] == "V" and t1.tag not in ("VCP",)
+    t1_is_stem = t1.tag[0] == "V" and t1.tag not in ("VCP",) and not across_words
     t2_is_ending = t2.tag[0] == "E"
 
     # §10 단서: 밟- + consonant → coda ㅂ (밟다 → 밥따)
@@ -144,7 +150,8 @@ def _apply_boundary_rules(chars, t1, t2):
         return
 
     # §29: ㄴ-insertion (꽃|잎 → 꽃닢, 한|여름 → 한녀름)
-    if jong1 and _hosts_n_insertion(t2.tag) and cho2 == "ㅇ" and jung2 in _N_INSERTION_VOWELS:
+    hosts_n = _is_lexical(t2.tag) if across_words else _hosts_n_insertion(t2.tag)
+    if jong1 and hosts_n and cho2 == "ㅇ" and jung2 in _N_INSERTION_VOWELS:
         chars[i2] = compose("ㄴ", jung2, jong2)
         return
 
@@ -159,8 +166,12 @@ def _apply_boundary_rules(chars, t1, t2):
         chars[i1] = compose(cho1, jung1, CODA_NEUTRAL.get(jong1, jong1))
 
 
-def apply(text: str) -> str:
+def apply(text: str, linked=()) -> str:
     """Orthography → pronunciation spelling (length/offsets preserved).
+
+    ``linked`` lists word boundaries (0 = between the first and second
+    word) the speaker read as one phrase; boundary rules apply across
+    them as well.
 
     The whole text is analyzed in one pass so Kiwi can use sentence
     context for POS disambiguation (신고/NNG vs 신-고/VV+EC). Rules only
@@ -170,8 +181,12 @@ def apply(text: str) -> str:
     if not any(is_hangul_syllable(ch) for ch in text):
         return text
     chars = list(text)
+    gaps = word_gaps(text) if linked else {}
     tokens = _get_kiwi().tokenize(text, split_complex=True)
     for t1, t2 in zip(tokens, tokens[1:]):
-        if t1.start + t1.len == t2.start and t2.start > 0:
+        end = t1.start + t1.len
+        if end == t2.start and t2.start > 0:
             _apply_boundary_rules(chars, t1, t2)
+        elif t2.start == end + 1 and gaps.get(end) in linked:
+            _apply_boundary_rules(chars, t1, t2, across_words=True)
     return "".join(chars)

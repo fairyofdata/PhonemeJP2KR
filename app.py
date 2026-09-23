@@ -159,6 +159,8 @@ def run_analysis(target: str, audio_bytes: bytes, strip_noise: bool = True,
         "audio_bytes": audio_bytes,
         "phone_ipa": phone_ipa,
         "phone_source": phone_source,
+        # word boundaries scored as one phrase (표준발음법 §15/§18/§29 붙임)
+        "linked_boundaries": report.linked,
         "llm": None,
         "llm_error": None,
     }
@@ -178,7 +180,8 @@ def run_analysis(target: str, audio_bytes: bytes, strip_noise: bool = True,
                 actual_ipa=result["actual_ipa"],
                 score=report.score,
                 error_tags=report.error_tags,
-                phone_tags=ipa_compare(target, phone_ipa).error_tags if phone_ipa else None,
+                phone_tags=(ipa_compare(target, phone_ipa, report.linked).error_tags
+                            if phone_ipa else None),
             )
         except GeminiUnavailableError as e:
             result["llm_error"] = str(e)
@@ -449,12 +452,13 @@ def render_channels(res: dict):
     """The channels as sentences, then aligned word by word."""
     phone_ipa = res.get("phone_ipa")
     words = _word_view(res["target"], res["whisper_text"], res["wav2vec_text"], phone_ipa)
-    phone_score = ipa_compare(res["target"], phone_ipa).score if phone_ipa else None
+    linked = tuple(res.get("linked_boundaries") or ())
+    phone_score = ipa_compare(res["target"], phone_ipa, linked).score if phone_ipa else None
     st.markdown(ui.channel_rows_html(res, words, phone_score), unsafe_allow_html=True)
     st.markdown("##### 語ごとの比較")
     st.caption("各チャネルを目標文の語ごとにそろえ、ハングルの下に IPA を添えました。"
                "赤枠は実際の音または音素 IPA に誤りがある語、黄枠は聞こえ方だけが目標と"
-               "異なる語、赤字の音素は目標と違う音です。")
+               "異なる語、赤字の音素は目標と違う音です。‿ は続けて読む発音で採点した境界です。")
     st.markdown(ui.word_grid_html(words), unsafe_allow_html=True)
     flagged = [w for w in words
                if w["acoustic_errors"] or w["heard_errors"] or w["phone_errors"]]

@@ -125,9 +125,9 @@ def _word_index(text: str) -> dict:
     return idx
 
 
-def _surface_phones(text: str) -> list:
+def _surface_phones(text: str, linked=()) -> list:
     words = _word_index(text)
-    seq = jamo_positions(text)
+    seq = jamo_positions(text, linked)
     segs = ipa_segments(seq)
     codas = set()
     k = 0
@@ -143,11 +143,11 @@ def _surface_phones(text: str) -> list:
     return out
 
 
-def _spelled_phones(text: str, liaison: bool) -> list:
+def _spelled_phones(text: str, liaison: bool, linked=()) -> list:
     """The text read without phonological rules: syllable by syllable with
     coda neutralization only, optionally with liaison (같이 → [가티])."""
     out = []
-    for w, word in enumerate(_tokenize(text)):
+    for w, word in enumerate(_tokenize(text, linked)):
         if liaison:
             word = _apply_liaison(word)
         for cho, jung, jong in _neutralize_codas(word):
@@ -172,16 +172,20 @@ def _rule_kind(target: Phone, spelled: Phone) -> str:
     return None
 
 
-def target_phones(text: str) -> list:
+def target_phones(text: str, linked=()) -> list:
     """Surface phones of the target, each annotated with the phones a reader
-    who skipped a rule would produce there (and which rule that was)."""
-    surface = _surface_phones(text)
+    who skipped a rule would produce there (and which rule that was).
+
+    ``linked`` are the word boundaries read as one phrase, as chosen by
+    src/scoring.py, so both channels compare against the same target.
+    """
+    surface = _surface_phones(text, linked)
     syms = [p.sym for p in surface]
-    linked = _spelled_phones(text, liaison=True)
-    for op, i, j in _align(syms, [p.sym for p in linked]):
-        if op == "sub" and (kind := _rule_kind(surface[i], linked[j])):
-            surface[i].missed[linked[j].sym] = kind
-    unlinked = _spelled_phones(text, liaison=False)
+    liaised = _spelled_phones(text, liaison=True, linked=linked)
+    for op, i, j in _align(syms, [p.sym for p in liaised]):
+        if op == "sub" and (kind := _rule_kind(surface[i], liaised[j])):
+            surface[i].missed[liaised[j].sym] = kind
+    unlinked = _spelled_phones(text, liaison=False, linked=linked)
     for op, i, j in _align(syms, [p.sym for p in unlinked]):
         if op == "sub" and unlinked[j].coda and not surface[i].coda:
             surface[i].missed.setdefault(unlinked[j].sym, "liaison")
@@ -272,9 +276,9 @@ def _tag(ref: Phone, hyp: str, op: str) -> str:
     return "substitution"
 
 
-def compare(target_text: str, produced_ipa: str) -> IpaReport:
+def compare(target_text: str, produced_ipa: str, linked=()) -> IpaReport:
     """Align a produced IPA string with the target's surface phones."""
-    target = target_phones(target_text)
+    target = target_phones(target_text, linked)
     produced = tokenize(produced_ipa)
     if not target:
         return IpaReport(0, target, produced)

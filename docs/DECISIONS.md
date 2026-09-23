@@ -311,3 +311,40 @@ experimental. The demo take (record 10) gives the channel its IPA
 through the admin input, like its acoustic transcript; the engine itself
 is unit-tested on all six rules.
 
+---
+
+## 14. Two readings of the target, chosen per word boundary
+
+**Context.** The G2P applied no rule across a word boundary, which the
+standard does not support: read as one phrase, 밥 먹어 is [밤머거]
+(§18 붙임), 옷 입어 is [온니버] (§29 붙임2), 밭 아래 is [바다래] (§15).
+A learner following the standard was therefore *penalised* for it — the
+target stayed [밥 머거] and ㅂ→ㅁ came back as a substitution.
+
+**Decision.** The target is derivable in two readings — pausing (each
+word its own domain, the previous behaviour and still the default of
+`to_surface`/`to_ipa`) and phrased (`linked=` boundaries, where the
+morphology layer also applies §15 and §29 across the gap). Scoring picks
+between them **per boundary**: for each boundary where the two readings
+differ, whichever produces fewer errors *at that boundary* is used, a tie
+keeps the pausing reading, and the result is recorded (`ScoreReport.linked`,
+`linked_boundaries` in the stored analysis and the export) so the score
+can be reproduced. Every channel — Hangul, Whisper, IPA — compares
+against the same chosen reading, and the word view draws ‿ at the
+boundaries scored as one phrase.
+
+**Why.** Where the speaker pauses is their own choice, and both readings
+are standard, so neither can be the single target. Three alternatives
+were rejected: *always phrased* penalises the equally standard pausing
+reading; *always paused* is the bug above; *score the sentence both ways
+and keep the higher score* lets errors far from the boundary decide the
+reading, which is not a pronunciation judgement at all.
+
+**Consequence.** Prosody is still not measured — the choice is inferred
+from the phones, so a speaker who paused but produced the linked phones
+is scored as phrased. §29's lexical exceptions (곧이어 → [고디어]) are not
+listed, so such a boundary can be linked wrongly; it costs one tag.
+Sentences with no such boundary are untouched: the demo take (record 10)
+keeps its surface form, IPA, score 76 and 13 tags, which a regression
+test pins.
+

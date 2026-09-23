@@ -13,7 +13,7 @@ into jamo, and aligned with Levenshtein dynamic programming. The score is
 
 from dataclasses import dataclass, field
 
-from .g2p import char_times, ipa_segments, jamo_positions
+from .g2p import char_times, ipa_segments, jamo_positions, linkable_boundaries, word_gaps
 
 # lenis / aspirated / tense triads share place & manner of articulation
 _LARYNGEAL_SETS = [
@@ -47,6 +47,7 @@ class ScoreReport:
     ref_len: int
     pairs: list = field(default_factory=list)   # list[AlignedPair]
     error_tags: list = field(default_factory=list)
+    linked: list = field(default_factory=list)  # boundaries scored as one phrase
 
 
 def align_jamo(ref, hyp, ref_pos=None, hyp_pos=None):
@@ -180,9 +181,62 @@ def _attach_ipa(pairs, ref_ipa, hyp_ipa):
             p.hyp_ipa, h = hyp_ipa[h], h + 1
 
 
-def score_pronunciation(target_text: str, actual_text: str, char_timestamps=None) -> ScoreReport:
-    """Compare target vs ASR hypothesis at the jamo level after G2P."""
-    ref_seq = jamo_positions(target_text)
+def _boundary_window(target_text: str, boundary: int) -> set:
+    """The two characters a linked boundary can change: the last of the
+    first word and the first of the second."""
+    space = next(i for i, b in word_gaps(target_text).items() if b == boundary)
+    return {space - 1, space + 1}
+
+
+def _boundary_errors(target_text: str, actual_text: str, linked, boundary: int) -> int:
+    """Non-matching pairs at one boundary, with the given reading of all of them."""
+    ref_seq = jamo_positions(target_text, linked)
+    hyp_seq = jamo_positions(actual_text)
+    pairs, _ = align_jamo([j for j, _ in ref_seq], [j for j, _ in hyp_seq],
+                          [i for _, i in ref_seq], [i for _, i in hyp_seq])
+    window = _boundary_window(target_text, boundary)
+    in_window = [p.ref_pos in window for p in pairs]
+    errors = 0
+    for k, p in enumerate(pairs):
+        if p.op == "match":
+            continue
+        if p.op == "ins":       # insertions have no target position of their own
+            before = next((in_window[i] for i in range(k - 1, -1, -1) if pairs[i].op != "ins"), False)
+            after = next((in_window[i] for i in range(k + 1, len(pairs)) if pairs[i].op != "ins"), False)
+            errors += before or after
+        else:
+            errors += in_window[k]
+    return errors
+
+
+def choose_linked_boundaries(target_text: str, actual_text: str) -> list:
+    """Which word boundaries the speaker read as one phrase.
+
+    Where pausing or linking changes the standard pronunciation, both
+    readings are correct (표준발음법 §15, §18 붙임, §29 붙임2), so each
+    boundary is judged on its own: the reading with fewer errors *at that
+    boundary* wins, and a tie keeps the pausing (default) reading. The
+    comparison is deliberately local — picking whichever whole-sentence
+    reading scores higher would let errors elsewhere decide it.
+    """
+    chosen = []
+    for b in linkable_boundaries(target_text):
+        if (_boundary_errors(target_text, actual_text, chosen + [b], b)
+                < _boundary_errors(target_text, actual_text, chosen, b)):
+            chosen.append(b)
+    return chosen
+
+
+def score_pronunciation(target_text: str, actual_text: str, char_timestamps=None,
+                        linked=None) -> ScoreReport:
+    """Compare target vs ASR hypothesis at the jamo level after G2P.
+
+    ``linked`` are the word boundaries to read as one phrase; by default
+    they are chosen per boundary (see choose_linked_boundaries).
+    """
+    if linked is None:
+        linked = choose_linked_boundaries(target_text, actual_text)
+    ref_seq = jamo_positions(target_text, linked)
     hyp_seq = jamo_positions(actual_text)
     if not ref_seq:
         return ScoreReport(score=0, distance=0, ref_len=0)
@@ -202,4 +256,5 @@ def score_pronunciation(target_text: str, actual_text: str, char_timestamps=None
         ref_len=len(ref),
         pairs=pairs,
         error_tags=classify_errors(pairs),
+        linked=list(linked),
     )

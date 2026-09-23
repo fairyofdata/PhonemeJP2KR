@@ -105,6 +105,8 @@ Without Kiwipiepy installed the engine degrades gracefully to the context-free p
 
 Because **both** the target and the ASR hypothesis pass through the same G2P, orthographic variance is neutralized — e.g. *감사합니다* and its surface spelling *감사함니다* score identically (100), as they should.
 
+
+**Across word boundaries.** Read as one phrase, the rules run over the gap too — 밥 먹어 → [밤머거] (§18 붙임), 옷 입어 → [온니버] (§29 붙임2), 밭 아래 → [바다래] (§15) — while a reader who pauses says [밥 머거]. Both are standard, so the target is built in both readings and each boundary is judged on its own: the reading with fewer errors *at that boundary* is the one scored there, ties keep the pausing reading, and the choice is recorded (`ScoreReport.linked`, `linked_boundaries` in the export) and drawn as ‿ in the word view. Deciding per boundary rather than per sentence keeps errors elsewhere from choosing the reading. Not covered: prosody — where the speaker actually paused is inferred from the phones, not measured, and §29's lexical exceptions (곧이어 → [고디어]) are not listed.
 ## Scoring & L1 Error Taxonomy
 
 [`src/scoring.py`](src/scoring.py) aligns the two jamo sequences with Levenshtein dynamic programming (full backtrace) and computes **score = round(100 × (1 − PER))**. The alignment trace drives:
@@ -224,7 +226,7 @@ This take is also exported as data — [`docs/assets/demo_take.json`](docs/asset
 
 ## Testing
 
-The linguistic core is fully unit-tested (168 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag. Around the core: the reference bands read from the Exp 6 results, API-key resolution (env var → `.env` → secrets), history persistence with clip pruning, edge-noise rules (including the cases that must *not* be stripped), CTC forced alignment for the admin input, the IPA channel (all six skipped-rule tags, notation normalization, display allophony), the word-level alignment of the unspaced acoustic output and the katakana table (including the contrasts it must merge), and the UI markup — syllable grouping and escaping of learner/ASR/LLM text.
+The linguistic core is fully unit-tested (192 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag. Around the core: the reference bands read from the Exp 6 results, API-key resolution (env var → `.env` → secrets), history persistence with clip pruning, edge-noise rules (including the cases that must *not* be stripped), CTC forced alignment for the admin input, the IPA channel (all six skipped-rule tags, notation normalization, display allophony), the word-level alignment of the unspaced acoustic output and the katakana table (including the contrasts it must merge), and the UI markup — syllable grouping and escaping of learner/ASR/LLM text.
 
 ```bash
 pip install -r requirements-dev.txt
