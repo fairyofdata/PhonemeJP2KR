@@ -130,6 +130,9 @@ h1, h2, h3 {{ letter-spacing: -0.01em; }}
 .pc-explain li {{ border-left: 3px solid #ff8787; padding: 0.2rem 0 0.2rem 0.7rem; margin-bottom: 0.5rem; }}
 .pc-explain.heard li {{ border-left-color: #ffd43b; }}
 .pc-explain.phone li {{ border-left-color: #9775fa; }}
+.pc-wlink {{ align-self: center; color: {ACCENT}; font-size: 1.2rem; padding: 0 0.1rem;
+  cursor: help; }}
+.pc-linknote {{ color: {MUTED}; font-size: 0.82rem; margin: -0.4rem 0 0.7rem; }}
 .pc-explain .ev {{ font-family: {FONT_KR}; color: {MUTED}; margin-left: 0.6rem; font-size: 0.85rem; }}
 .pc-explain p {{ margin: 0.15rem 0 0; font-size: 0.88rem; color: {INK}; line-height: 1.6; }}
 
@@ -329,11 +332,16 @@ def channel_rows_html(res: dict, words: list, phone_score: int = None) -> str:
             f'<div class="pc-kana-note">{escape(notes)}</div>')
 
 
-def _mark_diff(text: str, target: str) -> str:
-    """Escape ``text``; underline it when it differs from the target word."""
+def _mark_diff(text: str, *targets) -> str:
+    """Escape ``text``; underline it when it matches none of ``targets``.
+
+    A word scored as part of a linked phrase is compared with its surface
+    form too (밥 먹어 → [밤머거]): 밤 is the right reading there, not an error.
+    """
     if not text:
         return '<span class="gap">—</span>'
-    same = text.replace(" ", "") == target.replace(" ", "")
+    plain = text.replace(" ", "")
+    same = any(plain == t.replace(" ", "") for t in targets if t)
     return escape(text) if same else f"<u>{escape(text)}</u>"
 
 
@@ -365,19 +373,32 @@ def word_grid_html(words: list) -> str:
         labels.append('<span class="one">音素 IPA</span>')
     labels.append('<span class="one">カタカナ</span>')
     cols = [f'<div class="pc-wcol pc-wlabels">{"".join(labels)}</div>']
-    for w in words:
+    for prev, w in zip([None] + words[:-1], words):
+        if prev is not None and prev.get("linked_next"):
+            cols.append(f'<span class="pc-wlink" title="{escape(LINK_TITLE)}'
+                        f'（[{escape(prev["linked_surface"])}]）">‿</span>')
         bad = w["acoustic_errors"] or w.get("phone_errors")
         cls = " bad" if bad else " heard" if w["heard_errors"] else ""
         cells = [
             _cell(f'<b>{escape(w["target"])}</b>', f'/{escape(w["target_ipa"])}/'),
-            _cell(_mark_diff(w["heard"], w["target"]), escape(w["heard_ipa"])),
-            _cell(_mark_diff(w["acoustic"], w["target"]), ipa_diff_html(w["acoustic_ipa_diff"])),
+            _cell(_mark_diff(w["heard"], w["target"], _linked_surface(w)),
+                  escape(w["heard_ipa"])),
+            _cell(_mark_diff(w["acoustic"], w["target"], _linked_surface(w)),
+                  ipa_diff_html(w["acoustic_ipa_diff"])),
         ]
         if with_phones:
             cells.append(f'<span class="one pc-ipa">{ipa_diff_html(w.get("phones_diff"))}</span>')
         cells.append(f'<span class="one k">{escape(w["katakana"] or "—")}</span>')
         cols.append(f'<div class="pc-wcol{cls}">{"".join(cells)}</div>')
     return f'<div class="pc-words">{"".join(cols)}</div>'
+
+
+LINK_TITLE = "この境界は続けて読む発音で採点しました"
+
+
+def _linked_surface(w: dict) -> str:
+    """The word's surface form, when a linked boundary made it differ."""
+    return w["surface"] if w.get("linked_next") or w.get("linked_prev") else ""
 
 
 def _error_items(errors: list) -> str:
@@ -401,6 +422,10 @@ def word_detail_html(w: dict) -> str:
     if w.get("phones") is not None:
         lines += (f'<dt>音素 IPA</dt><dd class="pc-ipa">/{ipa_diff_html(w["phones_diff"])}/</dd>')
     parts = [f'<dl class="pc-wdetail">{lines}</dl>']
+    if w.get("linked_surface"):
+        parts.append(f'<div class="pc-linknote">‿ {escape(LINK_TITLE)}'
+                     f'（[{escape(w["linked_surface"])}]）。'
+                     "区切って読む発音でも正しいので、境界ごとに近いほうで採点します。</div>")
     if w["acoustic_errors"]:
         parts.append('<div class="pc-eyebrow">採点の根拠（実際の音）</div>'
                      f'<ul class="pc-explain">{_error_items(w["acoustic_errors"])}</ul>')

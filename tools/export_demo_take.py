@@ -77,6 +77,7 @@ def build(record: dict) -> dict:
         sys.exit(f"record {record['id']}: recomputation differs from the stored take: {drift}")
 
     phone_ipa = a.get("phone_ipa")
+    linked = tuple(a.get("linked_boundaries") or ())
     words = word_view(target, whisper, wav2vec, phone_ipa)
     stored_tags = iter(a["error_tags"])       # same order, verified above; carries timestamps
     for w in words:
@@ -89,7 +90,7 @@ def build(record: dict) -> dict:
         phones = {
             "source": a.get("phone_source"),   # "model" or "admin" (given IPA)
             "model": PHONE_MODEL_ID, "text": " ".join(w["phones"] for w in words if w["phones"]),
-            "score": ipa_compare(target, phone_ipa).score, "scored": False,
+            "score": ipa_compare(target, phone_ipa, linked).score, "scored": False,
             "role": "Phones compared with the target's surface IPA without passing the "
                     "G2P, so a skipped phonological rule is visible (rule_*_missed). "
                     "Experimental.",
@@ -112,7 +113,15 @@ def build(record: dict) -> dict:
             "wav2vec2": WAV2VEC_MODEL_ID,
             "coaching_llm": (a.get("llm") or {}).get("model"),  # the model that answered
         },
-        "target": {"text": target, "surface": a["target_surface"], "ipa": a["target_ipa"]},
+        "target": {
+            "text": target, "surface": a["target_surface"], "ipa": a["target_ipa"],
+            # boundaries scored as one phrase; words carry linked_next/linked_prev
+            "linked_boundaries": list(linked),
+            "linked_note": "Word boundaries where the standard pronunciation changes when "
+                           "the two words are read as one phrase are judged per boundary, "
+                           "the reading with fewer errors there winning (표준발음법 §15, "
+                           "§18 붙임, §29 붙임2).",
+        },
         "channels": {
             "heard": {
                 "model": WHISPER_MODEL_ID, "text": whisper, "ipa": a["whisper_ipa"],

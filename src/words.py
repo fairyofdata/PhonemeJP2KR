@@ -20,7 +20,7 @@ describe what a listener model heard and never enter the score.
 """
 
 from . import ipa
-from .g2p import is_hangul_syllable, to_ipa, to_surface
+from .g2p import ipa_segments, is_hangul_syllable, jamo_positions, to_surface
 from .kana import kana_by_position
 from .scoring import classify_pair, score_pronunciation
 
@@ -85,6 +85,32 @@ def _tags(pairs, idxs) -> list:
     return [t for t in (classify_pair(pairs, i) for i in idxs) if t]
 
 
+def _runs(spans, linked) -> list:
+    """Word indices grouped into the chunks the G2P pronounced together."""
+    runs = []
+    for i in range(len(spans)):
+        if i and (i - 1) in linked:
+            runs[-1].append(i)
+        else:
+            runs.append([i])
+    return runs
+
+
+def _surfaces(target: str, spans: list, linked) -> list:
+    """Standard pronunciation per word; a linked chunk is split back by
+    syllable count (no rule changes how many syllables a word has)."""
+    chunks = iter(to_surface(target, linked).split())
+    out = [""] * len(spans)
+    for run in _runs(spans, linked):
+        if not any(is_hangul_syllable(c) for w in run for c in target[slice(*spans[w])]):
+            continue
+        chunk, at = next(chunks, ""), 0
+        for w in run:
+            n = sum(is_hangul_syllable(c) for c in target[slice(*spans[w])])
+            out[w], at = chunk[at:at + n], at + n
+    return out
+
+
 def _ipa_of(pairs, idxs) -> str:
     return "".join(pairs[i].hyp_ipa for i in idxs if pairs[i].op != "del")
 
@@ -106,6 +132,10 @@ def word_view(target: str, whisper_text: str, wav2vec_text: str,
         phones, phones_diff, phone_errors
                       the IPA channel (``phone_ipa``, compared without the
                       G2P by src/ipa.py); None when there is no IPA input
+        linked_next / linked_prev / linked_surface
+                      the boundary after / before this word was scored as
+                      one phrase, and that phrase's pronunciation
+                      (밥 먹어 → [밤머거])
         heard         Whisper's segment (display only, not scored)
         acoustic      Wav2Vec2's segment (the scored channel)
         katakana      rule-based katakana of the acoustic segment
@@ -114,29 +144,43 @@ def word_view(target: str, whisper_text: str, wav2vec_text: str,
                       the stored result carries them)
     """
     acoustic = score_pronunciation(target, wav2vec_text)
-    heard = score_pronunciation(target, whisper_text)
+    linked = acoustic.linked                    # one target reading for every channel
+    heard = score_pronunciation(target, whisper_text, linked=linked)
     a_words = split_by_word(target, wav2vec_text, acoustic.pairs)
     h_words = split_by_word(target, whisper_text, heard.pairs)
 
     produced = [(p.hyp, p.hyp_pos) for p in acoustic.pairs if p.hyp_pos is not None]
     kana = kana_by_position(produced)
-    # to_surface/to_ipa drop words without Hangul, so hand their words out in order
-    surfaces = iter(to_surface(target).split())
-    target_ipas = iter(to_ipa(target).split())
+    spans = [w["span"] for w in a_words]
+    surfaces = _surfaces(target, spans, linked)
+    # the whole phrase a linked word belongs to, for the UI note
+    phrase = {}
+    for run in _runs(spans, linked):
+        if len(run) > 1:
+            for w in run:
+                phrase[w] = "".join(surfaces[x] for x in run)
+    # per-word target IPA, from the same segments the alignment used
+    seq = jamo_positions(target, linked)
+    word_of = {i: w for w, (s, e) in enumerate(spans) for i in range(s, e)}
+    target_ipas = [""] * len(spans)
+    for (_, pos), seg in zip(seq, ipa_segments(seq)):
+        target_ipas[word_of[pos]] += seg
     phone_words = None
     if phone_ipa:
-        phone_words = ipa.split_by_word(ipa.compare(target, phone_ipa), len(a_words))
+        phone_words = ipa.split_by_word(ipa.compare(target, phone_ipa, linked), len(a_words))
 
     out = []
     for i, (a, h) in enumerate(zip(a_words, h_words)):
         s, e = a["span"]
-        has_hangul = any(is_hangul_syllable(c) for c in target[s:e])
         pw = phone_words[i] if phone_words else None
         out.append({
             "index": i,
             "target": target[s:e],
-            "surface": next(surfaces, "") if has_hangul else "",
-            "target_ipa": next(target_ipas, "") if has_hangul else "",
+            "surface": surfaces[i],
+            "target_ipa": target_ipas[i],
+            "linked_next": i in linked,
+            "linked_prev": (i - 1) in linked,
+            "linked_surface": phrase.get(i, ""),
             "heard_ipa": _ipa_of(heard.pairs, h["pairs"]),
             "acoustic_ipa": _ipa_of(acoustic.pairs, a["pairs"]),
             "acoustic_ipa_diff": _ipa_diff(acoustic.pairs, a["pairs"]),

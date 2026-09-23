@@ -104,21 +104,42 @@ def compose(cho: str, jung: str, jong: str = "") -> str:
     return chr(code)
 
 
-def _tokenize(text: str):
+def word_gaps(text: str) -> dict:
+    """{index of a space between two Hangul words: boundary number}.
+
+    Boundary 0 is between the first and the second word; only a single
+    space counts, so punctuation always separates.
+    """
+    gaps, prev_end, n = {}, None, 0
+    for i, ch in enumerate(text):
+        if not is_hangul_syllable(ch):
+            continue
+        if prev_end is not None and i > prev_end + 1:
+            if i == prev_end + 2 and text[i - 1] == " ":
+                gaps[i - 1] = n
+            n += 1
+        prev_end = i
+    return gaps
+
+
+def _tokenize(text: str, linked=()):
     """Split text into word-chunks of decomposed syllables; drop punctuation.
 
-    Phonological rules never apply across a word boundary here, which is a
-    simplification (real speech links across spaces) but keeps behaviour
-    predictable for sentence-level scoring.
+    A chunk is the domain of the phonological rules. Words are separate
+    chunks by default — a reader who pauses between them applies no rule
+    across the gap — while a boundary listed in ``linked`` joins the two
+    words into one chunk, which is how the standard describes two words
+    read as one phrase (표준발음법 §15, §18 붙임, §29 붙임2). See
+    src/scoring.py for how the two readings are chosen between.
     """
+    gap_at = {i: b for i, b in word_gaps(text).items() if b in linked}
     words, current = [], []
-    for ch in text:
+    for i, ch in enumerate(text):
         if is_hangul_syllable(ch):
             current.append(decompose(ch))
-        else:
-            if current:
-                words.append(current)
-                current = []
+        elif current and i not in gap_at:
+            words.append(current)
+            current = []
     if current:
         words.append(current)
     return words
@@ -249,7 +270,7 @@ def _word_to_surface(syls):
 _morphology = None  # resolved lazily: module | False (unavailable)
 
 
-def _pronunciation_spelling(text: str) -> str:
+def _pronunciation_spelling(text: str, linked=()) -> str:
     """Morphology-conditioned rewrite (see src/morphology.py); identity
     when kiwipiepy is not installed."""
     global _morphology
@@ -259,19 +280,22 @@ def _pronunciation_spelling(text: str) -> str:
             _morphology = morphology
         except ImportError:
             _morphology = False
-    return _morphology.apply(text) if _morphology else text
+    return _morphology.apply(text, linked) if _morphology else text
 
 
 # --- public API -------------------------------------------------------------
 
-def to_surface(text: str) -> str:
-    """Orthographic text → surface pronunciation in Hangul (감사합니다 → 감사함니다)."""
-    text = _pronunciation_spelling(text)
-    words = [_word_to_surface(w) for w in _tokenize(text)]
+def to_surface(text: str, linked=()) -> str:
+    """Orthographic text → surface pronunciation in Hangul (감사합니다 → 감사함니다).
+
+    ``linked`` lists word boundaries read as one phrase (밥 먹어 → 밤머거).
+    """
+    text = _pronunciation_spelling(text, linked)
+    words = [_word_to_surface(w) for w in _tokenize(text, linked)]
     return " ".join("".join(compose(*s) for s in w) for w in words)
 
 
-def jamo_positions(text: str):
+def jamo_positions(text: str, linked=()):
     """Orthographic text → [(surface jamo, index of its source character)].
 
     The index points into ``text`` itself (the pronunciation-spelling
@@ -279,7 +303,8 @@ def jamo_positions(text: str):
     character — and hence the word — it came from. This is what lets the
     unspaced Wav2Vec2 output be cut into words after alignment.
     """
-    text = _pronunciation_spelling(text)
+    gap_at = set(i for i, b in word_gaps(text).items() if b in linked)
+    text = _pronunciation_spelling(text, linked)
     seq, word, indices = [], [], []
 
     def flush():
@@ -293,7 +318,7 @@ def jamo_positions(text: str):
         if is_hangul_syllable(ch):
             word.append(decompose(ch))
             indices.append(i)
-        elif word:
+        elif word and i not in gap_at:
             flush()
     if word:
         flush()
@@ -382,14 +407,14 @@ def ipa_segments(jamo_pos) -> list:
     return out
 
 
-def to_ipa(text: str) -> str:
+def to_ipa(text: str, linked=()) -> str:
     """Orthographic text → broad IPA with basic allophony.
 
     Allophony implemented: intervocalic lenis voicing (k→ɡ etc.) and
     ㅅ/ㅆ palatalization before front-glide vowels (s→ɕ).
     """
-    text = _pronunciation_spelling(text)
-    words = [_word_to_surface(w) for w in _tokenize(text)]
+    text = _pronunciation_spelling(text, linked)
+    words = [_word_to_surface(w) for w in _tokenize(text, linked)]
     out_words = []
     for word in words:
         parts = []
@@ -404,3 +429,12 @@ def to_ipa(text: str) -> str:
             prev_voiced = jong in _SONORANT_CODAS
         out_words.append("".join(parts))
     return " ".join(out_words)
+
+
+def linkable_boundaries(text: str) -> list:
+    """Word boundaries whose pronunciation changes when the two words are
+    read as one phrase (밥 먹어: [밥 머거] vs [밤머거])."""
+    split = to_surface(text).replace(" ", "")
+    return [b for b in sorted(set(word_gaps(text).values()))
+            if to_surface(text, (b,)).replace(" ", "") != split]
+
