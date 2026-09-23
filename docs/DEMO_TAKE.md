@@ -22,6 +22,7 @@ the score, surface form, IPA or error tags differ from what was stored.
 | `source.input` | `"recording"`, or for the admin text input `{tts_text, voice, acoustic_text}` — the script, the Edge TTS voice, and the transcript placed on the audio by forced alignment |
 | `versions` | app version, git commit (`-dirty` if `src/` had changes), kiwipiepy, ASR model ids, coaching LLM id |
 | `target.text` / `.surface` / `.ipa` | sentence, standard pronunciation (G2P), IPA |
+| `target.linked_boundaries` | word boundaries scored as one phrase (0 = between the first and second word); `[]` when every boundary was read with a pause |
 | `channels.heard` | Whisper: `text`, `ipa`, `scored: false` |
 | `channels.acoustic` | Wav2Vec2-CTC: `text` (no spaces), `ipa`, `scored: true`, `stripped_edge_noise` |
 | `channels.phones` | IPA channel, or null: `source` (`"model"` or `"admin"`), `model`, `text`, `score` (phone match), `scored: false` — compared without the G2P |
@@ -35,6 +36,7 @@ Each `words[]` entry:
 | Field | Meaning |
 |---|---|
 | `index`, `target`, `surface` | position, the word as written, its standard pronunciation |
+| `linked_next` / `linked_prev` / `linked_surface` | the boundary after / before this word was scored as one phrase, and that phrase's pronunciation (draw ‿ between the two words) |
 | `target_ipa` / `heard_ipa` / `acoustic_ipa` | IPA of the word in each reading (ASR channels via the G2P, in context) |
 | `acoustic_ipa_diff` | `[ref, hyp, op]` per aligned segment — draw `hyp`, mark `op != "match"` |
 | `phones`, `phones_diff` | the IPA channel for this word (display IPA) and its diff; null without an IPA channel |

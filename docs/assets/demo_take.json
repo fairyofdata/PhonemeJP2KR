@@ -1,6 +1,6 @@
 {
   "schema": "phonemejp2kr.demo_take/1",
-  "generated_at": "2026-09-21T21:14:40+00:00",
+  "generated_at": "2026-09-23T17:02:05+00:00",
   "source": {
     "record_id": 10,
     "recorded_at": "2026-09-22 06:07:59",
@@ -18,7 +18,7 @@
   },
   "versions": {
     "app": "0.1.0",
-    "git_commit": "841744b",
+    "git_commit": "bf2072c",
     "g2p_morphology": "kiwipiepy 0.23.2",
     "whisper": "openai/whisper-small",
     "wav2vec2": "kresnik/wav2vec2-large-xlsr-korean",
@@ -27,7 +27,9 @@
   "target": {
     "text": "화려한 도시를 그리며 찾아왔네 그 곳은 춥고도 험한 곳",
     "surface": "화려한 도시를 그리며 차자완네 그 고슨 춥꼬도 험한 곧",
-    "ipa": "hwaɾjʌhan toɕiɾɯɭ kɯɾimjʌ tɕʰadʑawanne kɯ kosɯn tɕʰup̚k͈odo hʌmhan kot̚"
+    "ipa": "hwaɾjʌhan toɕiɾɯɭ kɯɾimjʌ tɕʰadʑawanne kɯ kosɯn tɕʰup̚k͈odo hʌmhan kot̚",
+    "linked_boundaries": [],
+    "linked_note": "Word boundaries where the standard pronunciation changes when the two words are read as one phrase are judged per boundary, the reading with fewer errors there winning (표준발음법 §15, §18 붙임, §29 붙임2)."
   },
   "channels": {
     "heard": {
@@ -70,6 +72,9 @@
       "target": "화려한",
       "surface": "화려한",
       "target_ipa": "hwaɾjʌhan",
+      "linked_next": false,
+      "linked_prev": false,
+      "linked_surface": "",
       "heard_ipa": "haɾjʌhan",
       "acoustic_ipa": "haɾjohan",
       "acoustic_ipa_diff": [
@@ -204,6 +209,9 @@
       "target": "도시를",
       "surface": "도시를",
       "target_ipa": "toɕiɾɯɭ",
+      "linked_next": false,
+      "linked_prev": false,
+      "linked_surface": "",
       "heard_ipa": "toɕiɾɯɾɯ",
       "acoustic_ipa": "toɕiɾuɾu",
       "acoustic_ipa_diff": [
@@ -348,6 +356,9 @@
       "target": "그리며",
       "surface": "그리며",
       "target_ipa": "kɯɾimjʌ",
+      "linked_next": false,
+      "linked_prev": false,
+      "linked_surface": "",
       "heard_ipa": "kɯɾimio",
       "acoustic_ipa": "kuɾimjo",
       "acoustic_ipa_diff": [
@@ -480,6 +491,9 @@
       "target": "찾아왔네",
       "surface": "차자완네",
       "target_ipa": "tɕʰadʑawanne",
+      "linked_next": false,
+      "linked_prev": false,
+      "linked_surface": "",
       "heard_ipa": "tɕʰadʑɯawanne",
       "acoustic_ipa": "tɕʰadʑɯawanne",
       "acoustic_ipa_diff": [
@@ -625,6 +639,9 @@
       "target": "그",
       "surface": "그",
       "target_ipa": "kɯ",
+      "linked_next": false,
+      "linked_prev": false,
+      "linked_surface": "",
       "heard_ipa": "ku",
       "acoustic_ipa": "ku",
       "acoustic_ipa_diff": [
@@ -692,6 +709,9 @@
       "target": "곳은",
       "surface": "고슨",
       "target_ipa": "kosɯn",
+      "linked_next": false,
+      "linked_prev": false,
+      "linked_surface": "",
       "heard_ipa": "ɡosun",
       "acoustic_ipa": "kosun",
       "acoustic_ipa_diff": [
@@ -789,6 +809,9 @@
       "target": "춥고도",
       "surface": "춥꼬도",
       "target_ipa": "tɕʰup̚k͈odo",
+      "linked_next": false,
+      "linked_prev": false,
+      "linked_surface": "",
       "heard_ipa": "tɕʰubuɡodo",
       "acoustic_ipa": "tɕʰubuɡodo",
       "acoustic_ipa_diff": [
@@ -941,6 +964,9 @@
       "target": "험한",
       "surface": "험한",
       "target_ipa": "hʌmhan",
+      "linked_next": false,
+      "linked_prev": false,
+      "linked_surface": "",
       "heard_ipa": "homhan",
       "acoustic_ipa": "homuhan",
       "acoustic_ipa_diff": [
@@ -1075,6 +1101,9 @@
       "target": "곳",
       "surface": "곧",
       "target_ipa": "kot̚",
+      "linked_next": false,
+      "linked_prev": false,
+      "linked_surface": "",
       "heard_ipa": "ɡuk̚",
       "acoustic_ipa": "kot̚",
       "acoustic_ipa_diff": [
