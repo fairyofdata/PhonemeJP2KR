@@ -242,11 +242,15 @@ change since the learner's previous attempt at the same sentence
 ([`src/reference.py`](../src/reference.py) reads the cut points from this
 experiment's results file).
 
-**Reproducibility note.** The reported numbers use the scores cached in
-`run_results.jsonl` at run time. The G2P later gained 표준발음법 §5
-(ㅢ/져 realization), which changes scores for scripts containing 의/희/져.
-`analyze` reproduces the table above; re-scoring the cached ASR text with
-the current G2P (as Experiment 7 does) will differ slightly.
+**Reproducibility note.** The numbers above were computed from the scores
+cached in `run_results.jsonl` at run time. Since then the G2P gained
+표준발음법 §5 (ㅢ/져 realization) and the scorer reads word boundaries as
+one phrase where that fits the speech better (DECISIONS 14), which can
+only raise a score at such a boundary. `analyze` (and 6b, 7 and the plots)
+now re-score the cached texts with the current scorer and print how many
+clips changed, so a re-run on the data machine updates the table without
+re-running the ASR. Until then the table and the app's reference band
+(p10 68, median 81) reflect the earlier scorer.
 
 ---
 

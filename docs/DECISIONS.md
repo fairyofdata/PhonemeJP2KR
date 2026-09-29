@@ -348,3 +348,27 @@ Sentences with no such boundary are untouched: the demo take (record 10)
 keeps its surface form, IPA, score 76 and 13 tags, which a regression
 test pins.
 
+---
+
+## 15. Admin takes are labelled and kept out of the learner's statistics
+
+**Context.** The admin text input (decision 12) saves its takes to the
+same history as a learner's recordings. The scripted demo takes — built
+to show thirteen Japanese-L1 errors — then topped the weak-point profile,
+entered the score trend, and served as each other's "previous attempt".
+
+**Decision.** Every record carries a `source`: `recording` or `admin`.
+Existing rows are labelled on migration from their stored analysis (an
+`admin_input` means admin), and an admin take's stored delta to a
+previous attempt is dropped. The weak-point profile, the trend chart and
+the previous-score lookup skip admin rows; the history list still shows
+them, marked 管理者, so a demo take can be reopened. The input itself is
+offered only when `PHONEME_ADMIN=1` (environment or `.env`).
+
+**Why.** The statistics describe the learner. A take whose audio and
+transcript were scripted says nothing about them, however realistic.
+
+**Consequence.** None for scoring. The phoneme recognizer is also loaded
+on the first analysis instead of at start-up, since most sessions never
+need it.
+

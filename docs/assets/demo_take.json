@@ -1,6 +1,6 @@
 {
   "schema": "phonemejp2kr.demo_take/1",
-  "generated_at": "2026-09-23T17:02:05+00:00",
+  "generated_at": "2026-09-29T17:33:04+00:00",
   "source": {
     "record_id": 10,
     "recorded_at": "2026-09-22 06:07:59",
@@ -18,7 +18,7 @@
   },
   "versions": {
     "app": "0.1.0",
-    "git_commit": "bf2072c",
+    "git_commit": "1549cb4",
     "g2p_morphology": "kiwipiepy 0.23.2",
     "whisper": "openai/whisper-small",
     "wav2vec2": "kresnik/wav2vec2-large-xlsr-korean",
