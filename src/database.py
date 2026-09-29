@@ -16,6 +16,8 @@ from datetime import datetime
 from .config import CLIPS_DIR, DB_PATH
 
 KEEP_CLIPS = 50
+# rows that are a learner's own attempts (admin/demo takes are excluded)
+_LEARNER = "COALESCE(source, 'recording') != 'admin'"
 
 
 @contextmanager
@@ -48,21 +50,49 @@ def init_db():
         # migration: full analysis payload, so a record can be reopened
         if "analysis" not in cols:
             conn.execute("ALTER TABLE feedback_history ADD COLUMN analysis TEXT")
+        # migration: where an attempt came from — "recording" (a learner) or
+        # "admin" (the check/demo input), which the learner statistics skip
+        if "source" not in cols:
+            conn.execute("ALTER TABLE feedback_history ADD COLUMN source TEXT")
+        _backfill_source(conn)
+
+
+def _backfill_source(conn):
+    """Label rows saved before the source column; admin takes are the ones
+    whose stored analysis carries the admin input. Their stored delta to a
+    "previous" attempt compared two scripted takes, so it is dropped."""
+    rows = conn.execute(
+        "SELECT id, analysis FROM feedback_history WHERE source IS NULL").fetchall()
+    for record_id, raw in rows:
+        try:
+            analysis = json.loads(raw) if raw else None
+        except ValueError:
+            analysis = None
+        if analysis and analysis.get("admin_input"):
+            analysis["previous_score"] = None
+            conn.execute("UPDATE feedback_history SET source = 'admin', analysis = ? WHERE id = ?",
+                         (json.dumps(analysis, ensure_ascii=False), record_id))
+        else:
+            conn.execute("UPDATE feedback_history SET source = 'recording' WHERE id = ?",
+                         (record_id,))
 
 
 def save_record(intended: str, actual: str, score: int, feedback: str,
-                error_tags: list = None, analysis: dict = None) -> int:
-    """Insert one attempt and return its id."""
+                error_tags: list = None, analysis: dict = None,
+                source: str = "recording") -> int:
+    """Insert one attempt and return its id. ``source`` is "recording" for a
+    learner's attempt or "admin" for the check/demo input."""
     tag_names = [t["tag"] for t in (error_tags or [])]
     with _connect() as conn:
         cur = conn.execute(
             "INSERT INTO feedback_history"
-            " (timestamp, intended, actual, score, feedback, error_tags, analysis)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?)",
+            " (timestamp, intended, actual, score, feedback, error_tags, analysis, source)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
              intended, actual, score, feedback,
              json.dumps(tag_names, ensure_ascii=False),
-             json.dumps(analysis, ensure_ascii=False) if analysis else None),
+             json.dumps(analysis, ensure_ascii=False) if analysis else None,
+             source),
         )
         return cur.lastrowid
 
@@ -149,11 +179,12 @@ def get_previous_score(intended: str):
     """Score of the most recent earlier attempt at the same sentence, or None.
 
     Scores are only comparable within one sentence (the ASR noise floor
-    varies by sentence), so the match is on the exact target text.
+    varies by sentence), so the match is on the exact target text. Admin
+    takes are not the learner's attempts and are never compared against.
     """
     with _connect() as conn:
         row = conn.execute(
-            "SELECT score FROM feedback_history WHERE intended = ?"
+            "SELECT score FROM feedback_history WHERE intended = ? AND " + _LEARNER +
             " ORDER BY id DESC LIMIT 1",
             (intended,),
         ).fetchone()
@@ -163,12 +194,12 @@ def get_previous_score(intended: str):
 def get_weak_points(recent: int = 30):
     """Count L1 error tags over the most recent attempts → [(tag, count)].
 
-    Rows saved before the error_tags migration are skipped.
+    Rows saved before the error_tags migration, and admin takes, are skipped.
     """
     with _connect() as conn:
         rows = conn.execute(
             "SELECT error_tags FROM feedback_history"
-            " WHERE error_tags IS NOT NULL ORDER BY id DESC LIMIT ?",
+            " WHERE error_tags IS NOT NULL AND " + _LEARNER + " ORDER BY id DESC LIMIT ?",
             (recent,),
         ).fetchall()
     counts = {}

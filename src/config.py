@@ -79,3 +79,13 @@ def get_gemini_api_key() -> str | None:
         if key:
             return key
     return None
+
+
+def admin_enabled() -> bool:
+    """Whether to offer the admin check/demo input (「テキスト」).
+
+    Off unless PHONEME_ADMIN is set to 1/true (environment variable or
+    .env), so learners never see it.
+    """
+    value = os.environ.get("PHONEME_ADMIN") or read_env_file().get("PHONEME_ADMIN", "")
+    return str(value).strip().lower() in ("1", "true", "yes", "on")

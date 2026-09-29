@@ -43,6 +43,7 @@ from collections import Counter, defaultdict
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from experiments.exp6_l2_validation import rescore  # noqa: E402
 from experiments.statsutil import bootstrap_ci, rank_auc  # noqa: E402
 from src.scoring import score_pronunciation  # noqa: E402
 
@@ -64,6 +65,7 @@ def load_rows(data_dir):
                 r = json.loads(line)
                 if r["audio_file"] in meta:
                     rows.append({**meta[r["audio_file"]], **r})
+    rescore(rows)   # the faithful flag (heard_score) follows the current scorer
     return rows
 
 

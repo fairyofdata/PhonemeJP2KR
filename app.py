@@ -30,6 +30,7 @@ from src.asr import (
     transcribe_intelligibility,
     transcribe_phones,
 )
+from src.config import admin_enabled
 from src.database import (
     KEEP_CLIPS, delete_record, find_clip, get_all_records, get_previous_score,
     get_record, get_weak_points, init_db, save_clip, save_record,
@@ -79,17 +80,15 @@ def load_models():
 whisper_proc, whisper_mod, wav2vec_proc, wav2vec_mod = load_models()
 
 
-@st.cache_resource(show_spinner="音素認識モデルを読み込んでいます…")
+@st.cache_resource(show_spinner="音素認識モデルを読み込んでいます…（初回のみ）")
 def load_phone_models():
-    """The experimental IPA channel; the app runs without it if it cannot load."""
+    """The experimental IPA channel, loaded on the first analysis rather than
+    at start-up (≈1.2 GB); the app runs without it if it cannot load."""
     try:
         return load_phone_model()
     except Exception as e:  # missing download, offline, …
         print(f"phone model unavailable: {e}")
         return None
-
-
-phone_bundle = load_phone_models()
 
 
 def convert_to_wav16k(audio_bytes: bytes) -> str:
@@ -129,7 +128,7 @@ def run_analysis(target: str, audio_bytes: bytes, strip_noise: bool = True,
             wav2vec_text, char_timestamps = transcribe_acoustics(wav_path, wav2vec_proc, wav2vec_mod)
         phone_ipa = (admin.get("phone_ipa") or "").strip() or None
         phone_source = "admin" if phone_ipa else None
-        if not phone_ipa and phone_bundle:
+        if not phone_ipa and (phone_bundle := load_phone_models()):
             phone_ipa, phone_source = transcribe_phones(wav_path, *phone_bundle), "model"
         waveform, _ = librosa.load(wav_path, sr=SAMPLE_RATE)
     finally:
@@ -151,7 +150,8 @@ def run_analysis(target: str, audio_bytes: bytes, strip_noise: bool = True,
         "wav2vec_text": wav2vec_text,
         "actual_ipa": to_ipa(wav2vec_text),
         "score": report.score,
-        "previous_score": get_previous_score(target),  # read before saving this one
+        # read before saving this one; an admin take is not compared with anything
+        "previous_score": None if admin else get_previous_score(target),
         "diff_html": ui.diff_html(report.pairs),
         "error_tags": report.error_tags,
         "peaks": ui.envelope(waveform),
@@ -189,7 +189,8 @@ def run_analysis(target: str, audio_bytes: bytes, strip_noise: bool = True,
     feedback = (result["llm"] or {}).get("feedback_jp", result["llm_error"] or "")
     record_id = save_record(target, wav2vec_text, report.score,
                             f"**カタカナ表記**: {to_kana(wav2vec_text)}\n\n{feedback}",
-                            report.error_tags, analysis=_payload(result))
+                            report.error_tags, analysis=_payload(result),
+                            source="admin" if admin else "recording")
     save_clip(record_id, audio_bytes, ui.audio_suffix(audio_bytes))
     result["record_id"] = record_id
     return result
@@ -300,7 +301,8 @@ def render_practice():
 
     with right, st.container(border=True):
         st.markdown('<div class="pc-eyebrow">あなたの発音</div>', unsafe_allow_html=True)
-        source = st.segmented_control("入力方法", ["マイクで録音", "ファイル", "テキスト"],
+        methods = ["マイクで録音", "ファイル"] + (["テキスト"] if admin_enabled() else [])
+        source = st.segmented_control("入力方法", methods,
                                       key="source", default="マイクで録音",
                                       label_visibility="collapsed")
         audio_bytes, admin = None, None
@@ -483,7 +485,8 @@ def render_history():
     col_chart, col_weak = st.columns([1.2, 1], gap="medium")
     with col_chart, st.container(border=True):
         st.markdown('<div class="pc-eyebrow">スコアの推移（直近30回）</div>', unsafe_allow_html=True)
-        recent = list(reversed(records[:30]))
+        # the learner's own attempts; admin/demo takes stay out of the trend
+        recent = list(reversed([r for r in records if r.get("source") != "admin"][:30]))
         st.line_chart({"スコア": [r["score"] for r in recent]}, height=210)
     with col_weak, st.container(border=True):
         st.markdown('<div class="pc-eyebrow">よく出る誤り（直近30回）</div>', unsafe_allow_html=True)
@@ -495,7 +498,8 @@ def render_history():
     if st.session_state.get("history_error"):
         st.warning(st.session_state.history_error)
     for r in records[:50]:
-        with st.expander(f"{r['timestamp'][:16]}　{r['intended']}　·　{r['score']} 点"):
+        admin_mark = "　·　管理者" if r.get("source") == "admin" else ""
+        with st.expander(f"{r['timestamp'][:16]}　{r['intended']}　·　{r['score']} 点{admin_mark}"):
             st.markdown(f"**認識された発音:** {r['actual']}")
             st.markdown(r["feedback"])
             open_col, del_col = st.columns(2)

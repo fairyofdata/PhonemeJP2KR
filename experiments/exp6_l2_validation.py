@@ -227,6 +227,28 @@ def cmd_run(limit=None):
                       f"eta {rate * (len(todo) - k) / 60:.0f}min")
 
 
+def rescore(rows) -> int:
+    """Recompute the three scores from the cached texts, in place.
+
+    The run log stores the scores as computed at ASR time; recomputing
+    them from (script, transcript, ASR text) makes the analysis follow
+    later scorer changes — e.g. per-boundary phrase readings (DECISIONS 14)
+    — without re-running the ASR. Returns how many clips changed.
+    """
+    from src.scoring import score_pronunciation
+
+    changed = 0
+    for r in rows:
+        new = {
+            "system_score": score_pronunciation(r["target_text"], r["asr"]).score,
+            "heard_score": score_pronunciation(r["target_text"], r["heard_text"]).score,
+            "asr_vs_heard": score_pronunciation(r["heard_text"], r["asr"]).score,
+        }
+        changed += any(r[k] != v for k, v in new.items())
+        r.update(new)
+    return changed
+
+
 def cmd_analyze():
     with open(MANIFEST, newline="", encoding="utf-8-sig") as f:
         meta = {r["audio_file"]: r for r in csv.DictReader(f)}
@@ -239,6 +261,8 @@ def cmd_analyze():
             if r["audio_file"] in meta:
                 rows.append({**meta[r["audio_file"]], **r})
     print(f"analyzing {len(rows)} scored clips")
+    changed = rescore(rows)
+    print(f"rescored with the current scorer: {changed} clip score(s) differ from the run log")
 
     sys_scores = [r["system_score"] for r in rows]
     heard = [r["heard_score"] for r in rows]

@@ -71,3 +71,37 @@ def test_deleting_a_record_deletes_its_clip(store):
 
 def test_find_clip_without_clip_directory(store):
     assert store.find_clip(_save(store)) is None
+
+
+def test_admin_takes_stay_out_of_the_learner_statistics(store):
+    tags = [{"tag": "vowel_epenthesis", "ref": "", "hyp": "ㅜ"}]
+    store.save_record("밥", "밥", 70, "fb", [{"tag": "coda_deletion", "ref": "ㅂ", "hyp": ""}],
+                      analysis={"score": 70})
+    store.save_record("밥", "바부", 40, "fb", tags, analysis={"score": 40},
+                      source="admin")
+    assert store.get_previous_score("밥") == 70            # not the admin take's 40
+    assert dict(store.get_weak_points()) == {"coda_deletion": 1}
+    sources = [r["source"] for r in store.get_all_records()]
+    assert sources == ["admin", "recording"]               # still listed in the history
+
+
+def test_rows_from_before_the_source_column_are_labelled(store, tmp_path, monkeypatch):
+    import json
+    import sqlite3
+
+    path = tmp_path / "old.db"
+    conn = sqlite3.connect(path)
+    conn.execute("CREATE TABLE feedback_history (id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                 " timestamp TEXT, intended TEXT, actual TEXT, score INTEGER, feedback TEXT,"
+                 " error_tags TEXT, analysis TEXT)")
+    conn.execute("INSERT INTO feedback_history (intended, analysis) VALUES (?, ?)",
+                 ("밥", json.dumps({"admin_input": {"voice": "x"}, "previous_score": 76})))
+    conn.execute("INSERT INTO feedback_history (intended, analysis) VALUES (?, ?)",
+                 ("밥", json.dumps({"score": 60})))
+    conn.commit()
+    conn.close()
+    monkeypatch.setattr(db, "DB_PATH", str(path))
+    db.init_db()
+    first, second = db.get_record(1), db.get_record(2)
+    assert first["source"] == "admin" and first["analysis"]["previous_score"] is None
+    assert second["source"] == "recording"
