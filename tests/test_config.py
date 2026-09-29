@@ -54,3 +54,15 @@ def test_reading_env_file_does_not_leak_into_process_env(tmp_path, monkeypatch):
     monkeypatch.delenv("SOME_OTHER_KEY", raising=False)
     config.get_gemini_api_key()
     assert "SOME_OTHER_KEY" not in os.environ
+
+
+def test_admin_input_is_off_unless_asked_for(monkeypatch, tmp_path):
+    from src import config
+
+    monkeypatch.setattr(config, "ENV_FILE", str(tmp_path / "missing.env"))
+    monkeypatch.delenv("PHONEME_ADMIN", raising=False)
+    assert config.admin_enabled() is False
+    monkeypatch.setenv("PHONEME_ADMIN", "1")
+    assert config.admin_enabled() is True
+    monkeypatch.setenv("PHONEME_ADMIN", "0")
+    assert config.admin_enabled() is False

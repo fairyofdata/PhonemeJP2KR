@@ -24,6 +24,7 @@ import sys
 
 import matplotlib
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
@@ -62,6 +63,8 @@ def load_rows():
                     if d["audio_file"] in meta:
                         meta[d["audio_file"]].update(d)
     rows = [r for r in meta.values() if "system_score" in r and "gop" in r]
+    from experiments.exp6_l2_validation import rescore
+    rescore(rows)   # plot what the current scorer gives (see exp6)
     print(f"{len(rows)} clips with all scores")
     return rows
 

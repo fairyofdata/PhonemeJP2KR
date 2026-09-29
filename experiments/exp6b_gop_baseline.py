@@ -44,6 +44,7 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from experiments.exp6_l2_validation import rescore  # noqa: E402
 from experiments.statsutil import bootstrap_ci, rank_auc, spearman_rho  # noqa: E402
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data", "l2_aihub")
@@ -193,6 +194,7 @@ def cmd_analyze():
         if fname in sys_rows and fname in gop_rows:
             rows.append({**m, **sys_rows[fname], **gop_rows[fname]})
     print(f"analyzing {len(rows)} clips with all three scores")
+    rescore(rows)   # alignment scores follow the current scorer (see exp6)
 
     summary = {
         "n_clips": len(rows),

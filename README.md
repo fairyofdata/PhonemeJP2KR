@@ -208,7 +208,7 @@ streamlit run app.py
 4. Read the result: the reference band and score with the change since your last attempt at the same sentence; a waveform player whose red markers (Wav2Vec2-CTC timestamps) replay each detected error; then tabs for the syllable-grouped jamo diff with named errors, the three channels aligned word by word (pick a flagged word to see its three readings, its katakana and a Japanese explanation of each tag), and the LLM coaching.
 5. The 学習記録 tab charts your scores, aggregates recurring errors into a weak-point profile, and reopens any past attempt in the result view — with its recording, kept for the 50 most recent attempts.
 
-A Japanese voice reading *화려한 도시를 그리며 찾아왔네 그 곳은 춥고도 험한 곳* the way Japanese learners typically do — the Nanami TTS voice speaks a kana script (はりょはん どしるる ぐりみょ ちゃずあわっね …), fed in through the admin text input together with the Hangul and IPA transcripts of that reading. The sentence has 22 syllables carrying liaison and nasalisation (찾아왔네 → [차자완네]), tensification (춥고도 → [춥꼬도]) and coda neutralisation (곳 → [곧]).
+A Japanese voice reading *화려한 도시를 그리며 찾아왔네 그 곳은 춥고도 험한 곳* the way Japanese learners typically do — the Nanami TTS voice speaks a kana script (はりょはん どしるる ぐりみょ ちゃずあわっね …), fed in through the admin text input (shown only when `PHONEME_ADMIN=1` is set, in the environment or `.env`) together with the Hangul and IPA transcripts of that reading. The sentence has 22 syllables carrying liaison and nasalisation (찾아왔네 → [차자완네]), tensification (춥고도 → [춥꼬도]) and coda neutralisation (곳 → [곧]).
 
 ![Score, waveform markers and the jamo diff](docs/assets/demo_phoneme_diff.png)
 
@@ -226,7 +226,7 @@ This take is also exported as data — [`docs/assets/demo_take.json`](docs/asset
 
 ## Testing
 
-The linguistic core is fully unit-tested (192 tests): 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag. Around the core: the reference bands read from the Exp 6 results, API-key resolution (env var → `.env` → secrets), history persistence with clip pruning, edge-noise rules (including the cases that must *not* be stripped), CTC forced alignment for the admin input, the IPA channel (all six skipped-rule tags, notation normalization, display allophony), the word-level alignment of the unspaced acoustic output and the katakana table (including the contrasts it must merge), and the UI markup — syllable grouping and escaping of learner/ASR/LLM text.
+The linguistic core is fully unit-tested: 60+ surface-form conversions verified against Standard Korean pronunciation — including morphology-conditioned rules and regression guards for boundary false-positives — plus IPA mapping, alignment ops, CTC timestamp threading, statistics helpers, and every L1 error tag. Around the core: the reference bands read from the Exp 6 results, API-key resolution (env var → `.env` → secrets), history persistence with clip pruning, edge-noise rules (including the cases that must *not* be stripped), CTC forced alignment for the admin input, the IPA channel (all six skipped-rule tags, notation normalization, display allophony), the word-level alignment of the unspaced acoustic output and the katakana table (including the contrasts it must merge), and the UI markup — syllable grouping and escaping of learner/ASR/LLM text.
 
 ```bash
 pip install -r requirements-dev.txt
