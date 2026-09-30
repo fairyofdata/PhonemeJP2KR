@@ -20,7 +20,8 @@ Is that a valid measurement instrument?
 
 **Method.** The identical input pair (target 감사합니다, ASR hypothesis
 감사하무니다 — a typical epenthesis error) was scored 10 times by each
-method. v1 replicates the original prompt logic verbatim, including
+method. v1 yielded 9 valid runs out of 10 attempts: one attempt failed
+all three API retries and left no result (its cause was not recorded). v1 replicates the original prompt logic verbatim, including
 `temperature=0.2`. Script: [`exp1_reproducibility.py`](../experiments/exp1_reproducibility.py).
 
 **Results.**
@@ -37,6 +38,12 @@ measures transcription-style noise, not pronunciation. A learner practicing
 the same sentence twice could see their "score" move without any change in
 their speech. This experiment is the quantitative justification for the
 measure-deterministically/interpret-with-LLM architecture.
+
+**In CI.** The deterministic half only: the same pair is scored 10 times
+and must have sd 0 and match the recorded 92
+([`tests/test_exp1_determinism.py`](../tests/test_exp1_determinism.py)).
+The LLM half is not in CI — its variation is what is being measured, so
+it cannot be a pass/fail test (DECISIONS 16).
 
 ---
 
@@ -146,6 +153,13 @@ native TTS audio, the same ASR-error confound documented in Experiment 2.
 One ladder (서울에서 만나요) plateaued at 85 for severities 1–3: the
 recognizer absorbed the later perturbations, compressing ordinal
 resolution at high error densities.
+
+**In CI.** The scoring half only. The ASR hypotheses of the 20 clips are
+saved once, locally, to `experiments/data/exp4_asr_fixture.json`;
+`--check` re-scores them with the current scorer and fails if ρ rises
+above −0.60 or the monotonic step rate drops below 0.80. TTS and ASR do
+not run in CI. The recorded numbers above come from the original run and
+are not overwritten by a new fixture — a re-run prints both side by side.
 
 **Interpretation.** The CI excludes zero: the score is a statistically
 significant monotone function of controlled error severity. Combined with

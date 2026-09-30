@@ -372,3 +372,36 @@ transcript were scripted says nothing about them, however realistic.
 on the first analysis instead of at start-up, since most sessions never
 need it.
 
+---
+
+## 16. What of Experiments 1 and 4 runs in CI
+
+**Context.** CI ran the unit tests and the Experiment 3 held-out gate.
+Experiments 1 and 4 were run by hand, so "the evaluation runs in CI" was
+true of one experiment only. The CI job installs pytest and kiwipiepy
+and nothing else — no torch, no API key — and that stays.
+
+**Decision.**
+- Experiment 1: the deterministic half is a unit test (10 scorings of
+  the same pair, sd 0, equal to the recorded 92). The LLM half stays out.
+- Experiment 4: split into the part that needs models and the part that
+  does not. A local run synthesizes and recognizes the clips and saves
+  the ASR hypotheses as a fixture; CI re-scores that fixture
+  (`--check`) and fails if Spearman ρ > −0.60 or the monotonic step
+  rate < 0.80 (recorded: −0.702, 0.867).
+
+**Why.** The LLM half measures run-to-run variation; a test of it either
+fails at random or needs tolerances so wide it tests nothing, and it
+would put an API key and network calls into CI. For Experiment 4, what
+can regress through a code change is the scoring, not TTS or the
+acoustic model — so fixing the ASR outputs isolates exactly the part the
+repository controls. The threshold is one-sided with slack: a fixed
+fixture gives the same number on every run, so the slack only absorbs
+intended scorer changes and the difference between the original run and
+the fixture's run; a stronger correlation is never a failure.
+
+**Consequence.** The gate needs the fixture in the repository; it is
+generated once with TTS + Wav2Vec2 and does not overwrite the recorded
+result. If the fixture's numbers differ from the recorded ones, both are
+reported, not replaced.
+

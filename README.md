@@ -161,10 +161,10 @@ Six reproducible experiments ([`experiments/`](experiments/), full report in [do
 
 | # | Question | Result |
 |---|---|---|
-| 1 | Is LLM-generated IPA a valid scorer? | **No** — on identical input, the v1 LLM scorer fluctuated 89–93 (sd 1.45) across 10 runs, producing 4 different IPA transcriptions of the same word. The deterministic scorer: sd 0.0. |
+| 1 | Is LLM-generated IPA a valid scorer? | **No** — on identical input, the v1 LLM scorer fluctuated 89–93 (sd 1.45) across 10 attempts (9 valid), producing 4 different IPA transcriptions of the same word. The deterministic scorer: sd 0.0. The deterministic half runs in CI (10 identical scorings, sd 0); the LLM half does not. |
 | 2 | Does the pipeline detect injected L1 errors? (TTS perturbation study) | **80% pairwise ranking accuracy** over 10 sentence pairs; mean gap 10.3 points. Both failures trace to the documented ASR-error confound and are analyzed in the report. |
 | 3 | Does the G2P engine generalize beyond its dev examples? | **100% (51/51)** on held-out context-free rules and **100% (17/17)** on morphology-conditioned items; 0/5 on semantics-dependent 사잇소리 items, matching the documented scope. Runs in CI as a regression gate. |
-| 4 | Does the score track error *severity*? (graded 0–3 injection) | **Spearman ρ = −0.702** [95% CI −0.928, −0.325]; mean score strictly decreasing by severity (91.8→74.8), 87% monotonic steps. |
+| 4 | Does the score track error *severity*? (graded 0–3 injection) | **Spearman ρ = −0.702** [95% CI −0.928, −0.325]; mean score strictly decreasing by severity (91.8→74.8), 87% monotonic steps. The scoring half runs in CI on fixed ASR outputs; TTS and ASR do not. |
 | 6 | Does the score carry signal on **real Japanese-accented speech**? (615 clips, 198 speakers, AI-Hub L2 corpus) | **Yes, ordinally** — AUC 0.818 separating 상/하 speech-level ratings, ρ = 0.473 vs human ratings; detects transcriber-noted reading deviations at AUC 0.717. Also measures the ASR noise floor (mean 79.6 on faithful readings): absolute scores are not calibrated until the acoustic model is accent-tuned. |
 | 6b | Does it beat the classic **GOP baseline** (Witt & Young, 2000)? | **Yes, on every axis** — same 615 clips, same acoustic model, CTC likelihood-ratio GOP: 상/하 AUC 0.818 vs 0.606, ρ vs human ratings 0.473 vs 0.153, deviation detection 0.717 vs 0.635. Independent real-data support for scoring text-level similarity over raw model confidences. |
 

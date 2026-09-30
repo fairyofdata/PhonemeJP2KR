@@ -21,3 +21,7 @@ jobs:
         run: python -m pytest tests/ -q
       - name: G2P held-out regression gate (core & morph must stay 100%)
         run: python experiments/exp3_g2p_heldout.py --check
+      # Exp 4, scoring half only: re-scores ASR outputs saved once locally
+      # (experiments/data/exp4_asr_fixture.json) — no TTS, ASR or torch here
+      - name: Severity monotonicity gate on fixed ASR outputs (Exp 4)
+        run: python experiments/exp4_severity_monotonicity.py --check

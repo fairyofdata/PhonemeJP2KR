@@ -15,8 +15,16 @@ Caveat: like Experiment 2 this is a perturbation study on TTS audio, not
 genuine L2 speech; it validates ordinal sensitivity, not absolute
 calibration against human judgment.
 
-Usage:  python experiments/exp4_severity_monotonicity.py
-Output: experiments/results/exp4_severity_monotonicity.json + console table
+Usage:
+  python experiments/exp4_severity_monotonicity.py           # TTS + ASR (local)
+  python experiments/exp4_severity_monotonicity.py --check   # scoring only (CI)
+
+The first form synthesizes and recognizes the 20 clips, saves the ASR
+hypotheses to experiments/data/exp4_asr_fixture.json, and prints the
+result next to the one recorded in experiments/results/ — it never
+overwrites the recorded result. --check re-scores the saved hypotheses
+with the current scorer (no TTS, no ASR, no torch) and fails if ρ or the
+monotonic step rate fall outside the tolerance around the recorded value.
 """
 
 import json
@@ -28,15 +36,15 @@ import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-import imageio_ffmpeg  # noqa: E402
-
 from experiments.statsutil import bootstrap_ci, spearman_rho  # noqa: E402
-from src.asr import load_wav2vec_model, transcribe_acoustics  # noqa: E402
 from src.scoring import score_pronunciation  # noqa: E402
-from src.tts import generate_tts_audio  # noqa: E402
 
 OUT = os.path.join(os.path.dirname(__file__), "results", "exp4_severity_monotonicity.json")
-FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
+FIXTURE = os.path.join(os.path.dirname(__file__), "data", "exp4_asr_fixture.json")
+
+# --check tolerance around the recorded result (see DECISIONS 16)
+RHO_MAX = -0.60        # recorded −0.702; fail if the correlation weakens past this
+MONOTONE_MIN = 0.80    # recorded 0.867 (13/15); fail below 12/15
 
 # severity 0 = target; severity k = k cumulative injected L1 errors
 LADDERS = [
@@ -74,67 +82,98 @@ LADDERS = [
 
 
 def synthesize_wav(text: str, workdir: str, tag: str) -> str:
+    import imageio_ffmpeg
+    from src.tts import generate_tts_audio
+
     mp3 = os.path.join(workdir, f"{tag}.mp3")
     wav = os.path.join(workdir, f"{tag}.wav")
     if not generate_tts_audio(text, "SunHi", mp3):
         raise RuntimeError(f"TTS failed for: {text}")
-    subprocess.run([FFMPEG, "-y", "-i", mp3, "-ar", "16000", "-ac", "1", wav],
-                   check=True, capture_output=True)
+    subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-i", mp3, "-ar", "16000",
+                    "-ac", "1", wav], check=True, capture_output=True)
     return wav
 
 
-def main():
-    processor, model = load_wav2vec_model()
+def summarize(ladders) -> dict:
+    """Score saved hypotheses → the statistics of the experiment.
+
+    ``ladders``: [{"target": …, "hyps": [severity 0..3 ASR text]}].
+    """
     severities, scores, rows = [], [], []
-
-    with tempfile.TemporaryDirectory() as workdir:
-        for li, ladder in enumerate(LADDERS):
-            texts = [ladder["target"]] + ladder["steps"]
-            ladder_scores = []
-            for sev, text in enumerate(texts):
-                wav = synthesize_wav(text, workdir, f"{li}_{sev}")
-                hyp = transcribe_acoustics(wav, processor, model)[0]
-                score = score_pronunciation(ladder["target"], hyp).score
-                ladder_scores.append(score)
-                severities.append(sev)
-                scores.append(score)
-            violations = sum(
-                1 for a, b in zip(ladder_scores, ladder_scores[1:]) if b > a
-            )
-            rows.append({"target": ladder["target"], "scores": ladder_scores,
-                         "violations": violations})
-            print(f"{ladder['target']}: {ladder_scores}"
-                  f" ({violations} monotonicity violation(s))")
-
+    for ladder in ladders:
+        ladder_scores = [score_pronunciation(ladder["target"], h).score for h in ladder["hyps"]]
+        severities += list(range(len(ladder_scores)))
+        scores += ladder_scores
+        violations = sum(1 for a, b in zip(ladder_scores, ladder_scores[1:]) if b > a)
+        rows.append({"target": ladder["target"], "scores": ladder_scores,
+                     "violations": violations})
     rho = spearman_rho(severities, scores)
     ci_lo, ci_hi = bootstrap_ci(severities, scores, spearman_rho)
-    by_severity = {
-        sev: round(statistics.mean(
-            s for v, s in zip(severities, scores) if v == sev), 1)
-        for sev in sorted(set(severities))
-    }
     total_steps = sum(len(r["scores"]) - 1 for r in rows)
-    total_violations = sum(r["violations"] for r in rows)
-
-    summary = {
+    return {
         "n_clips": len(scores),
         "spearman_rho": round(rho, 3),
         "bootstrap_95ci": [round(ci_lo, 3), round(ci_hi, 3)],
-        "mean_score_by_severity": by_severity,
-        "monotonic_step_rate": round(1 - total_violations / total_steps, 3),
+        "mean_score_by_severity": {
+            str(sev): round(statistics.mean(s for v, s in zip(severities, scores) if v == sev), 1)
+            for sev in sorted(set(severities))},
+        "monotonic_step_rate": round(1 - sum(r["violations"] for r in rows) / total_steps, 3),
         "ladders": rows,
     }
 
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    with open(OUT, "w", encoding="utf-8") as f:
-        json.dump(summary, f, ensure_ascii=False, indent=2)
 
-    print("\n=== Summary ===")
-    print(f"Spearman rho (severity vs score): {rho:.3f}"
-          f" [95% CI {ci_lo:.3f}, {ci_hi:.3f}]")
-    print(f"mean score by severity: {by_severity}")
-    print(f"monotonic step rate: {summary['monotonic_step_rate']:.0%}")
+def _recorded() -> dict:
+    with open(OUT, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def record():
+    """TTS + ASR for every clip → save the hypotheses; compare, don't overwrite."""
+    from src.asr import load_wav2vec_model, transcribe_acoustics
+
+    processor, model = load_wav2vec_model()
+    ladders = []
+    with tempfile.TemporaryDirectory() as workdir:
+        for li, ladder in enumerate(LADDERS):
+            texts = [ladder["target"]] + ladder["steps"]
+            hyps = [transcribe_acoustics(synthesize_wav(t, workdir, f"{li}_{k}"),
+                                         processor, model)[0]
+                    for k, t in enumerate(texts)]
+            ladders.append({"target": ladder["target"], "texts": texts, "hyps": hyps})
+            print(f"{ladder['target']}: {hyps}")
+    os.makedirs(os.path.dirname(FIXTURE), exist_ok=True)
+    with open(FIXTURE, "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"voice": "SunHi", "ladders": ladders}, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+    print(f"hypotheses saved: {FIXTURE}")
+    _report(summarize(ladders), _recorded())
+
+
+def _report(now: dict, recorded: dict):
+    print("\n=== this run vs the recorded result (not overwritten) ===")
+    for key in ("spearman_rho", "bootstrap_95ci", "mean_score_by_severity", "monotonic_step_rate"):
+        mark = "" if now[key] == recorded[key] else "   ← differs"
+        print(f"{key}: now {now[key]}   recorded {recorded[key]}{mark}")
+    for n, r in zip(now["ladders"], recorded["ladders"]):
+        mark = "" if n["scores"] == r["scores"] else "   ← differs"
+        print(f"  {n['target']}: now {n['scores']}   recorded {r['scores']}{mark}")
+
+
+def check() -> int:
+    """Re-score the saved hypotheses; 0 if within tolerance of the record."""
+    if not os.path.exists(FIXTURE):
+        print(f"missing {FIXTURE} — create it once, locally, with:")
+        print("  python experiments/exp4_severity_monotonicity.py")
+        return 1
+    with open(FIXTURE, encoding="utf-8") as f:
+        now = summarize(json.load(f)["ladders"])
+    recorded = _recorded()
+    _report(now, recorded)
+    ok = now["spearman_rho"] <= RHO_MAX and now["monotonic_step_rate"] >= MONOTONE_MIN
+    print(f"\ncheck: rho {now['spearman_rho']} (≤ {RHO_MAX}), monotone "
+          f"{now['monotonic_step_rate']} (≥ {MONOTONE_MIN}) → {'PASS' if ok else 'FAIL'}")
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(check() if "--check" in sys.argv[1:] else record())
