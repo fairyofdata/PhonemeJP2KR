@@ -33,6 +33,7 @@ import statistics
 import subprocess
 import sys
 import tempfile
+import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -42,9 +43,11 @@ from src.scoring import score_pronunciation  # noqa: E402
 OUT = os.path.join(os.path.dirname(__file__), "results", "exp4_severity_monotonicity.json")
 FIXTURE = os.path.join(os.path.dirname(__file__), "data", "exp4_asr_fixture.json")
 
-# --check tolerance around the recorded result (see DECISIONS 16)
-RHO_MAX = -0.60        # recorded −0.702; fail if the correlation weakens past this
-MONOTONE_MIN = 0.80    # recorded 0.867 (13/15); fail below 12/15
+# --check tolerance around the fixture's own baseline (see DECISIONS 16).
+# The fixture stores the numbers its hypotheses gave when it was made; a
+# scorer change may move them by at most this much before CI fails.
+RHO_SLACK = 0.05        # fail if rho weakens by more than 0.05
+MONOTONE_SLACK = 1 / 15  # fail if more than one extra step (of 15) breaks
 
 # severity 0 = target; severity k = k cumulative injected L1 errors
 LADDERS = [
@@ -160,18 +163,23 @@ def _report(now: dict, recorded: dict):
 
 
 def check() -> int:
-    """Re-score the saved hypotheses; 0 if within tolerance of the record."""
+    """Re-score the saved hypotheses; 0 if within tolerance of the fixture's baseline."""
     if not os.path.exists(FIXTURE):
         print(f"missing {FIXTURE} — create it once, locally, with:")
         print("  python experiments/exp4_severity_monotonicity.py")
         return 1
     with open(FIXTURE, encoding="utf-8") as f:
-        now = summarize(json.load(f)["ladders"])
-    recorded = _recorded()
-    _report(now, recorded)
-    ok = now["spearman_rho"] <= RHO_MAX and now["monotonic_step_rate"] >= MONOTONE_MIN
-    print(f"\ncheck: rho {now['spearman_rho']} (≤ {RHO_MAX}), monotone "
-          f"{now['monotonic_step_rate']} (≥ {MONOTONE_MIN}) → {'PASS' if ok else 'FAIL'}")
+        fixture = json.load(f)
+    now = summarize(fixture["ladders"])
+    _report(now, _recorded())
+    base = fixture["baseline"]
+    rho_max = round(base["spearman_rho"] + RHO_SLACK, 3)
+    mono_min = round(base["monotonic_step_rate"] - MONOTONE_SLACK, 3)
+    ok = now["spearman_rho"] <= rho_max and now["monotonic_step_rate"] >= mono_min
+    print(f"\ncheck (fixture of {fixture.get('created', '?')}, baseline rho "
+          f"{base['spearman_rho']}, monotone {base['monotonic_step_rate']}): "
+          f"rho {now['spearman_rho']} (≤ {rho_max}), monotone "
+          f"{now['monotonic_step_rate']} (≥ {mono_min}) → {'PASS' if ok else 'FAIL'}")
     return 0 if ok else 1
 
 

@@ -7,8 +7,11 @@ is Levenshtein over those IPA strings — exactly the v1 logic (same
 temperature 0.2). The identical input is scored N times by each method;
 a valid measurement instrument must return the same value every time.
 
-Usage:  python experiments/exp1_reproducibility.py [n_runs]
+Usage:  python experiments/exp1_reproducibility.py [n_runs] [--out PATH]
 Output: experiments/results/exp1_reproducibility.json + console summary
+        (--out writes elsewhere; the scheduled LLM check in
+        .github/workflows/llm-eval.yml uses it so the recorded result is
+        never overwritten — DECISIONS 17)
 """
 
 import json
@@ -86,7 +89,13 @@ def run_v1_once(client):
 
 
 def main():
-    n_runs = int(sys.argv[1]) if len(sys.argv) > 1 else 10
+    args = sys.argv[1:]
+    out = OUT
+    if "--out" in args:
+        i = args.index("--out")
+        out = args[i + 1]
+        del args[i:i + 2]
+    n_runs = int(args[0]) if args else 10
     client = _get_client()
 
     v1_runs = []
@@ -98,6 +107,9 @@ def main():
             except Exception as e:
                 print(f"  run {i}: retry after error: {e}")
                 time.sleep(10)
+        else:
+            print(f"v1 run {i + 1}/{n_runs}: no result after 3 attempts")
+            continue
         print(f"v1 run {i + 1}/{n_runs}: score={v1_runs[-1]['score']}"
               f" ipa=/{v1_runs[-1]['target_ipa']}/ vs /{v1_runs[-1]['actual_ipa']}/")
 
@@ -128,8 +140,8 @@ def main():
         },
     }
 
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    with open(OUT, "w", encoding="utf-8") as f:
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    with open(out, "w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
 
     print("\n=== Summary ===")

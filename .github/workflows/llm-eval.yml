@@ -1,0 +1,36 @@
+name: LLM eval (scheduled)
+
+# Experiment 1, LLM half. Not a gate: the run-to-run variation of an LLM
+# scorer is what is measured, so a pass/fail test of it would be flaky by
+# design (DECISIONS 16-17). Runs weekly and on demand, records the result
+# as an artifact, and never touches experiments/results/.
+on:
+  schedule:
+    - cron: "0 0 * * 1"   # Mondays 09:00 JST
+  workflow_dispatch:
+
+jobs:
+  exp1-llm:
+    runs-on: ubuntu-latest
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - name: Skip without an API key
+        if: env.GEMINI_API_KEY == ''
+        run: echo "GEMINI_API_KEY secret is not set — skipping the LLM run."
+      - name: Install dependencies
+        if: env.GEMINI_API_KEY != ''
+        run: pip install kiwipiepy==0.23.2 google-genai python-dotenv
+      - name: Experiment 1 — 10 LLM scorings of the same input
+        if: env.GEMINI_API_KEY != ''
+        run: python experiments/exp1_reproducibility.py 10 --out llm-eval/exp1_llm.json
+      - name: Keep the result
+        if: env.GEMINI_API_KEY != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: exp1-llm-${{ github.run_id }}
+          path: llm-eval/exp1_llm.json

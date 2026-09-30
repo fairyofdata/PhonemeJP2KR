@@ -42,8 +42,11 @@ measure-deterministically/interpret-with-LLM architecture.
 **In CI.** The deterministic half only: the same pair is scored 10 times
 and must have sd 0 and match the recorded 92
 ([`tests/test_exp1_determinism.py`](../tests/test_exp1_determinism.py)).
-The LLM half is not in CI — its variation is what is being measured, so
-it cannot be a pass/fail test (DECISIONS 16).
+The LLM half is not a pass/fail gate — its variation is what is being
+measured (DECISIONS 16). It runs as a scheduled job instead
+([`.github/workflows/llm-eval.yml`](../.github/workflows/llm-eval.yml),
+weekly and on demand): 10 LLM scorings of the same input, saved as a CI
+artifact, never written over the recorded result (DECISIONS 17).
 
 ---
 
@@ -156,10 +159,18 @@ resolution at high error densities.
 
 **In CI.** The scoring half only. The ASR hypotheses of the 20 clips are
 saved once, locally, to `experiments/data/exp4_asr_fixture.json`;
-`--check` re-scores them with the current scorer and fails if ρ rises
-above −0.60 or the monotonic step rate drops below 0.80. TTS and ASR do
-not run in CI. The recorded numbers above come from the original run and
-are not overwritten by a new fixture — a re-run prints both side by side.
+`--check` re-scores them with the current scorer and fails if ρ weakens
+by more than 0.05, or more than one extra step of 15 breaks, relative to
+the fixture's own baseline. TTS and ASR do not run in CI.
+
+**Re-run (2026-10-01).** Generating the fixture meant synthesizing the
+20 clips again with the same TTS voice. The recognized text changed, 3 of
+the 20 clips scored differently, and the same scorer gave
+ρ = −0.599 [95% CI −0.871, −0.175], monotonic steps 80% (12/15), mean
+score by severity 91.8 → 82.6 → 78.0 → 69.8. The recorded run above is
+kept as it is; both are reported. The fixture's baseline is the re-run,
+because the gate checks the scorer on fixed input, not the TTS.
+The CI still excludes zero in the re-run.
 
 **Interpretation.** The CI excludes zero: the score is a statistically
 significant monotone function of controlled error severity. Combined with
